@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   BOARD_SIZE,
+  cloneBoard,
   countPieces,
   createInitialBoard,
   getAdjacentSquare,
@@ -384,5 +385,14 @@ describe('coordinate system integrity', () => {
       expect(map.has(key)).toBe(false);
       map.set(key, i);
     }
+  });
+});
+
+describe('cloneBoard()', () => {
+  it('returns a distinct array with identical contents', () => {
+    const board = createInitialBoard();
+    const clone = cloneBoard(board);
+    expect(clone).toEqual(board);
+    expect(clone).not.toBe(board);
   });
 });

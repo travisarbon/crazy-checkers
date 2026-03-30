@@ -77,6 +77,14 @@ export interface Move {
   readonly captured: readonly Square[];
 }
 
+/** The lifecycle status of a game. */
+export const GameStatus = {
+  Setup: 'SETUP',
+  InProgress: 'IN_PROGRESS',
+  GameOver: 'GAME_OVER',
+} as const;
+export type GameStatus = (typeof GameStatus)[keyof typeof GameStatus];
+
 /** How a game ended. */
 export const GameResultType = {
   WhiteWin: 'WHITE_WIN',
@@ -108,6 +116,95 @@ export const PlayerType = {
   CpuHard: 'CPU_HARD',
 } as const;
 export type PlayerType = (typeof PlayerType)[keyof typeof PlayerType];
+
+// ---------------------------------------------------------------------------
+// RuleSet interface (defined here to avoid circular dependency with rules.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * A complete rule set for a checkers-family game.
+ *
+ * The game state machine (game.ts) calls these methods to advance the game.
+ * The AI calls getLegalMoves and applyMove during search.
+ * The UI calls getLegalMoves to highlight valid destinations.
+ */
+export interface RuleSet {
+  /** Returns all legal moves for the active player. */
+  getLegalMoves(board: BoardState, activeColor: PieceColor): Move[];
+
+  /** Applies a move to the board, producing a new board state. */
+  applyMove(board: BoardState, move: Move): BoardState;
+
+  /** Checks whether the game is over based on the current board and active color. */
+  checkGameOver(board: BoardState, activeColor: PieceColor): GameResult | null;
+
+  /** Returns true if a piece on the given square should be promoted. */
+  shouldPromote(piece: Piece, sq: Square): boolean;
+
+  // --- Phase 2 extensibility hooks (optional) ---
+  onTurnStart?(board: BoardState, activeColor: PieceColor): BoardState;
+  onTurnEnd?(board: BoardState, activeColor: PieceColor, move: Move): BoardState;
+  onCapture?(board: BoardState, landingSquare: Square, captured: Square[]): BoardState;
+  onCheckGameOver?(
+    board: BoardState,
+    activeColor: PieceColor,
+    baseResult: GameResult | null,
+  ): GameResult | null;
+}
+
+/** Configuration for a game: who is playing each color. */
+export interface PlayerSetup {
+  readonly white: PlayerType;
+  readonly black: PlayerType;
+}
+
+/**
+ * The complete state of a game at a point in time.
+ *
+ * Immutable by convention: every function that advances the game returns
+ * a new GameState rather than mutating the existing one.
+ */
+export interface GameState {
+  /** The current board position. */
+  readonly board: BoardState;
+
+  /** Whose turn it is. */
+  readonly activeColor: PieceColor;
+
+  /** Current lifecycle status. */
+  readonly status: GameStatus;
+
+  /** The result of the game, if status is GameOver. Null otherwise. */
+  readonly result: GameResult | null;
+
+  /** The rule set governing this game (imported as type to avoid circular deps). */
+  readonly ruleSet: RuleSet;
+
+  /** Who is playing each color. */
+  readonly players: PlayerSetup;
+
+  /** Ordered list of moves played so far (oldest first). */
+  readonly moveHistory: readonly Move[];
+
+  /**
+   * Ordered list of Zobrist hashes for every position that has occurred,
+   * including the initial position. Used for threefold repetition detection.
+   */
+  readonly positionHashes: readonly bigint[];
+
+  /**
+   * Count of consecutive half-moves (plies) with no capture and no pawn advance.
+   * Reset to 0 whenever a capture or pawn move occurs.
+   * Draw is triggered at 80 (40 moves per side, per WCDF rules).
+   */
+  readonly halfMoveClock: number;
+
+  /**
+   * The total number of half-moves (plies) played. Starts at 0.
+   * Incremented by 1 after each move.
+   */
+  readonly plyCount: number;
+}
 
 /** Diagonal directions for adjacency lookups. */
 export const Direction = {

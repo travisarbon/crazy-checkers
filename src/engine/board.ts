@@ -174,3 +174,11 @@ export function isPromotionSquare(sq: Square, color: PieceColor): boolean {
   const { row } = squareToGrid(sq);
   return row === getPromotionRow(color);
 }
+
+/**
+ * Returns a shallow copy of the board.
+ * Safe because Piece objects are treated as immutable.
+ */
+export function cloneBoard(board: BoardState): BoardState {
+  return [...board] as BoardState;
+}

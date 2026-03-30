@@ -7,31 +7,13 @@ import {
   getMovesToSquare,
 } from './moves';
 import { createInitialBoard } from './board';
-import { PieceColor, PieceType, square } from './types';
-import type { BoardState, Move, SquareState } from './types';
+import { square } from './types';
+import type { Move } from './types';
+import { W, B, P, K, emptyBoard, buildBoard } from './test-utils';
 
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
-
-const W = PieceColor.White;
-const B = PieceColor.Black;
-const P = PieceType.Pawn;
-const K = PieceType.King;
-
-function emptyBoard(): SquareState[] {
-  return new Array<SquareState>(32).fill(null);
-}
-
-function buildBoard(
-  placements: Array<{ sq: number; color: PieceColor; type: PieceType }>,
-): BoardState {
-  const board = emptyBoard();
-  for (const { sq, color, type } of placements) {
-    board[sq - 1] = { color, type };
-  }
-  return board;
-}
 
 /** Returns the set of final destination squares from a list of moves. */
 function destinations(moves: Move[]): number[] {

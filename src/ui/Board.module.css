@@ -1,0 +1,12 @@
+.boardContainer {
+  width: 100%;
+  max-width: min(90vw, 90vh, 600px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+.boardContainer svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
