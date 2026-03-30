@@ -38,7 +38,6 @@ describe('Board', () => {
     render(<Board board={createInitialBoard()} />);
     const pieces = screen.getAllByTestId('piece');
 
-    // None of the pieces should mention squares 13-20
     for (let sq = 13; sq <= 20; sq++) {
       const found = pieces.some((p) =>
         p.getAttribute('aria-label')?.includes(`square ${String(sq)}`),
@@ -55,7 +54,6 @@ describe('Board', () => {
   });
 
   it('renders the board with flipped orientation', () => {
-    // Place a single black pawn on square 1 (engine row 0)
     const board: BoardState = new Array(32).fill(null) as BoardState;
     const mutableBoard = [...board];
     mutableBoard[0] = { color: PieceColor.Black, type: PieceType.Pawn };
@@ -68,18 +66,18 @@ describe('Board', () => {
       <Board board={testBoard} flipped />,
     );
 
-    // In normal orientation, square 1 (row 0, col 1) renders at y = 0 * 100 + 50 = 50
-    // In flipped orientation, square 1 (row 0) renders at y = (7 - 0) * 100 + 50 = 750
     const normalCircle = normalContainer.querySelector('circle');
     const flippedCircle = flippedContainer.querySelector('circle');
 
     expect(normalCircle).not.toBeNull();
     expect(flippedCircle).not.toBeNull();
 
-    const normalCy = Number(normalCircle!.getAttribute('cy'));
-    const flippedCy = Number(flippedCircle!.getAttribute('cy'));
+    // Use type guard instead of non-null assertion
+    if (normalCircle === null || flippedCircle === null) return;
 
-    // Normal: piece at top (low y), Flipped: piece at bottom (high y)
+    const normalCy = Number(normalCircle.getAttribute('cy'));
+    const flippedCy = Number(flippedCircle.getAttribute('cy'));
+
     expect(normalCy).toBeLessThan(flippedCy);
     expect(normalCy).toBe(50);
     expect(flippedCy).toBe(750);
@@ -97,12 +95,11 @@ describe('Board', () => {
     const gridcells = screen.getAllByRole('gridcell');
     expect(gridcells).toHaveLength(32);
 
-    // Check that at least one occupied square has a descriptive label
     const sq1Cell = gridcells.find((cell) =>
       cell.getAttribute('aria-label')?.includes('Square 1'),
     );
     expect(sq1Cell).toBeDefined();
-    expect(sq1Cell!.getAttribute('aria-label')).toBe('Square 1, black pawn');
+    expect(sq1Cell).toHaveAttribute('aria-label', 'Square 1, black pawn');
   });
 
   it('light squares have aria-hidden="true"', () => {
@@ -119,14 +116,13 @@ describe('Board', () => {
       cell.getAttribute('aria-label')?.includes('Square 13'),
     );
     expect(sq13Cell).toBeDefined();
-    expect(sq13Cell!.getAttribute('aria-label')).toBe('Square 13, empty');
+    expect(sq13Cell).toHaveAttribute('aria-label', 'Square 13, empty');
   });
 
   it('board container has square aspect ratio', () => {
     const { container } = render(<Board board={createInitialBoard()} />);
     const boardContainer = container.firstElementChild as HTMLElement;
     expect(boardContainer).not.toBeNull();
-    // CSS module class is applied; check the SVG viewBox is square
     const svg = container.querySelector('svg');
     expect(svg).toHaveAttribute('viewBox', '0 0 800 800');
   });
@@ -149,7 +145,6 @@ describe('Board', () => {
   });
 
   it('correctly maps engine squares to SVG positions', () => {
-    // Square 1 is at grid (0, 1) — should render at x=150, y=50 (normal orientation)
     const board: BoardState = new Array(32).fill(null) as BoardState;
     const mutableBoard = [...board];
     mutableBoard[0] = { color: PieceColor.White, type: PieceType.Pawn };
@@ -159,10 +154,10 @@ describe('Board', () => {
     const circle = container.querySelector('circle');
     expect(circle).not.toBeNull();
 
+    if (circle === null) return;
+
     const grid = squareToGrid(square(1));
-    // col 1 => x center = 1 * 100 + 50 = 150
-    // row 0 => y center = 0 * 100 + 50 = 50
-    expect(Number(circle!.getAttribute('cx'))).toBe(grid.col * 100 + 50);
-    expect(Number(circle!.getAttribute('cy'))).toBe(grid.row * 100 + 50);
+    expect(Number(circle.getAttribute('cx'))).toBe(grid.col * 100 + 50);
+    expect(Number(circle.getAttribute('cy'))).toBe(grid.row * 100 + 50);
   });
 });

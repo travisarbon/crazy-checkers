@@ -10,7 +10,10 @@ import Board from './Board';
 
 export default function App() {
   useEffect(() => {
-    applyTheme(THEMES[DEFAULT_THEME_ID]!);
+    const theme = THEMES[DEFAULT_THEME_ID];
+    if (theme) {
+      applyTheme(theme);
+    }
   }, []);
 
   return (

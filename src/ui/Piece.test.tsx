@@ -8,6 +8,15 @@ function renderInSvg(ui: React.ReactElement) {
   return render(<svg>{ui}</svg>);
 }
 
+function queryCircle(container: HTMLElement) {
+  const circle = container.querySelector('circle');
+  expect(circle).not.toBeNull();
+  // After the assertion above, circle is guaranteed non-null.
+  // Use a guard to satisfy the linter without non-null assertions.
+  if (circle === null) throw new Error('Expected circle element');
+  return circle;
+}
+
 describe('Piece', () => {
   it('renders a circle for a pawn', () => {
     const { container } = renderInSvg(
@@ -18,10 +27,9 @@ describe('Piece', () => {
         cy={550}
       />,
     );
-    const circle = container.querySelector('circle');
-    expect(circle).not.toBeNull();
-    expect(circle!.getAttribute('fill')).toBe('var(--piece-white)');
-    expect(circle!.getAttribute('stroke')).toBe('var(--piece-white-stroke)');
+    const circle = queryCircle(container);
+    expect(circle.getAttribute('fill')).toBe('var(--piece-white)');
+    expect(circle.getAttribute('stroke')).toBe('var(--piece-white-stroke)');
   });
 
   it('renders a circle and crown path for a king', () => {
@@ -87,9 +95,9 @@ describe('Piece', () => {
         cy={50}
       />,
     );
-    const circle = container.querySelector('circle');
-    expect(circle!.getAttribute('fill')).toBe('var(--piece-black)');
-    expect(circle!.getAttribute('stroke')).toBe('var(--piece-black-stroke)');
+    const circle = queryCircle(container);
+    expect(circle.getAttribute('fill')).toBe('var(--piece-black)');
+    expect(circle.getAttribute('stroke')).toBe('var(--piece-black-stroke)');
   });
 
   it('positions the circle at the given cx/cy', () => {
@@ -101,8 +109,8 @@ describe('Piece', () => {
         cy={450}
       />,
     );
-    const circle = container.querySelector('circle');
-    expect(circle!.getAttribute('cx')).toBe('350');
-    expect(circle!.getAttribute('cy')).toBe('450');
+    const circle = queryCircle(container);
+    expect(circle.getAttribute('cx')).toBe('350');
+    expect(circle.getAttribute('cy')).toBe('450');
   });
 });
