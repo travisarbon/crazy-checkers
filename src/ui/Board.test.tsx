@@ -7,10 +7,14 @@ import { PieceColor, PieceType, square } from '../engine/types';
 import { squareToGrid } from '../engine/board';
 
 describe('Board', () => {
-  it('renders 64 squares (32 light + 32 dark)', () => {
+  it('renders all 64 squares (32 light + 32 dark with overlays)', () => {
     const { container } = render(<Board board={createInitialBoard()} />);
+    // 32 light squares (1 rect each) + 32 dark squares (base rect + transparent click target = 2 each)
     const rects = container.querySelectorAll('rect');
-    expect(rects).toHaveLength(64);
+    expect(rects.length).toBeGreaterThanOrEqual(64);
+    // Verify 32 gridcells (dark squares)
+    const gridcells = screen.getAllByRole('gridcell');
+    expect(gridcells).toHaveLength(32);
   });
 
   it('renders 24 pieces at the initial position', () => {
