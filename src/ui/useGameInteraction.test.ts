@@ -1,11 +1,11 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { useGameInteraction } from './useGameInteraction';
-import { createNewGame, makeMove, getCurrentLegalMoves } from '../engine/game';
+import { createNewGame, getCurrentLegalMoves } from '../engine/game';
 import { createAmericanRules } from '../engine/rules';
 import { getLegalMovesForPiece, getJumpsForPiece } from '../engine/moves';
 import { setBoardSquare } from '../engine/board';
-import type { BoardState, GameState, Move } from '../engine/types';
+import type { BoardState, GameState } from '../engine/types';
 import {
   PieceColor,
   PieceType,
@@ -135,7 +135,7 @@ describe('useGameInteraction', () => {
     act(() => result.current.handleSquareClick(square(17)));
 
     expect(onMove).toHaveBeenCalledTimes(1);
-    const newState = onMove.mock.calls[0][0] as GameState;
+    const newState = onMove.mock.calls[0]?.[0] as GameState;
     expect(newState.activeColor).toBe(PieceColor.Black);
     expect(result.current.selectedSquare).toBeNull();
   });
@@ -199,7 +199,7 @@ describe('useGameInteraction', () => {
     act(() => result.current.handleSquareClick(square(14)));
 
     expect(onMove).toHaveBeenCalledTimes(1);
-    const newState = onMove.mock.calls[0][0] as GameState;
+    const newState = onMove.mock.calls[0]?.[0] as GameState;
     expect(newState.activeColor).toBe(PieceColor.Black);
   });
 

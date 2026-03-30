@@ -78,7 +78,7 @@ function applyPartialHop(
  * Find the captured square for a hop from `from` to `to` by looking at the
  * legal moves' first path entry.
  */
-function findCapturedForHop(from: Square, to: Square, legalMoves: Move[]): Square | null {
+function findCapturedForHop(_from: Square, to: Square, legalMoves: Move[]): Square | null {
   for (const move of legalMoves) {
     if (move.path.length > 0 && (move.path[0] as number) === (to as number)) {
       return move.captured.length > 0 ? (move.captured[0] ?? null) : null;

@@ -121,7 +121,7 @@ describe('Board interaction rendering', () => {
   });
 
   it('6. cursor is pointer on selectable pieces', () => {
-    const { container } = render(
+    render(
       <Board
         board={createInitialBoard()}
         selectablePieces={new Set([21, 22])}
@@ -141,7 +141,7 @@ describe('Board interaction rendering', () => {
   });
 
   it('7. non-selectable pieces do not have pointer cursor', () => {
-    const { container } = render(
+    render(
       <Board
         board={createInitialBoard()}
         selectablePieces={new Set([21])}
