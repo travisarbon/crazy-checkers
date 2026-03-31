@@ -1,11 +1,14 @@
 /**
  * Board rendering — SVG-based 8x8 checkers board with piece placement,
- * selection highlighting, legal move indicators, and click interaction.
+ * selection highlighting, legal move indicators, click interaction,
+ * and move animation support.
  */
 
 import type { BoardState, Piece as PieceData, Square } from '../engine/types';
 import { getBoardSquare, gridToSquare } from '../engine/board';
 import { PieceColor, PieceType } from '../engine/types';
+import type { AnimatingPiece } from './useAnimationQueue';
+import { ANIM_DURATION } from './useAnimationQueue';
 import PieceComponent from './Piece';
 import styles from './Board.module.css';
 
@@ -22,6 +25,16 @@ interface BoardProps {
   lastMoveSquares?: { from: Square; to: Square } | null;
   onSquareClick?: (sq: Square) => void;
   selectablePieces?: ReadonlySet<number>;
+
+  // Animation props (Task 2.3)
+  /** Map of square number → animation overrides for pieces currently animating. */
+  animatingPieces?: ReadonlyMap<number, AnimatingPiece>;
+  /** Set of squares whose pieces are fading out (captured). */
+  fadingSquares?: ReadonlySet<number>;
+  /** Whether any animation is in progress (disables click handlers). */
+  isAnimating?: boolean;
+  /** Speed multiplier for animation durations. */
+  animSpeedMultiplier?: number;
 }
 
 function describeSquare(sq: Square, piece: PieceData | null): string {
@@ -38,11 +51,16 @@ export default function Board({
   selectedSquare,
   onSquareClick,
   selectablePieces,
+  animatingPieces,
+  fadingSquares,
+  isAnimating = false,
+  animSpeedMultiplier = 1.0,
 }: BoardProps) {
   const rows = Array.from({ length: 8 }, (_, i) => i);
   const cols = Array.from({ length: 8 }, (_, i) => i);
 
   const isClickable = (sq: Square): boolean => {
+    if (isAnimating) return false;
     return (selectablePieces?.has(sq as number) ?? false)
       || (legalMoveSquares?.has(sq as number) ?? false);
   };
@@ -84,18 +102,26 @@ export default function Board({
                 : 'Empty square';
 
               const isSelected =
+                !isAnimating &&
                 sq !== null &&
                 selectedSquare !== null &&
                 selectedSquare !== undefined &&
                 (sq as number) === (selectedSquare as number);
 
-              const isLegalDest = sq !== null && (legalMoveSquares?.has(sq as number) ?? false);
+              const isLegalDest = !isAnimating && sq !== null && (legalMoveSquares?.has(sq as number) ?? false);
               const clickable = sq !== null && isClickable(sq);
+
+              // Animation overrides for this piece
+              const animOverride = sq !== null ? animatingPieces?.get(sq as number) : undefined;
+              const isFading = sq !== null && (fadingSquares?.has(sq as number) ?? false);
 
               return (
                 <g
                   key={col}
-                  onClick={() => sq && onSquareClick?.(sq)}
+                  onClick={() => {
+                    if (isAnimating) return;
+                    if (sq) onSquareClick?.(sq);
+                  }}
                   style={{ cursor: clickable ? 'pointer' : 'default' }}
                   role="gridcell"
                   aria-label={label}
@@ -141,8 +167,15 @@ export default function Board({
                       sq={sq}
                       cx={x + SQUARE_SIZE / 2}
                       cy={y + SQUARE_SIZE / 2}
-                      isSelectable={selectablePieces?.has(sq as number) ?? false}
+                      isSelectable={!isAnimating && (selectablePieces?.has(sq as number) ?? false)}
                       isSelected={isSelected}
+                      // Animation props
+                      animTargetCx={animOverride?.overridePosition?.cx}
+                      animTargetCy={animOverride?.overridePosition?.cy}
+                      animDurationMs={animOverride ? ANIM_DURATION.SIMPLE_MOVE * animSpeedMultiplier : 0}
+                      animOpacity={isFading ? 0 : undefined}
+                      animOpacityDurationMs={isFading ? ANIM_DURATION.CAPTURE_FADE * animSpeedMultiplier : undefined}
+                      animScale={animOverride?.scale ?? undefined}
                     />
                   )}
 

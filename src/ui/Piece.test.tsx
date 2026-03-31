@@ -100,8 +100,8 @@ describe('Piece', () => {
     expect(circle.getAttribute('stroke')).toBe('var(--piece-black-stroke)');
   });
 
-  it('positions the circle at the given cx/cy', () => {
-    const { container } = renderInSvg(
+  it('positions the piece via transform on the wrapping g element', () => {
+    renderInSvg(
       <Piece
         piece={{ color: PieceColor.White, type: PieceType.Pawn }}
         sq={square(15)}
@@ -109,8 +109,13 @@ describe('Piece', () => {
         cy={450}
       />,
     );
-    const circle = queryCircle(container);
-    expect(circle.getAttribute('cx')).toBe('350');
-    expect(circle.getAttribute('cy')).toBe('450');
+    const g = screen.getByTestId('piece');
+    expect(g.getAttribute('transform')).toBe('translate(350, 450) scale(1)');
+    // Circle is drawn at origin
+    const circle = g.querySelector('circle');
+    expect(circle).not.toBeNull();
+    if (circle === null) throw new Error('Expected circle element');
+    expect(circle.getAttribute('cx')).toBe('0');
+    expect(circle.getAttribute('cy')).toBe('0');
   });
 });

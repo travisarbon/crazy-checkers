@@ -1,18 +1,25 @@
 /**
  * Root application component.
  *
- * Temporary game harness for Task 2.2: wires up game state and interaction
- * hook so two humans can play pass-and-play checkers in the browser.
- * Task 2.4 replaces this with the full GameScreen layout.
+ * Temporary game harness: wires up game state, interaction hook, and animation
+ * queue so two humans can play pass-and-play checkers in the browser with
+ * smooth move animations. Task 2.4 replaces this with the full GameScreen layout.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { applyTheme, THEMES, DEFAULT_THEME_ID } from '../themes/theme';
 import { createNewGame } from '../engine/game';
 import { createAmericanRules } from '../engine/rules';
+import type { BoardState, GameState, Square } from '../engine/types';
 import { PieceColor, PlayerType, GameStatus } from '../engine/types';
 import Board from './Board';
 import { useGameInteraction } from './useGameInteraction';
+import {
+  useAnimationQueue,
+  buildAnimationSequence,
+  ANIM_DURATION,
+} from './useAnimationQueue';
+import type { AnimationStep } from './useAnimationQueue';
 
 export default function App() {
   useEffect(() => {
@@ -29,23 +36,99 @@ export default function App() {
     }),
   );
 
+  // Pending state: the state after the move, held until animation completes
+  const pendingStateRef = useRef<GameState | null>(null);
+
+  const animationQueue = useAnimationQueue({
+    speedMultiplier: 1.0,
+    onComplete: () => {
+      if (pendingStateRef.current) {
+        setGameState(pendingStateRef.current);
+        pendingStateRef.current = null;
+      }
+    },
+  });
+
+  // Handle a complete move: build animation sequence, enqueue, defer state update
+  const handleMove = useCallback(
+    (newState: GameState) => {
+      const move = newState.moveHistory[newState.moveHistory.length - 1];
+      if (!move) {
+        setGameState(newState);
+        return;
+      }
+
+      const steps = buildAnimationSequence(move, gameState.board, newState.board);
+      pendingStateRef.current = newState;
+      animationQueue.enqueue(steps, gameState.board);
+    },
+    [gameState.board, animationQueue],
+  );
+
+  // Handle per-hop animation during multi-jumps
+  const handleAnimateHop = useCallback(
+    (
+      fromSquare: Square,
+      toSquare: Square,
+      capturedSquare: Square,
+      boardBefore: BoardState,
+      onComplete: () => void,
+    ) => {
+      const steps: AnimationStep[] = [
+        {
+          type: 'slide',
+          fromSquare,
+          toSquare,
+          durationMs: ANIM_DURATION.MULTI_JUMP_HOP,
+        },
+        {
+          type: 'fadeOut',
+          square: capturedSquare,
+          durationMs: ANIM_DURATION.CAPTURE_FADE,
+        },
+      ];
+
+      pendingStateRef.current = null; // No pending state for hops
+      animationQueue.enqueue(steps, boardBefore);
+
+      // Wait for animation to finish, then call onComplete
+      // The animation queue's onComplete will fire, but pendingState is null so it's a no-op.
+      // We need a different approach: use a timeout matching the animation duration.
+      const totalDuration =
+        ANIM_DURATION.MULTI_JUMP_HOP + ANIM_DURATION.CAPTURE_FADE;
+      setTimeout(onComplete, totalDuration + 50); // small buffer
+    },
+    [animationQueue],
+  );
+
   const interaction = useGameInteraction({
     gameState,
-    onMove: setGameState,
+    onMove: handleMove,
+    isAnimating: animationQueue.isAnimating,
+    onAnimateHop: handleAnimateHop,
   });
 
   // Escape key listener
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        interaction.handleEscape();
+        if (animationQueue.isAnimating) {
+          animationQueue.skipAnimation();
+        } else {
+          interaction.handleEscape();
+        }
       }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => { window.removeEventListener('keydown', handleKeyDown); };
-  }, [interaction]);
+  }, [interaction, animationQueue]);
 
   const turnLabel = gameState.activeColor === PieceColor.White ? 'White' : 'Black';
+
+  // The board displays:
+  // - During animation: animationQueue.animationBoard (pre-move snapshot with CSS transitions)
+  // - Otherwise: interaction.displayBoard (normal game state or intermediate multi-jump board)
+  const displayBoard = animationQueue.animationBoard ?? interaction.displayBoard;
 
   return (
     <div style={{ padding: '1rem', textAlign: 'center' }}>
@@ -55,18 +138,21 @@ export default function App() {
           ? `Game Over — ${gameState.result?.type ?? ''}`
           : `${turnLabel}'s turn`}
       </p>
-      {interaction.isMidMultiJump && (
+      {interaction.isMidMultiJump && !animationQueue.isAnimating && (
         <p style={{ color: 'var(--ui-accent)' }}>
           Multi-jump in progress — click the next destination or press Escape to
           cancel
         </p>
       )}
       <Board
-        board={interaction.displayBoard}
-        selectedSquare={interaction.selectedSquare}
-        legalMoveSquares={interaction.legalDestinations}
-        selectablePieces={interaction.selectablePieces}
+        board={displayBoard}
+        selectedSquare={animationQueue.isAnimating ? null : interaction.selectedSquare}
+        legalMoveSquares={animationQueue.isAnimating ? undefined : interaction.legalDestinations}
+        selectablePieces={animationQueue.isAnimating ? undefined : interaction.selectablePieces}
         onSquareClick={interaction.handleSquareClick}
+        animatingPieces={animationQueue.animatingPieces}
+        fadingSquares={animationQueue.fadingSquares}
+        isAnimating={animationQueue.isAnimating}
       />
     </div>
   );

@@ -70,17 +70,24 @@ describe('Board', () => {
       <Board board={testBoard} flipped />,
     );
 
-    const normalCircle = normalContainer.querySelector('circle');
-    const flippedCircle = flippedContainer.querySelector('circle');
+    // Pieces now use origin-based rendering with <g transform="translate(cx, cy) scale(1)">
+    const normalPiece = normalContainer.querySelector('[data-testid="piece"]');
+    const flippedPiece = flippedContainer.querySelector('[data-testid="piece"]');
 
-    expect(normalCircle).not.toBeNull();
-    expect(flippedCircle).not.toBeNull();
+    expect(normalPiece).not.toBeNull();
+    expect(flippedPiece).not.toBeNull();
 
-    // Use type guard instead of non-null assertion
-    if (normalCircle === null || flippedCircle === null) return;
+    if (normalPiece === null || flippedPiece === null) return;
 
-    const normalCy = Number(normalCircle.getAttribute('cy'));
-    const flippedCy = Number(flippedCircle.getAttribute('cy'));
+    // Extract cy from transform="translate(cx, cy) scale(1)"
+    const extractCy = (el: Element) => {
+      const transform = el.getAttribute('transform') ?? '';
+      const match = /translate\(\d+,\s*(\d+)\)/.exec(transform);
+      return match ? Number(match[1]) : NaN;
+    };
+
+    const normalCy = extractCy(normalPiece);
+    const flippedCy = extractCy(flippedPiece);
 
     expect(normalCy).toBeLessThan(flippedCy);
     expect(normalCy).toBe(50);
@@ -155,13 +162,17 @@ describe('Board', () => {
     const testBoard = mutableBoard as unknown as BoardState;
 
     const { container } = render(<Board board={testBoard} />);
-    const circle = container.querySelector('circle');
-    expect(circle).not.toBeNull();
+    // Pieces now use origin-based rendering: <g transform="translate(cx, cy) scale(1)">
+    const pieceG = container.querySelector('[data-testid="piece"]');
+    expect(pieceG).not.toBeNull();
 
-    if (circle === null) return;
+    if (pieceG === null) return;
 
     const grid = squareToGrid(square(1));
-    expect(Number(circle.getAttribute('cx'))).toBe(grid.col * 100 + 50);
-    expect(Number(circle.getAttribute('cy'))).toBe(grid.row * 100 + 50);
+    const expectedCx = grid.col * 100 + 50;
+    const expectedCy = grid.row * 100 + 50;
+    expect(pieceG.getAttribute('transform')).toBe(
+      `translate(${String(expectedCx)}, ${String(expectedCy)}) scale(1)`,
+    );
   });
 });

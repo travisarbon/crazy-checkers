@@ -23,6 +23,22 @@ interface UseGameInteractionOptions {
 
   /** Callback invoked when a complete move is executed. Receives the new GameState. */
   onMove: (newState: GameState) => void;
+
+  /** Whether an animation is currently playing (suppresses input). */
+  isAnimating?: boolean;
+
+  /**
+   * Called when a single hop should be animated (during multi-jump).
+   * If provided, the hook calls it instead of immediately updating the intermediate board.
+   * The `onComplete` callback signals that the animation has finished and the hook can proceed.
+   */
+  onAnimateHop?: (
+    fromSquare: Square,
+    toSquare: Square,
+    capturedSquare: Square,
+    boardBefore: BoardState,
+    onComplete: () => void,
+  ) => void;
 }
 
 export interface UseGameInteractionResult {
@@ -94,6 +110,8 @@ function findCapturedForHop(_from: Square, to: Square, legalMoves: Move[]): Squa
 export function useGameInteraction({
   gameState,
   onMove,
+  isAnimating = false,
+  onAnimateHop,
 }: UseGameInteractionOptions): UseGameInteractionResult {
   // ── Internal state ───────────────────────────────────────────────────
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
@@ -112,13 +130,11 @@ export function useGameInteraction({
   }, []);
 
   const handleEscape = useCallback(() => {
+    if (isAnimating) return;
     clearSelection();
-  }, [clearSelection]);
+  }, [clearSelection, isAnimating]);
 
   // ── Reset selection when game state changes externally ───────────────
-  // React-supported pattern: "adjusting state based on props during rendering."
-  // When plyCount changes (undo, opponent move), clear stale selection state.
-  // See: https://react.dev/learn/you-might-not-need-an-effect#adjusting-state-when-a-prop-changes
   const [trackedPly, setTrackedPly] = useState(gameState.plyCount);
   if (gameState.plyCount !== trackedPly) {
     setTrackedPly(gameState.plyCount);
@@ -173,6 +189,9 @@ export function useGameInteraction({
   // ── Core click handler ───────────────────────────────────────────────
   const handleSquareClick = useCallback(
     (sq: Square) => {
+      // Suppress input during animation
+      if (isAnimating) return;
+
       if (gameState.status !== GameStatus.InProgress) return;
 
       // ── MID-MULTI-JUMP phase ───────────────────────────────────────
@@ -185,32 +204,40 @@ export function useGameInteraction({
         const captured = findCapturedForHop(selectedSquare, sq, legalMoves);
         if (captured === null) return;
 
-        const newBoard = applyPartialHop(intermediateBoard, selectedSquare, sq, captured);
-        const newPath = [...multiJumpProgress.pathSoFar, sq];
-        const newCaptured = [...multiJumpProgress.capturedSoFar, captured];
+        const applyHopResult = () => {
+          const newBoard = applyPartialHop(intermediateBoard, selectedSquare, sq, captured);
+          const newPath = [...multiJumpProgress.pathSoFar, sq];
+          const newCaptured = [...multiJumpProgress.capturedSoFar, captured];
 
-        // Check for continuations from the new landing
-        const continuations = getJumpsForPiece(newBoard, sq);
+          // Check for continuations from the new landing
+          const continuations = getJumpsForPiece(newBoard, sq);
 
-        if (continuations.length > 0) {
-          // More jumps available — stay in mid-multi-jump
-          setSelectedSquare(sq);
-          setIntermediateBoard(newBoard);
-          setMultiJumpProgress({
-            from: multiJumpProgress.from,
-            pathSoFar: newPath,
-            capturedSoFar: newCaptured,
-          });
+          if (continuations.length > 0) {
+            // More jumps available — stay in mid-multi-jump
+            setSelectedSquare(sq);
+            setIntermediateBoard(newBoard);
+            setMultiJumpProgress({
+              from: multiJumpProgress.from,
+              pathSoFar: newPath,
+              capturedSoFar: newCaptured,
+            });
+          } else {
+            // Chain complete — assemble the full Move and execute
+            const completeMove: Move = {
+              from: multiJumpProgress.from,
+              path: newPath,
+              captured: newCaptured,
+            };
+            clearSelection();
+            const newState = makeMove(gameState, completeMove);
+            onMove(newState);
+          }
+        };
+
+        if (onAnimateHop) {
+          onAnimateHop(selectedSquare, sq, captured, intermediateBoard, applyHopResult);
         } else {
-          // Chain complete — assemble the full Move and execute
-          const completeMove: Move = {
-            from: multiJumpProgress.from,
-            path: newPath,
-            captured: newCaptured,
-          };
-          clearSelection();
-          const newState = makeMove(gameState, completeMove);
-          onMove(newState);
+          applyHopResult();
         }
 
         return;
@@ -229,28 +256,36 @@ export function useGameInteraction({
           const captured = findCapturedForHop(selectedSquare, sq, legalMoves);
           if (captured === null) return;
 
-          const newBoard = applyPartialHop(gameState.board, selectedSquare, sq, captured);
-          const continuations = getJumpsForPiece(newBoard, sq);
+          const applyFirstHop = () => {
+            const newBoard = applyPartialHop(gameState.board, selectedSquare, sq, captured);
+            const continuations = getJumpsForPiece(newBoard, sq);
 
-          if (continuations.length > 0) {
-            // Multi-jump: enter mid-multi-jump phase
-            setSelectedSquare(sq);
-            setIntermediateBoard(newBoard);
-            setMultiJumpProgress({
-              from: selectedSquare,
-              pathSoFar: [sq],
-              capturedSoFar: [captured],
-            });
+            if (continuations.length > 0) {
+              // Multi-jump: enter mid-multi-jump phase
+              setSelectedSquare(sq);
+              setIntermediateBoard(newBoard);
+              setMultiJumpProgress({
+                from: selectedSquare,
+                pathSoFar: [sq],
+                capturedSoFar: [captured],
+              });
+            } else {
+              // Single jump — execute immediately
+              const completeMove: Move = {
+                from: selectedSquare,
+                path: [sq],
+                captured: [captured],
+              };
+              clearSelection();
+              const newState = makeMove(gameState, completeMove);
+              onMove(newState);
+            }
+          };
+
+          if (onAnimateHop) {
+            onAnimateHop(selectedSquare, sq, captured, gameState.board, applyFirstHop);
           } else {
-            // Single jump — execute immediately
-            const completeMove: Move = {
-              from: selectedSquare,
-              path: [sq],
-              captured: [captured],
-            };
-            clearSelection();
-            const newState = makeMove(gameState, completeMove);
-            onMove(newState);
+            applyFirstHop();
           }
         } else {
           // Simple move (no capture)
@@ -289,6 +324,8 @@ export function useGameInteraction({
       selectablePieces,
       onMove,
       clearSelection,
+      isAnimating,
+      onAnimateHop,
     ],
   );
 

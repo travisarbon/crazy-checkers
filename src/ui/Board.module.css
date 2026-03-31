@@ -18,3 +18,17 @@
 .pieceSelectable {
   cursor: pointer;
 }
+
+/* ── Animation transition classes ──────────────────────────── */
+
+.pieceAnimating {
+  will-change: transform, opacity;
+}
+
+.pieceFadingOut {
+  pointer-events: none;
+}
+
+.pieceKinging {
+  will-change: transform;
+}
