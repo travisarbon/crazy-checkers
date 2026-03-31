@@ -1,0 +1,29 @@
+.gameControls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.controlButton {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--ui-accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, opacity 150ms ease;
+}
+
+.controlButton:hover:not(:disabled) {
+  background: var(--ui-accent);
+  color: var(--ui-bg);
+}
+
+.controlButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
