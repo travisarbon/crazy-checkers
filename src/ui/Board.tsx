@@ -2,6 +2,9 @@
  * Board rendering — SVG-based 8x8 checkers board with piece placement,
  * selection highlighting, legal move indicators, click interaction,
  * and move animation support.
+ *
+ * Animating pieces are rendered in a separate floating layer above all squares
+ * so they don't clip underneath other squares during slide transitions.
  */
 
 import type { BoardState, Piece as PieceData, Square } from '../engine/types';
@@ -65,6 +68,18 @@ export default function Board({
       || (legalMoveSquares?.has(sq as number) ?? false);
   };
 
+  // Collect pieces that need to be rendered in the floating animation layer
+  // (animating or fading pieces are excluded from their normal square and
+  // rendered on top of all squares so they don't clip underneath).
+  const floatingPieces: Array<{
+    piece: PieceData;
+    sq: Square;
+    cx: number;
+    cy: number;
+    animOverride?: AnimatingPiece;
+    isFading: boolean;
+  }> = [];
+
   return (
     <div className={styles.boardContainer}>
       <svg
@@ -111,9 +126,21 @@ export default function Board({
               const isLegalDest = !isAnimating && sq !== null && (legalMoveSquares?.has(sq as number) ?? false);
               const clickable = sq !== null && isClickable(sq);
 
-              // Animation overrides for this piece
+              // Check if this piece is animating or fading — if so, render in floating layer
               const animOverride = sq !== null ? animatingPieces?.get(sq as number) : undefined;
               const isFading = sq !== null && (fadingSquares?.has(sq as number) ?? false);
+              const isFloating = animOverride != null || isFading;
+
+              if (isFloating && piece && sq) {
+                floatingPieces.push({
+                  piece,
+                  sq,
+                  cx: x + SQUARE_SIZE / 2,
+                  cy: y + SQUARE_SIZE / 2,
+                  animOverride,
+                  isFading,
+                });
+              }
 
               return (
                 <g
@@ -160,8 +187,8 @@ export default function Board({
                     />
                   )}
 
-                  {/* Piece (if present) */}
-                  {piece && sq && (
+                  {/* Piece — only rendered here if NOT floating (animating/fading) */}
+                  {piece && sq && !isFloating && (
                     <PieceComponent
                       piece={piece}
                       sq={sq}
@@ -169,13 +196,6 @@ export default function Board({
                       cy={y + SQUARE_SIZE / 2}
                       isSelectable={!isAnimating && (selectablePieces?.has(sq as number) ?? false)}
                       isSelected={isSelected}
-                      // Animation props
-                      animTargetCx={animOverride?.overridePosition?.cx}
-                      animTargetCy={animOverride?.overridePosition?.cy}
-                      animDurationMs={animOverride ? ANIM_DURATION.SIMPLE_MOVE * animSpeedMultiplier : 0}
-                      animOpacity={isFading ? 0 : undefined}
-                      animOpacityDurationMs={isFading ? ANIM_DURATION.CAPTURE_FADE * animSpeedMultiplier : undefined}
-                      animScale={animOverride?.scale ?? undefined}
                     />
                   )}
 
@@ -216,6 +236,26 @@ export default function Board({
               );
             })}
           </g>
+        ))}
+
+        {/* Floating animation layer — rendered above all squares so animating
+            pieces don't clip underneath other board squares during slides */}
+        {floatingPieces.map(({ piece, sq, cx, cy, animOverride, isFading }) => (
+          <PieceComponent
+            key={sq as number}
+            piece={piece}
+            sq={sq}
+            cx={cx}
+            cy={cy}
+            isSelectable={false}
+            isSelected={false}
+            animTargetCx={animOverride?.overridePosition?.cx}
+            animTargetCy={animOverride?.overridePosition?.cy}
+            animDurationMs={animOverride ? ANIM_DURATION.SIMPLE_MOVE * animSpeedMultiplier : 0}
+            animOpacity={isFading ? 0 : undefined}
+            animOpacityDurationMs={isFading ? ANIM_DURATION.CAPTURE_FADE * animSpeedMultiplier : undefined}
+            animScale={animOverride?.scale ?? undefined}
+          />
         ))}
       </svg>
     </div>

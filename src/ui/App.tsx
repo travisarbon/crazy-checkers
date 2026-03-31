@@ -10,16 +10,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { applyTheme, THEMES, DEFAULT_THEME_ID } from '../themes/theme';
 import { createNewGame } from '../engine/game';
 import { createAmericanRules } from '../engine/rules';
-import type { BoardState, GameState, Square } from '../engine/types';
+import type { GameState } from '../engine/types';
 import { PieceColor, PlayerType, GameStatus } from '../engine/types';
 import Board from './Board';
 import { useGameInteraction } from './useGameInteraction';
 import {
   useAnimationQueue,
   buildAnimationSequence,
-  ANIM_DURATION,
 } from './useAnimationQueue';
-import type { AnimationStep } from './useAnimationQueue';
 
 export default function App() {
   useEffect(() => {
@@ -65,47 +63,10 @@ export default function App() {
     [gameState.board, animationQueue],
   );
 
-  // Handle per-hop animation during multi-jumps
-  const handleAnimateHop = useCallback(
-    (
-      fromSquare: Square,
-      toSquare: Square,
-      capturedSquare: Square,
-      boardBefore: BoardState,
-      onComplete: () => void,
-    ) => {
-      const steps: AnimationStep[] = [
-        {
-          type: 'slide',
-          fromSquare,
-          toSquare,
-          durationMs: ANIM_DURATION.MULTI_JUMP_HOP,
-        },
-        {
-          type: 'fadeOut',
-          square: capturedSquare,
-          durationMs: ANIM_DURATION.CAPTURE_FADE,
-        },
-      ];
-
-      pendingStateRef.current = null; // No pending state for hops
-      animationQueue.enqueue(steps, boardBefore);
-
-      // Wait for animation to finish, then call onComplete
-      // The animation queue's onComplete will fire, but pendingState is null so it's a no-op.
-      // We need a different approach: use a timeout matching the animation duration.
-      const totalDuration =
-        ANIM_DURATION.MULTI_JUMP_HOP + ANIM_DURATION.CAPTURE_FADE;
-      setTimeout(onComplete, totalDuration + 50); // small buffer
-    },
-    [animationQueue],
-  );
-
   const interaction = useGameInteraction({
     gameState,
     onMove: handleMove,
     isAnimating: animationQueue.isAnimating,
-    onAnimateHop: handleAnimateHop,
   });
 
   // Escape key listener

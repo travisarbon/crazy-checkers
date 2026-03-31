@@ -26,19 +26,6 @@ interface UseGameInteractionOptions {
 
   /** Whether an animation is currently playing (suppresses input). */
   isAnimating?: boolean;
-
-  /**
-   * Called when a single hop should be animated (during multi-jump).
-   * If provided, the hook calls it instead of immediately updating the intermediate board.
-   * The `onComplete` callback signals that the animation has finished and the hook can proceed.
-   */
-  onAnimateHop?: (
-    fromSquare: Square,
-    toSquare: Square,
-    capturedSquare: Square,
-    boardBefore: BoardState,
-    onComplete: () => void,
-  ) => void;
 }
 
 export interface UseGameInteractionResult {
@@ -111,7 +98,6 @@ export function useGameInteraction({
   gameState,
   onMove,
   isAnimating = false,
-  onAnimateHop,
 }: UseGameInteractionOptions): UseGameInteractionResult {
   // ── Internal state ───────────────────────────────────────────────────
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
@@ -234,11 +220,7 @@ export function useGameInteraction({
           }
         };
 
-        if (onAnimateHop) {
-          onAnimateHop(selectedSquare, sq, captured, intermediateBoard, applyHopResult);
-        } else {
-          applyHopResult();
-        }
+        applyHopResult();
 
         return;
       }
@@ -282,11 +264,7 @@ export function useGameInteraction({
             }
           };
 
-          if (onAnimateHop) {
-            onAnimateHop(selectedSquare, sq, captured, gameState.board, applyFirstHop);
-          } else {
-            applyFirstHop();
-          }
+          applyFirstHop();
         } else {
           // Simple move (no capture)
           const move = movesForDest[0];
@@ -325,7 +303,6 @@ export function useGameInteraction({
       onMove,
       clearSelection,
       isAnimating,
-      onAnimateHop,
     ],
   );
 
