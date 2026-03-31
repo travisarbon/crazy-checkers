@@ -120,8 +120,8 @@ export default function Piece({
       />
       {isKing && (
         <path
-          d="M -12,-6 L -8,6 L -4,-2 L 0,6 L 4,-2 L 8,6 L 12,-6 Z"
-          transform="translate(0, -4)"
+          d="M -12,6 L -8,-6 L -4,2 L 0,-6 L 4,2 L 8,-6 L 12,6 Z"
+          transform="translate(0, 4)"
           fill="var(--ui-accent)"
           data-testid="crown"
         />
