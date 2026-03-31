@@ -349,7 +349,7 @@ export function useAnimationQueue({
           // Move piece on the animation board
           if (boardRef.current) {
             const board = [...boardRef.current];
-            const piece = board[(step.fromSquare as number) - 1];
+            const piece = board[(step.fromSquare as number) - 1] ?? null;
             board[(step.fromSquare as number) - 1] = null;
             board[(step.toSquare as number) - 1] = piece;
             boardRef.current = board;

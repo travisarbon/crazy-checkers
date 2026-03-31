@@ -6,7 +6,7 @@ import type { BoardState } from '../engine/types';
 import { PieceColor, PieceType, square } from '../engine/types';
 
 // Helper: create a board with a single piece
-function boardWithPiece(sq: number, color = PieceColor.White, type = PieceType.Pawn): BoardState {
+function boardWithPiece(sq: number, color: PieceColor = PieceColor.White, type: PieceType = PieceType.Pawn): BoardState {
   const board = new Array(32).fill(null) as BoardState;
   const mutable = [...board];
   mutable[sq - 1] = { color, type };
