@@ -5,7 +5,7 @@ import { createNewGame, getCurrentLegalMoves } from '../engine/game';
 import { createAmericanRules } from '../engine/rules';
 import { getLegalMovesForPiece, getJumpsForPiece } from '../engine/moves';
 import { setBoardSquare } from '../engine/board';
-import type { BoardState, GameState } from '../engine/types';
+import type { BoardState, GameState, Square } from '../engine/types';
 import {
   PieceColor,
   PieceType,
@@ -71,7 +71,7 @@ describe('useGameInteraction', () => {
     );
 
     // Square 21 has a white pawn in the starting position
-    act(() => result.current.handleSquareClick(square(21)));
+    act(() => { result.current.handleSquareClick(square(21)); });
 
     expect(result.current.selectedSquare).toBe(square(21));
     expect(result.current.legalDestinations.size).toBeGreaterThan(0);
@@ -92,7 +92,7 @@ describe('useGameInteraction', () => {
     );
 
     // Square 28 white pawn is blocked by own pieces — should not be selectable
-    act(() => result.current.handleSquareClick(square(28)));
+    act(() => { result.current.handleSquareClick(square(28)); });
     expect(result.current.selectedSquare).toBeNull();
   });
 
@@ -104,7 +104,7 @@ describe('useGameInteraction', () => {
     );
 
     // Square 1 has a black pawn
-    act(() => result.current.handleSquareClick(square(1)));
+    act(() => { result.current.handleSquareClick(square(1)); });
     expect(result.current.selectedSquare).toBeNull();
   });
 
@@ -115,7 +115,7 @@ describe('useGameInteraction', () => {
       useGameInteraction({ gameState: gs, onMove }),
     );
 
-    act(() => result.current.handleSquareClick(square(21)));
+    act(() => { result.current.handleSquareClick(square(21)); });
 
     const engineMoves = getLegalMovesForPiece(gs.board, square(21));
     const engineDests = new Set(engineMoves.map((m) => m.path[0] as number));
@@ -131,8 +131,8 @@ describe('useGameInteraction', () => {
     );
 
     // Select white pawn on 21, move to 17
-    act(() => result.current.handleSquareClick(square(21)));
-    act(() => result.current.handleSquareClick(square(17)));
+    act(() => { result.current.handleSquareClick(square(21)); });
+    act(() => { result.current.handleSquareClick(square(17)); });
 
     expect(onMove).toHaveBeenCalledTimes(1);
     const newState = onMove.mock.calls[0]?.[0] as GameState;
@@ -147,11 +147,11 @@ describe('useGameInteraction', () => {
       useGameInteraction({ gameState: gs, onMove }),
     );
 
-    act(() => result.current.handleSquareClick(square(21)));
+    act(() => { result.current.handleSquareClick(square(21)); });
     expect(result.current.selectedSquare).not.toBeNull();
 
     // Click an empty square in the middle that's not a destination
-    act(() => result.current.handleSquareClick(square(13)));
+    act(() => { result.current.handleSquareClick(square(13)); });
     expect(result.current.selectedSquare).toBeNull();
   });
 
@@ -162,10 +162,10 @@ describe('useGameInteraction', () => {
       useGameInteraction({ gameState: gs, onMove }),
     );
 
-    act(() => result.current.handleSquareClick(square(21)));
+    act(() => { result.current.handleSquareClick(square(21)); });
     expect(result.current.selectedSquare).not.toBeNull();
 
-    act(() => result.current.handleEscape());
+    act(() => { result.current.handleEscape(); });
     expect(result.current.selectedSquare).toBeNull();
   });
 
@@ -176,10 +176,10 @@ describe('useGameInteraction', () => {
       useGameInteraction({ gameState: gs, onMove }),
     );
 
-    act(() => result.current.handleSquareClick(square(21)));
+    act(() => { result.current.handleSquareClick(square(21)); });
     expect(result.current.selectedSquare).toBe(square(21));
 
-    act(() => result.current.handleSquareClick(square(22)));
+    act(() => { result.current.handleSquareClick(square(22)); });
     expect(result.current.selectedSquare).toBe(square(22));
   });
 
@@ -195,8 +195,8 @@ describe('useGameInteraction', () => {
       useGameInteraction({ gameState: gs, onMove }),
     );
 
-    act(() => result.current.handleSquareClick(square(21)));
-    act(() => result.current.handleSquareClick(square(14)));
+    act(() => { result.current.handleSquareClick(square(21)); });
+    act(() => { result.current.handleSquareClick(square(14)); });
 
     expect(onMove).toHaveBeenCalledTimes(1);
     const newState = onMove.mock.calls[0]?.[0] as GameState;
@@ -225,8 +225,8 @@ describe('useGameInteraction', () => {
 
     // If there's a multi-jump available, test the interaction
     if (multiJump) {
-      act(() => result.current.handleSquareClick(square(22)));
-      act(() => result.current.handleSquareClick(multiJump.path[0]!));
+      act(() => { result.current.handleSquareClick(square(22)); });
+      act(() => { result.current.handleSquareClick(multiJump.path[0] as Square); });
 
       expect(result.current.isMidMultiJump).toBe(true);
       expect(onMove).not.toHaveBeenCalled();
@@ -251,13 +251,13 @@ describe('useGameInteraction', () => {
     const multiJump = jumps.find((j) => j.path.length > 1);
 
     if (multiJump) {
-      act(() => result.current.handleSquareClick(square(22)));
-      act(() => result.current.handleSquareClick(multiJump.path[0]!));
+      act(() => { result.current.handleSquareClick(square(22)); });
+      act(() => { result.current.handleSquareClick(multiJump.path[0] as Square); });
 
       expect(result.current.isMidMultiJump).toBe(true);
 
       // Click the second destination to complete
-      act(() => result.current.handleSquareClick(multiJump.path[1]!));
+      act(() => { result.current.handleSquareClick(multiJump.path[1] as Square); });
 
       expect(result.current.isMidMultiJump).toBe(false);
       expect(onMove).toHaveBeenCalledTimes(1);
@@ -284,7 +284,7 @@ describe('useGameInteraction', () => {
         useGameInteraction({ gameState: gs, onMove }),
       );
 
-      act(() => result.current.handleSquareClick(square(15)));
+      act(() => { result.current.handleSquareClick(square(15)); });
       expect(result.current.legalDestinations.size).toBeGreaterThan(0);
     }
   });
@@ -305,12 +305,12 @@ describe('useGameInteraction', () => {
     const multiJump = jumps.find((j) => j.path.length > 1);
 
     if (multiJump) {
-      act(() => result.current.handleSquareClick(square(22)));
-      act(() => result.current.handleSquareClick(multiJump.path[0]!));
+      act(() => { result.current.handleSquareClick(square(22)); });
+      act(() => { result.current.handleSquareClick(multiJump.path[0] as Square); });
 
       expect(result.current.isMidMultiJump).toBe(true);
 
-      act(() => result.current.handleEscape());
+      act(() => { result.current.handleEscape(); });
 
       expect(result.current.isMidMultiJump).toBe(false);
       expect(result.current.selectedSquare).toBeNull();
@@ -337,7 +337,7 @@ describe('useGameInteraction', () => {
     expect(result.current.selectablePieces.has(21)).toBe(true);
 
     // Clicking 25 should not select it
-    act(() => result.current.handleSquareClick(square(25)));
+    act(() => { result.current.handleSquareClick(square(25)); });
     expect(result.current.selectedSquare).toBeNull();
   });
 
@@ -350,7 +350,7 @@ describe('useGameInteraction', () => {
       { initialProps: { gameState: gs, onMove } },
     );
 
-    act(() => result.current.handleSquareClick(square(21)));
+    act(() => { result.current.handleSquareClick(square(21)); });
     expect(result.current.selectedSquare).not.toBeNull();
 
     // Simulate external state change (undo) by providing a state with different plyCount
@@ -374,7 +374,7 @@ describe('useGameInteraction', () => {
       useGameInteraction({ gameState: gs, onMove }),
     );
 
-    act(() => result.current.handleSquareClick(square(21)));
+    act(() => { result.current.handleSquareClick(square(21)); });
     expect(result.current.selectedSquare).toBeNull();
     expect(onMove).not.toHaveBeenCalled();
   });
@@ -396,11 +396,13 @@ describe('useGameInteraction', () => {
         useGameInteraction({ gameState: gs, onMove }),
       );
 
-      act(() => result.current.handleSquareClick(square(12)));
+      act(() => { result.current.handleSquareClick(square(12)); });
 
       // Find the jump destination
-      const dest = jumps[0]!.path[0]!;
-      act(() => result.current.handleSquareClick(dest));
+      const jump = jumps[0];
+      if (!jump) return;
+      const dest = jump.path[0] as Square;
+      act(() => { result.current.handleSquareClick(dest); });
 
       // Should complete immediately (no mid-multi-jump), piece promoted
       expect(result.current.isMidMultiJump).toBe(false);
