@@ -125,4 +125,27 @@ describe('GameScreen', () => {
     renderGameScreen();
     expect(screen.getByTestId('game-screen')).toBeInTheDocument();
   });
+
+  // --- Game-over dialog integration (Task 2.5) ---
+
+  it('does not show game-over dialog on initial render', () => {
+    renderGameScreen();
+    expect(screen.queryByTestId('game-over-dialog')).not.toBeInTheDocument();
+  });
+
+  it('shows game-over dialog after resignation', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    renderGameScreen();
+    fireEvent.click(screen.getByRole('button', { name: /resign/i }));
+    expect(screen.getByTestId('game-over-dialog')).toBeInTheDocument();
+  });
+
+  it('game-over dialog New Game button calls onNewGame', () => {
+    const onNewGame = vi.fn();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    renderGameScreen({ onNewGame });
+    fireEvent.click(screen.getByRole('button', { name: /resign/i }));
+    fireEvent.click(screen.getByTestId('game-over-new-game'));
+    expect(onNewGame).toHaveBeenCalled();
+  });
 });

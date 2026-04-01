@@ -16,6 +16,7 @@ import TurnIndicator from './TurnIndicator';
 import CapturedPieces from './CapturedPieces';
 import MoveHistory from './MoveHistory';
 import GameControls from './GameControls';
+import GameOverDialog from './dialogs/GameOverDialog';
 import { useGameInteraction } from './useGameInteraction';
 import { useAnimationQueue, buildAnimationSequence } from './useAnimationQueue';
 import styles from './GameScreen.module.css';
@@ -250,6 +251,14 @@ export default function GameScreen({
           onResign={handleResign}
         />
       </aside>
+
+      {isGameOver && gameState.result && (
+        <GameOverDialog
+          result={gameState.result}
+          lastActiveColor={gameState.activeColor}
+          onNewGame={onNewGame}
+        />
+      )}
     </div>
   );
 }
