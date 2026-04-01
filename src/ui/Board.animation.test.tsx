@@ -17,7 +17,7 @@ describe('Board animation integration', () => {
   it('renders piece at override position when animatingPieces is provided', () => {
     const board = boardWithPiece(11);
     const animatingPieces = new Map<number, AnimatingPiece>([
-      [11, { overridePosition: { cx: 400, cy: 400 }, opacity: null, scale: null }],
+      [11, { overridePosition: { cx: 400, cy: 400 }, opacity: null, scale: null, transitionDurationMs: 0 }],
     ]);
 
     const { container } = render(
@@ -36,7 +36,7 @@ describe('Board animation integration', () => {
   it('renders piece with transition style when animation duration > 0', () => {
     const board = boardWithPiece(11);
     const animatingPieces = new Map<number, AnimatingPiece>([
-      [11, { overridePosition: { cx: 400, cy: 400 }, opacity: null, scale: null }],
+      [11, { overridePosition: { cx: 400, cy: 400 }, opacity: null, scale: null, transitionDurationMs: 280 }],
     ]);
 
     const { container } = render(
@@ -139,7 +139,7 @@ describe('Board animation integration', () => {
   it('renders piece with scale override for king pulse', () => {
     const board = boardWithPiece(1, PieceColor.White, PieceType.King);
     const animatingPieces = new Map<number, AnimatingPiece>([
-      [1, { overridePosition: { cx: 150, cy: 50 }, opacity: null, scale: 1.15 }],
+      [1, { overridePosition: { cx: 150, cy: 50 }, opacity: null, scale: 1.15, transitionDurationMs: 150 }],
     ]);
 
     const { container } = render(

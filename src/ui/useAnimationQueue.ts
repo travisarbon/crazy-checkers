@@ -184,6 +184,8 @@ export interface AnimatingPiece {
   opacity: number | null;
   /** Scale override (for king pulse). Null = default (1). */
   scale: number | null;
+  /** CSS transition duration for position/scale changes (ms). 0 = instant. */
+  transitionDurationMs: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -323,7 +325,7 @@ export function useAnimationQueue({
           new Map([
             [
               step.fromSquare as number,
-              { overridePosition: fromCoords, opacity: null, scale: null },
+              { overridePosition: fromCoords, opacity: null, scale: null, transitionDurationMs: 0 },
             ],
           ]),
         );
@@ -335,7 +337,7 @@ export function useAnimationQueue({
             new Map([
               [
                 step.fromSquare as number,
-                { overridePosition: toCoords, opacity: null, scale: null },
+                { overridePosition: toCoords, opacity: null, scale: null, transitionDurationMs: duration },
               ],
             ]),
           );
@@ -356,7 +358,19 @@ export function useAnimationQueue({
             setAnimationBoard(board);
           }
 
-          setAnimatingPieces(new Map());
+          // Keep piece floating at destination to prevent flash between hops.
+          // The piece is now at toSquare on the animation board; keeping it in
+          // the animatingPieces map (with no transition) maintains DOM continuity
+          // so it doesn't unmount/remount between steps.
+          const destCoords = squareCenterCoords(step.toSquare, fl);
+          setAnimatingPieces(
+            new Map([
+              [
+                step.toSquare as number,
+                { overridePosition: destCoords, opacity: null, scale: null, transitionDurationMs: 0 },
+              ],
+            ]),
+          );
           advance();
         }, duration);
         activeTimersRef.current.add(timer);
@@ -387,12 +401,13 @@ export function useAnimationQueue({
 
       case 'kingPulse': {
         const coords = squareCenterCoords(step.square, fl);
+        const halfDuration = duration / 2;
         // Scale up
         setAnimatingPieces(
           new Map([
             [
               step.square as number,
-              { overridePosition: coords, opacity: null, scale: 1.15 },
+              { overridePosition: coords, opacity: null, scale: 1.15, transitionDurationMs: halfDuration },
             ],
           ]),
         );
@@ -405,11 +420,11 @@ export function useAnimationQueue({
             new Map([
               [
                 step.square as number,
-                { overridePosition: coords, opacity: null, scale: 1.0 },
+                { overridePosition: coords, opacity: null, scale: 1.0, transitionDurationMs: halfDuration },
               ],
             ]),
           );
-        }, duration / 2);
+        }, halfDuration);
         activeTimersRef.current.add(halfTimer);
 
         // Complete

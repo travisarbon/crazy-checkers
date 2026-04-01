@@ -273,7 +273,7 @@ export default function Board({
             isSelected={false}
             animTargetCx={animOverride?.overridePosition?.cx}
             animTargetCy={animOverride?.overridePosition?.cy}
-            animDurationMs={animOverride ? ANIM_DURATION.SIMPLE_MOVE * animSpeedMultiplier : 0}
+            animDurationMs={animOverride?.transitionDurationMs ?? 0}
             animOpacity={isFading ? 0 : undefined}
             animOpacityDurationMs={isFading ? ANIM_DURATION.CAPTURE_FADE * animSpeedMultiplier : undefined}
             animScale={animOverride?.scale ?? undefined}
