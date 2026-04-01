@@ -118,9 +118,7 @@ function ResultIcon({ result }: { result: GameResult }) {
 
 export default function GameOverDialog({
   result,
-  lastActiveColor: _lastActiveColor,
   onNewGame,
-  onReview: _onReview,
 }: GameOverDialogProps) {
   const primaryRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
