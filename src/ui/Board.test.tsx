@@ -175,4 +175,169 @@ describe('Board', () => {
       `translate(${String(expectedCx)}, ${String(expectedCy)}) scale(1)`,
     );
   });
+
+  // --- Last-move highlights (Task 2.6) ---
+
+  const SQUARE_SIZE_C = 100;
+
+  function expectedPosition(sq: number, flipped = false): { x: number; y: number } {
+    const { row, col } = squareToGrid(square(sq));
+    const renderRow = flipped ? 7 - row : row;
+    return { x: col * SQUARE_SIZE_C, y: renderRow * SQUARE_SIZE_C };
+  }
+
+  it('renders last-move highlights for from and to squares', () => {
+    render(
+      <Board
+        board={createInitialBoard()}
+        lastMoveSquares={{ from: square(22), to: square(18) }}
+      />,
+    );
+    const highlights = screen.getAllByTestId('highlight-last-move');
+    expect(highlights).toHaveLength(2);
+  });
+
+  it('renders no last-move highlights when lastMoveSquares is null', () => {
+    render(<Board board={createInitialBoard()} lastMoveSquares={null} />);
+    expect(screen.queryAllByTestId('highlight-last-move')).toHaveLength(0);
+  });
+
+  it('renders no last-move highlights when lastMoveSquares is undefined', () => {
+    render(<Board board={createInitialBoard()} />);
+    expect(screen.queryAllByTestId('highlight-last-move')).toHaveLength(0);
+  });
+
+  it('last-move highlight uses correct CSS variable', () => {
+    render(
+      <Board
+        board={createInitialBoard()}
+        lastMoveSquares={{ from: square(22), to: square(18) }}
+      />,
+    );
+    const highlights = screen.getAllByTestId('highlight-last-move');
+    for (const rect of highlights) {
+      expect(rect.getAttribute('fill')).toBe('var(--highlight-last-move)');
+    }
+  });
+
+  it('highlight layering: last-move renders before legal-move highlight', () => {
+    const legalMoves = new Set([18]);
+    render(
+      <Board
+        board={createInitialBoard()}
+        lastMoveSquares={{ from: square(22), to: square(18) }}
+        legalMoveSquares={legalMoves}
+      />,
+    );
+
+    const gridcells = screen.getAllByRole('gridcell');
+    const sq18Cell = gridcells.find((cell) =>
+      cell.getAttribute('aria-label')?.includes('Square 18'),
+    );
+    expect(sq18Cell).toBeDefined();
+    if (!sq18Cell) return;
+
+    const rects = sq18Cell.querySelectorAll('rect[data-testid]');
+    const testIds = Array.from(rects).map((r) => r.getAttribute('data-testid'));
+    const lastMoveIdx = testIds.indexOf('highlight-last-move');
+    const legalIdx = testIds.indexOf('highlight-legal');
+    expect(lastMoveIdx).toBeGreaterThanOrEqual(0);
+    expect(legalIdx).toBeGreaterThanOrEqual(0);
+    expect(lastMoveIdx).toBeLessThan(legalIdx);
+  });
+
+  it('highlight layering: last-move renders before selected highlight', () => {
+    render(
+      <Board
+        board={createInitialBoard()}
+        lastMoveSquares={{ from: square(22), to: square(18) }}
+        selectedSquare={square(18)}
+      />,
+    );
+
+    const gridcells = screen.getAllByRole('gridcell');
+    const sq18Cell = gridcells.find((cell) =>
+      cell.getAttribute('aria-label')?.includes('Square 18'),
+    );
+    expect(sq18Cell).toBeDefined();
+    if (!sq18Cell) return;
+
+    const rects = sq18Cell.querySelectorAll('rect[data-testid]');
+    const testIds = Array.from(rects).map((r) => r.getAttribute('data-testid'));
+    const lastMoveIdx = testIds.indexOf('highlight-last-move');
+    const selectedIdx = testIds.indexOf('highlight-selected');
+    expect(lastMoveIdx).toBeGreaterThanOrEqual(0);
+    expect(selectedIdx).toBeGreaterThanOrEqual(0);
+    expect(lastMoveIdx).toBeLessThan(selectedIdx);
+  });
+
+  it('last-move highlight on from square has correct position', () => {
+    render(
+      <Board
+        board={createInitialBoard()}
+        lastMoveSquares={{ from: square(22), to: square(18) }}
+      />,
+    );
+    const highlights = screen.getAllByTestId('highlight-last-move');
+    const { x, y } = expectedPosition(22);
+    const fromRect = highlights.find(
+      (r) => r.getAttribute('x') === String(x) && r.getAttribute('y') === String(y),
+    );
+    expect(fromRect).toBeDefined();
+  });
+
+  it('last-move highlight on to square has correct position', () => {
+    render(
+      <Board
+        board={createInitialBoard()}
+        lastMoveSquares={{ from: square(22), to: square(18) }}
+      />,
+    );
+    const highlights = screen.getAllByTestId('highlight-last-move');
+    const { x, y } = expectedPosition(18);
+    const toRect = highlights.find(
+      (r) => r.getAttribute('x') === String(x) && r.getAttribute('y') === String(y),
+    );
+    expect(toRect).toBeDefined();
+  });
+
+  it('last-move highlights respect board flip', () => {
+    const { container: normalContainer } = render(
+      <Board
+        board={createInitialBoard()}
+        lastMoveSquares={{ from: square(22), to: square(18) }}
+      />,
+    );
+    const normalHighlights = normalContainer.querySelectorAll('[data-testid="highlight-last-move"]');
+
+    const { container: flippedContainer } = render(
+      <Board
+        board={createInitialBoard()}
+        lastMoveSquares={{ from: square(22), to: square(18) }}
+        flipped
+      />,
+    );
+    const flippedHighlights = flippedContainer.querySelectorAll('[data-testid="highlight-last-move"]');
+
+    expect(normalHighlights).toHaveLength(2);
+    expect(flippedHighlights).toHaveLength(2);
+
+    const normalYs = Array.from(normalHighlights).map((r) => Number(r.getAttribute('y'))).sort();
+    const flippedYs = Array.from(flippedHighlights).map((r) => Number(r.getAttribute('y'))).sort();
+    expect(normalYs).not.toEqual(flippedYs);
+  });
+
+  it('last-move highlights do not appear on light squares', () => {
+    render(
+      <Board
+        board={createInitialBoard()}
+        lastMoveSquares={{ from: square(22), to: square(18) }}
+      />,
+    );
+    const highlights = screen.getAllByTestId('highlight-last-move');
+    for (const hl of highlights) {
+      const parent = hl.closest('[role="gridcell"]');
+      expect(parent).not.toBeNull();
+    }
+  });
 });

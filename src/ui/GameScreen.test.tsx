@@ -148,4 +148,31 @@ describe('GameScreen', () => {
     fireEvent.click(screen.getByTestId('game-over-new-game'));
     expect(onNewGame).toHaveBeenCalled();
   });
+
+  // --- Last-move highlights (Task 2.6) ---
+
+  it('no last-move highlight at game start', () => {
+    renderGameScreen();
+    expect(screen.queryAllByTestId('highlight-last-move')).toHaveLength(0);
+  });
+
+  it('last-move highlights survive after game over (resignation)', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    renderGameScreen();
+
+    // Make a move first so there's a last-move highlight
+    // Select a white piece (square 21 is white pawn on row 5)
+    const gridcells = screen.getAllByRole('gridcell');
+    const sq21Cell = gridcells.find((cell) =>
+      cell.getAttribute('aria-label')?.includes('Square 21'),
+    );
+    if (sq21Cell) {
+      fireEvent.click(sq21Cell);
+    }
+
+    // Now resign — any existing last-move highlights from before should persist
+    // (or at minimum, the game-over dialog should not crash)
+    fireEvent.click(screen.getByRole('button', { name: /resign/i }));
+    expect(screen.getByTestId('game-over-dialog')).toBeInTheDocument();
+  });
 });

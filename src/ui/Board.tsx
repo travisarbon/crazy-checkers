@@ -52,6 +52,7 @@ export default function Board({
   flipped = false,
   legalMoveSquares,
   selectedSquare,
+  lastMoveSquares,
   onSquareClick,
   selectablePieces,
   animatingPieces,
@@ -116,6 +117,12 @@ export default function Board({
                 ? describeSquare(sq, piece ?? null)
                 : 'Empty square';
 
+              const isLastMoveSquare =
+                sq !== null &&
+                lastMoveSquares != null &&
+                ((sq as number) === (lastMoveSquares.from as number) ||
+                 (sq as number) === (lastMoveSquares.to as number));
+
               const isSelected =
                 !isAnimating &&
                 sq !== null &&
@@ -163,7 +170,19 @@ export default function Board({
                     fill="var(--board-dark)"
                   />
 
-                  {/* Legal move destination highlight (below selected highlight) */}
+                  {/* Last-move highlight (lowest visual priority) */}
+                  {isLastMoveSquare && (
+                    <rect
+                      x={x}
+                      y={y}
+                      width={SQUARE_SIZE}
+                      height={SQUARE_SIZE}
+                      fill="var(--highlight-last-move)"
+                      data-testid="highlight-last-move"
+                    />
+                  )}
+
+                  {/* Legal move destination highlight (middle priority) */}
                   {isLegalDest && (
                     <rect
                       x={x}

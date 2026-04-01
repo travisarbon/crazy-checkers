@@ -7,7 +7,7 @@
  * for the duration of a game session.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { GameState, PlayerSetup, RuleSet } from '../engine/types';
 import { GameStatus, PlayerType } from '../engine/types';
 import { createNewGame, canUndo as engineCanUndo, resign } from '../engine/game';
@@ -196,6 +196,15 @@ export default function GameScreen({
     takebacksRemaining,
   );
   const currentMoveIndex = gameState.moveHistory.length - 1;
+  const lastMoveSquares = useMemo(() => {
+    const history = gameState.moveHistory;
+    if (history.length === 0) return null;
+    const lastMove = history[history.length - 1];
+    if (!lastMove) return null;
+    const finalDestination = lastMove.path[lastMove.path.length - 1];
+    if (finalDestination === undefined) return null;
+    return { from: lastMove.from, to: finalDestination };
+  }, [gameState.moveHistory]);
   const isMobile = useIsMobile();
 
   // --- Render ---
@@ -223,6 +232,7 @@ export default function GameScreen({
           selectablePieces={
             animationQueue.isAnimating ? undefined : interaction.selectablePieces
           }
+          lastMoveSquares={lastMoveSquares}
           onSquareClick={interaction.handleSquareClick}
           animatingPieces={animationQueue.animatingPieces}
           fadingSquares={animationQueue.fadingSquares}
