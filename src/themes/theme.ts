@@ -50,6 +50,10 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty('--ui-bg', theme.uiBg);
   root.style.setProperty('--ui-text', theme.uiText);
   root.style.setProperty('--ui-accent', theme.uiAccent);
+
+  // Apply page background
+  document.body.style.background = theme.uiBg;
+  document.body.style.margin = '0';
 }
 
 import { classicTheme } from './classic';

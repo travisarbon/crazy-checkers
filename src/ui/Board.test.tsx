@@ -135,7 +135,7 @@ describe('Board', () => {
     const boardContainer = container.firstElementChild as HTMLElement;
     expect(boardContainer).not.toBeNull();
     const svg = container.querySelector('svg');
-    expect(svg).toHaveAttribute('viewBox', '0 0 800 800');
+    expect(svg).toHaveAttribute('viewBox', '-4 -4 808 808');
   });
 
   it('renders a king piece with crown indicator', () => {

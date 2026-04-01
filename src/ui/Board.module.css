@@ -1,6 +1,6 @@
 .boardContainer {
   width: 100%;
-  max-width: min(90vh - 2rem, 600px);
+  max-width: min(90vw, 90vh - 2rem, 600px);
   aspect-ratio: 1;
   margin: 0 auto;
 }

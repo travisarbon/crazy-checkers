@@ -84,11 +84,14 @@ export default function Board({
   return (
     <div className={styles.boardContainer}>
       <svg
-        viewBox="0 0 800 800"
+        viewBox="-4 -4 808 808"
         role="grid"
         aria-label="Checkers board"
         data-testid="board"
       >
+        {/* Board border/frame */}
+        <rect x="-4" y="-4" width="808" height="808" fill="var(--board-border)" rx="4" />
+
         {rows.map((row) => (
           <g key={row} role="row">
             {cols.map((col) => {

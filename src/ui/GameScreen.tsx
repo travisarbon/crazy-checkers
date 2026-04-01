@@ -109,6 +109,7 @@ export default function GameScreen({
   // --- Animation queue ---
   const animationQueue = useAnimationQueue({
     speedMultiplier: animationSpeedMultiplier,
+    flipped,
     onComplete: () => {
       if (pendingStateRef.current) {
         setGameState(pendingStateRef.current);
@@ -237,6 +238,7 @@ export default function GameScreen({
           animatingPieces={animationQueue.animatingPieces}
           fadingSquares={animationQueue.fadingSquares}
           isAnimating={animationQueue.isAnimating}
+          animSpeedMultiplier={animationSpeedMultiplier}
         />
       </div>
 

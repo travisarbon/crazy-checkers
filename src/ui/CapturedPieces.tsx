@@ -39,7 +39,7 @@ export default function CapturedPieces({ moveHistory }: CapturedPiecesProps) {
     <div data-testid="captured-pieces" style={{ fontSize: '0.875rem', color: 'var(--ui-text)' }}>
       <div
         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}
-        aria-label={`Black pieces captured: ${String(white)}`}
+        aria-label={`${String(white)} black piece${white !== 1 ? 's' : ''} captured`}
       >
         <svg width={16} height={16} aria-hidden="true">
           <circle
@@ -55,7 +55,7 @@ export default function CapturedPieces({ moveHistory }: CapturedPiecesProps) {
       </div>
       <div
         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-        aria-label={`White pieces captured: ${String(black)}`}
+        aria-label={`${String(black)} white piece${black !== 1 ? 's' : ''} captured`}
       >
         <svg width={16} height={16} aria-hidden="true">
           <circle

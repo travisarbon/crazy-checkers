@@ -77,7 +77,7 @@ function WinnerIcon({ color }: { color: PieceColor }) {
     <svg width={56} height={56} aria-hidden="true" data-testid="winner-icon">
       <circle cx={28} cy={28} r={24} fill={fill} stroke={stroke} strokeWidth={3} />
       <path
-        d="M 16,32 L 20,22 L 24,28 L 28,22 L 32,28 L 36,22 L 40,32 Z"
+        d="M 16,22 L 20,32 L 24,26 L 28,32 L 32,26 L 36,32 L 40,22 Z"
         fill="var(--ui-accent)"
       />
     </svg>
