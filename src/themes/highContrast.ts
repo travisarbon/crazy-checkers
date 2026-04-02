@@ -16,4 +16,5 @@ export const highContrastTheme: Theme = {
   uiBg: '#000000',
   uiText: '#FFFFFF',
   uiAccent: '#FFD700',
+  uiDanger: '#FF0000',
 };

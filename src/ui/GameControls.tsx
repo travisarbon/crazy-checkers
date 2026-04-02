@@ -20,7 +20,7 @@ interface GameControlsProps {
   onMainMenu?: () => void;
 }
 
-type PendingAction = 'resign' | 'newGame' | null;
+type PendingAction = 'resign' | 'newGame' | 'mainMenu' | null;
 
 export default function GameControls({
   canUndo,
@@ -45,6 +45,14 @@ export default function GameControls({
     setPendingAction('resign');
   }
 
+  function handleMainMenu() {
+    if (isGameInProgress && onMainMenu) {
+      setPendingAction('mainMenu');
+    } else if (onMainMenu) {
+      onMainMenu();
+    }
+  }
+
   function handleConfirm() {
     const action = pendingAction;
     setPendingAction(null);
@@ -52,6 +60,8 @@ export default function GameControls({
       onResign();
     } else if (action === 'newGame') {
       onNewGame();
+    } else if (action === 'mainMenu' && onMainMenu) {
+      onMainMenu();
     }
   }
 
@@ -59,11 +69,20 @@ export default function GameControls({
     setPendingAction(null);
   }
 
-  const dialogTitle = pendingAction === 'resign' ? 'Resign Game?' : 'New Game?';
-  const dialogMessage = pendingAction === 'resign'
-    ? 'Are you sure you want to resign? This will count as a loss.'
+  const dialogTitle =
+    pendingAction === 'resign' ? 'Resign Game?'
+    : pendingAction === 'mainMenu' ? 'Return to Menu?'
+    : 'New Game?';
+  const dialogMessage =
+    pendingAction === 'resign'
+      ? 'Are you sure you want to resign? This will count as a loss.'
+    : pendingAction === 'mainMenu'
+      ? 'Your game will be saved and can be resumed.'
     : 'Start a new game? Your current game will be lost.';
-  const dialogConfirmLabel = pendingAction === 'resign' ? 'Resign' : 'New Game';
+  const dialogConfirmLabel =
+    pendingAction === 'resign' ? 'Resign'
+    : pendingAction === 'mainMenu' ? 'Main Menu'
+    : 'New Game';
 
   return (
     <>
@@ -97,7 +116,7 @@ export default function GameControls({
         {onMainMenu && (
           <button
             className={styles.controlButton}
-            onClick={onMainMenu}
+            onClick={handleMainMenu}
             aria-label="Return to main menu"
             title="Return to main menu"
           >

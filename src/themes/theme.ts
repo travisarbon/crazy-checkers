@@ -30,6 +30,7 @@ export interface Theme {
   readonly uiBg: string;
   readonly uiText: string;
   readonly uiAccent: string;
+  readonly uiDanger: string;
 }
 
 /**
@@ -50,6 +51,7 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty('--ui-bg', theme.uiBg);
   root.style.setProperty('--ui-text', theme.uiText);
   root.style.setProperty('--ui-accent', theme.uiAccent);
+  root.style.setProperty('--ui-danger', theme.uiDanger);
 
   // Apply page background
   document.body.style.background = theme.uiBg;

@@ -39,7 +39,11 @@ function getResultHeading(result: GameResult): string {
   }
 }
 
-function getReasonDescription(result: GameResult): string {
+function colorName(color: PieceColor): string {
+  return color === PC.White ? 'White' : 'Black';
+}
+
+function getReasonDescription(result: GameResult, lastActiveColor: PieceColor): string {
   switch (result.reason) {
     case GameEndReason.NoPiecesLeft:
       return 'All opponent pieces have been captured.';
@@ -50,7 +54,7 @@ function getReasonDescription(result: GameResult): string {
     case GameEndReason.FortyMoveRule:
       return 'Forty consecutive moves without a capture or pawn advance.';
     case GameEndReason.Resignation:
-      return 'The opponent resigned the game.';
+      return `${colorName(lastActiveColor)} resigned the game.`;
   }
 }
 
@@ -119,6 +123,7 @@ function ResultIcon({ result }: { result: GameResult }) {
 
 export default function GameOverDialog({
   result,
+  lastActiveColor,
   onNewGame,
   onMainMenu,
 }: GameOverDialogProps) {
@@ -190,7 +195,7 @@ export default function GameOverDialog({
           {getResultHeading(result)}
         </h2>
         <p id="game-over-reason" className={styles.reason}>
-          {getReasonDescription(result)}
+          {getReasonDescription(result, lastActiveColor)}
         </p>
         <div className={styles.actions}>
           {onMainMenu && (

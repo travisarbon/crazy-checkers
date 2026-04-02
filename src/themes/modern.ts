@@ -16,4 +16,5 @@ export const modernTheme: Theme = {
   uiBg: '#121212',
   uiText: '#EEEEEE',
   uiAccent: '#BB86FC',
+  uiDanger: '#CF6679',
 };

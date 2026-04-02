@@ -16,4 +16,5 @@ export const classicTheme: Theme = {
   uiBg: '#2C1810',
   uiText: '#F0D9B5',
   uiAccent: '#D4A843',
+  uiDanger: '#E53E3E',
 };

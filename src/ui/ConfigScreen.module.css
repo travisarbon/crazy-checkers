@@ -233,6 +233,6 @@
 }
 
 .dangerButton {
-  border-color: #e53e3e;
-  color: #e53e3e;
+  border-color: var(--ui-danger);
+  color: var(--ui-danger);
 }

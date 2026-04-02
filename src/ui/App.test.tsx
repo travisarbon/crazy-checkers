@@ -80,8 +80,12 @@ describe('App', () => {
     fireEvent.click(screen.getByTestId('setup-start'));
     expect(screen.getByTestId('game-screen')).toBeInTheDocument();
 
-    // Click Main Menu button
+    // Click Main Menu button — now shows confirmation dialog during active game
     fireEvent.click(screen.getByRole('button', { name: /return to main menu/i }));
+    expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
+
+    // Confirm the action
+    fireEvent.click(screen.getByTestId('confirm-confirm'));
     expect(screen.getByTestId('menu-screen')).toBeInTheDocument();
   });
 

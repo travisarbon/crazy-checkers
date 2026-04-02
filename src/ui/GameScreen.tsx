@@ -248,6 +248,8 @@ export default function GameScreen({
 
   // --- Undo handler ---
   const handleUndo = useCallback(() => {
+    if (animationQueue.isAnimating) return;
+
     const isCpuGame =
       players.white !== PlayerType.Human || players.black !== PlayerType.Human;
 
@@ -268,7 +270,7 @@ export default function GameScreen({
     if (takebacksRemaining > 0) {
       setTakebacksRemaining((prev) => prev - 1);
     }
-  }, [undoStack, takebacksRemaining, players]);
+  }, [undoStack, takebacksRemaining, players, animationQueue.isAnimating]);
 
   // --- Resign handler ---
   const handleResign = useCallback(() => {
