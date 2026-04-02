@@ -29,6 +29,9 @@ interface UseGameInteractionOptions {
 
   /** Whether interaction is disabled (e.g., during AI thinking). */
   isDisabled?: boolean;
+
+  /** Whether moves require a second click to confirm (does not apply to multi-jump continuations). */
+  moveConfirmation?: boolean;
 }
 
 export interface UseGameInteractionResult {
@@ -55,6 +58,9 @@ export interface UseGameInteractionResult {
    * Used for subtle visual affordance (e.g., cursor: pointer).
    */
   selectablePieces: ReadonlySet<number>;
+
+  /** Square awaiting move confirmation (second click), or null. */
+  pendingConfirmSquare: Square | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,6 +108,7 @@ export function useGameInteraction({
   onMove,
   isAnimating = false,
   isDisabled = false,
+  moveConfirmation = false,
 }: UseGameInteractionOptions): UseGameInteractionResult {
   // ── Internal state ───────────────────────────────────────────────────
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
@@ -111,12 +118,14 @@ export function useGameInteraction({
     capturedSoFar: Square[];
   } | null>(null);
   const [intermediateBoard, setIntermediateBoard] = useState<BoardState | null>(null);
+  const [pendingConfirmSquare, setPendingConfirmSquare] = useState<Square | null>(null);
 
   // ── clearSelection helper ────────────────────────────────────────────
   const clearSelection = useCallback(() => {
     setSelectedSquare(null);
     setMultiJumpProgress(null);
     setIntermediateBoard(null);
+    setPendingConfirmSquare(null);
   }, []);
 
   const handleEscape = useCallback(() => {
@@ -128,10 +137,11 @@ export function useGameInteraction({
   const [trackedPly, setTrackedPly] = useState(gameState.plyCount);
   if (gameState.plyCount !== trackedPly) {
     setTrackedPly(gameState.plyCount);
-    if (selectedSquare !== null || multiJumpProgress !== null) {
+    if (selectedSquare !== null || multiJumpProgress !== null || pendingConfirmSquare !== null) {
       setSelectedSquare(null);
       setMultiJumpProgress(null);
       setIntermediateBoard(null);
+      setPendingConfirmSquare(null);
     }
   }
 
@@ -233,6 +243,23 @@ export function useGameInteraction({
 
       // Clicking a legal destination for the currently selected piece
       if (selectedSquare !== null && legalDestinations.has(sq as number)) {
+        // Move confirmation: if enabled and this is the first click on a
+        // destination, mark it as pending instead of executing.
+        if (moveConfirmation && pendingConfirmSquare === null) {
+          setPendingConfirmSquare(sq);
+          return;
+        }
+
+        // Move confirmation: clicking a different destination than the pending
+        // one switches the pending target.
+        if (moveConfirmation && pendingConfirmSquare !== null && (sq as number) !== (pendingConfirmSquare as number)) {
+          setPendingConfirmSquare(sq);
+          return;
+        }
+
+        // Either confirmation is off, or this is the confirming second click.
+        setPendingConfirmSquare(null);
+
         const movesForDest = getMovesToSquare(legalMoves, sq);
         if (movesForDest.length === 0) return;
 
@@ -289,6 +316,7 @@ export function useGameInteraction({
           setSelectedSquare(sq);
           setMultiJumpProgress(null);
           setIntermediateBoard(null);
+          setPendingConfirmSquare(null);
         }
         return;
       }
@@ -304,6 +332,8 @@ export function useGameInteraction({
       multiJumpProgress,
       intermediateBoard,
       selectablePieces,
+      pendingConfirmSquare,
+      moveConfirmation,
       onMove,
       clearSelection,
       isAnimating,
@@ -319,5 +349,6 @@ export function useGameInteraction({
     handleEscape,
     isMidMultiJump: multiJumpProgress !== null,
     selectablePieces,
+    pendingConfirmSquare,
   };
 }

@@ -32,6 +32,7 @@ interface GameScreenProps {
   players: PlayerSetup;
   flipped?: boolean;
   animationSpeedMultiplier?: number;
+  moveConfirmation?: boolean;
   onNewGame: () => void;
   onMainMenu?: () => void;
 }
@@ -97,6 +98,7 @@ export default function GameScreen({
   players,
   flipped = false,
   animationSpeedMultiplier = 1.0,
+  moveConfirmation = false,
   onNewGame,
   onMainMenu,
 }: GameScreenProps) {
@@ -202,6 +204,7 @@ export default function GameScreen({
     onMove: handleMove,
     isAnimating: animationQueue.isAnimating,
     isDisabled: isAIThinking,
+    moveConfirmation,
   });
 
   // --- Escape key ---
@@ -289,6 +292,9 @@ export default function GameScreen({
           flipped={flipped}
           selectedSquare={
             animationQueue.isAnimating ? null : interaction.selectedSquare
+          }
+          pendingConfirmSquare={
+            animationQueue.isAnimating ? null : interaction.pendingConfirmSquare
           }
           legalMoveSquares={
             animationQueue.isAnimating ? undefined : interaction.legalDestinations

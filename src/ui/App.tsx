@@ -6,12 +6,13 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { applyTheme, THEMES, DEFAULT_THEME_ID } from '../themes/theme';
+import { applyTheme, THEMES } from '../themes/theme';
 import { createAmericanRules } from '../engine/rules';
 import type { PlayerSetup, RuleSet } from '../engine/types';
 import GameScreen from './GameScreen';
 import MenuScreen from './MenuScreen';
 import ConfigScreen from './ConfigScreen';
+import { DEFAULT_SETTINGS } from './settings';
 
 // ---------------------------------------------------------------------------
 // Navigation state
@@ -34,12 +35,13 @@ type Screen =
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ kind: 'menu' });
   const [gameKey, setGameKey] = useState(0);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
-  // Apply default theme on mount
+  // Apply theme reactively when themeId changes
   useEffect(() => {
-    const theme = THEMES[DEFAULT_THEME_ID];
+    const theme = THEMES[settings.themeId];
     if (theme) applyTheme(theme);
-  }, []);
+  }, [settings.themeId]);
 
   // Browser back-button support
   useEffect(() => {
@@ -82,12 +84,20 @@ export default function App() {
           ruleSet={screen.ruleSet}
           players={screen.players}
           flipped={screen.flipped}
+          animationSpeedMultiplier={settings.animationSpeed}
+          moveConfirmation={settings.moveConfirmation}
           onNewGame={() => { navigateToGame(screen.players, screen.flipped); }}
           onMainMenu={navigateToMenu}
         />
       );
 
     case 'config':
-      return <ConfigScreen onBack={navigateToMenu} />;
+      return (
+        <ConfigScreen
+          settings={settings}
+          onSettingsChange={setSettings}
+          onBack={navigateToMenu}
+        />
+      );
   }
 }

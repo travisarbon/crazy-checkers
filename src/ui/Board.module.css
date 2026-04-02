@@ -38,3 +38,14 @@
 .pieceKinging {
   will-change: transform;
 }
+
+/* ── Pending move confirmation pulse ─────────────────────── */
+
+@keyframes pendingPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.pendingConfirm {
+  animation: pendingPulse 1s ease-in-out infinite;
+}

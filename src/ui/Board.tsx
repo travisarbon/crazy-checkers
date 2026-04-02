@@ -23,6 +23,7 @@ const CAPTURE_RING_STROKE = 4;
 interface BoardProps {
   board: BoardState;
   flipped?: boolean;
+  pendingConfirmSquare?: Square | null;
   legalMoveSquares?: ReadonlySet<number>;
   selectedSquare?: Square | null;
   lastMoveSquares?: { from: Square; to: Square } | null;
@@ -50,6 +51,7 @@ function describeSquare(sq: Square, piece: PieceData | null): string {
 export default function Board({
   board,
   flipped = false,
+  pendingConfirmSquare,
   legalMoveSquares,
   selectedSquare,
   lastMoveSquares,
@@ -133,6 +135,13 @@ export default function Board({
                 selectedSquare !== undefined &&
                 (sq as number) === (selectedSquare as number);
 
+              const isPendingConfirm =
+                !isAnimating &&
+                sq !== null &&
+                pendingConfirmSquare !== null &&
+                pendingConfirmSquare !== undefined &&
+                (sq as number) === (pendingConfirmSquare as number);
+
               const isLegalDest = !isAnimating && sq !== null && (legalMoveSquares?.has(sq as number) ?? false);
               const clickable = sq !== null && isClickable(sq);
 
@@ -206,6 +215,19 @@ export default function Board({
                       height={SQUARE_SIZE}
                       fill="var(--highlight-selected)"
                       data-testid="highlight-selected"
+                    />
+                  )}
+
+                  {/* Pending confirmation highlight (pulsing) */}
+                  {isPendingConfirm && (
+                    <rect
+                      x={x}
+                      y={y}
+                      width={SQUARE_SIZE}
+                      height={SQUARE_SIZE}
+                      fill="var(--highlight-selected)"
+                      data-testid="highlight-pending-confirm"
+                      className={styles.pendingConfirm}
                     />
                   )}
 
