@@ -10,6 +10,7 @@ interface TurnIndicatorProps {
   activeColor: PieceColor;
   isGameOver: boolean;
   result: GameResult | null;
+  isThinking?: boolean;
 }
 
 function formatGameResult(result: GameResult): string {
@@ -40,6 +41,7 @@ export default function TurnIndicator({
   activeColor,
   isGameOver,
   result,
+  isThinking = false,
 }: TurnIndicatorProps) {
   const isWhite = activeColor === PC.White;
   const fillVar = isWhite ? 'var(--piece-white)' : 'var(--piece-black)';
@@ -50,6 +52,8 @@ export default function TurnIndicator({
   let label: string;
   if (isGameOver && result) {
     label = formatGameResult(result);
+  } else if (isThinking) {
+    label = 'Thinking\u2026';
   } else {
     label = `${isWhite ? 'White' : 'Black'}'s turn`;
   }
@@ -74,6 +78,9 @@ export default function TurnIndicator({
           fontSize: '1rem',
           fontWeight: 600,
           color: 'var(--ui-text)',
+          ...(isThinking && !isGameOver
+            ? { animation: 'pulse 1.2s ease-in-out infinite' }
+            : {}),
         }}
       >
         {label}

@@ -9,8 +9,10 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { GameState, PlayerSetup, RuleSet } from '../engine/types';
-import { GameStatus, PlayerType } from '../engine/types';
-import { createNewGame, canUndo as engineCanUndo, resign } from '../engine/game';
+import { GameStatus, PieceColor, PlayerType } from '../engine/types';
+import { createNewGame, makeMove, canUndo as engineCanUndo, resign } from '../engine/game';
+import { requestAIMove } from '../ai/workerClient';
+import type { Difficulty } from '../ai/difficulty';
 import Board from './Board';
 import TurnIndicator from './TurnIndicator';
 import CapturedPieces from './CapturedPieces';
@@ -105,6 +107,7 @@ export default function GameScreen({
   const [takebacksRemaining, setTakebacksRemaining] = useState(
     computeInitialTakebacks(players),
   );
+  const [isAIThinking, setIsAIThinking] = useState(false);
 
   // --- Animation queue ---
   const animationQueue = useAnimationQueue({
@@ -134,11 +137,57 @@ export default function GameScreen({
     [gameState, animationQueue],
   );
 
+  // --- AI turn effect ---
+  useEffect(() => {
+    if (gameState.status !== GameStatus.InProgress) return;
+    if (animationQueue.isAnimating) return;
+    if (isAIThinking) return;
+
+    const activePlayer =
+      gameState.activeColor === PieceColor.White
+        ? gameState.players.white
+        : gameState.players.black;
+
+    if (activePlayer === PlayerType.Human) return;
+
+    const difficulty: Difficulty =
+      activePlayer === PlayerType.CpuEasy ? 'easy' : 'hard';
+
+    setIsAIThinking(true);
+    let cancelled = false;
+
+    requestAIMove(gameState, difficulty)
+      .then((move) => {
+        if (cancelled) return;
+        const newState = makeMove(gameState, move);
+        handleMove(newState);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        console.error('AI move computation failed:', error);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsAIThinking(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    gameState,
+    animationQueue.isAnimating,
+    isAIThinking,
+    handleMove,
+  ]);
+
   // --- Interaction hook ---
   const interaction = useGameInteraction({
     gameState,
     onMove: handleMove,
     isAnimating: animationQueue.isAnimating,
+    isDisabled: isAIThinking,
   });
 
   // --- Escape key ---
@@ -247,6 +296,7 @@ export default function GameScreen({
           activeColor={gameState.activeColor}
           isGameOver={isGameOver}
           result={gameState.result}
+          isThinking={isAIThinking}
         />
         <CapturedPieces moveHistory={gameState.moveHistory} />
         <MoveHistory
@@ -255,7 +305,7 @@ export default function GameScreen({
           collapsible={isMobile}
         />
         <GameControls
-          canUndo={undoAvailable && !animationQueue.isAnimating}
+          canUndo={undoAvailable && !animationQueue.isAnimating && !isAIThinking}
           undoTooltip={undoTooltip}
           isGameInProgress={!isGameOver}
           onNewGame={onNewGame}

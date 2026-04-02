@@ -26,6 +26,9 @@ interface UseGameInteractionOptions {
 
   /** Whether an animation is currently playing (suppresses input). */
   isAnimating?: boolean;
+
+  /** Whether interaction is disabled (e.g., during AI thinking). */
+  isDisabled?: boolean;
 }
 
 export interface UseGameInteractionResult {
@@ -98,6 +101,7 @@ export function useGameInteraction({
   gameState,
   onMove,
   isAnimating = false,
+  isDisabled = false,
 }: UseGameInteractionOptions): UseGameInteractionResult {
   // ── Internal state ───────────────────────────────────────────────────
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
@@ -175,8 +179,8 @@ export function useGameInteraction({
   // ── Core click handler ───────────────────────────────────────────────
   const handleSquareClick = useCallback(
     (sq: Square) => {
-      // Suppress input during animation
-      if (isAnimating) return;
+      // Suppress input during animation or when disabled (e.g., AI thinking)
+      if (isAnimating || isDisabled) return;
 
       if (gameState.status !== GameStatus.InProgress) return;
 
@@ -303,6 +307,7 @@ export function useGameInteraction({
       onMove,
       clearSelection,
       isAnimating,
+      isDisabled,
     ],
   );
 
