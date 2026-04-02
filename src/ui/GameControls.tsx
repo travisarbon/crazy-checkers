@@ -15,6 +15,7 @@ interface GameControlsProps {
   onNewGame: () => void;
   onUndo: () => void;
   onResign: () => void;
+  onMainMenu?: () => void;
 }
 
 export default function GameControls({
@@ -24,6 +25,7 @@ export default function GameControls({
   onNewGame,
   onUndo,
   onResign,
+  onMainMenu,
 }: GameControlsProps) {
   function handleNewGame() {
     if (isGameInProgress) {
@@ -69,6 +71,16 @@ export default function GameControls({
       >
         Resign
       </button>
+      {onMainMenu && (
+        <button
+          className={styles.controlButton}
+          onClick={onMainMenu}
+          aria-label="Return to main menu"
+          title="Return to main menu"
+        >
+          Main Menu
+        </button>
+      )}
     </div>
   );
 }

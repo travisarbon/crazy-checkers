@@ -1,0 +1,78 @@
+.menuScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  background-color: var(--ui-bg);
+  color: var(--ui-text);
+}
+
+.gameTitle {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 0.5rem;
+  color: var(--ui-accent);
+}
+
+.gameSubtitle {
+  font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+  text-align: center;
+  margin: 0 0 2.5rem;
+  opacity: 0.8;
+}
+
+/* ── Mode button grid ─────────────────────────────────────── */
+
+.modeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 600px;
+}
+
+.modeButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 1rem;
+  border: 2px solid var(--ui-accent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-text);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 100ms ease;
+  min-height: 80px;
+}
+
+.modeButton:hover:not(:disabled) {
+  background-color: var(--ui-accent);
+  color: var(--ui-bg);
+  transform: scale(1.03);
+}
+
+.modeButton:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.modeButton.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: currentColor;
+}
+
+.badge {
+  font-size: 0.7rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.3rem;
+  opacity: 0.7;
+}

@@ -21,6 +21,7 @@ interface GameOverDialogProps {
   lastActiveColor: PieceColor;
   onNewGame: () => void;
   onReview?: () => void;
+  onMainMenu?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -119,6 +120,7 @@ function ResultIcon({ result }: { result: GameResult }) {
 export default function GameOverDialog({
   result,
   onNewGame,
+  onMainMenu,
 }: GameOverDialogProps) {
   const primaryRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -142,15 +144,28 @@ export default function GameOverDialog({
     };
   }, []);
 
-  // Focus trap: keep focus on the single active button
+  // Focus trap: keep Tab cycling within the dialog
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Tab') {
-      const focusable = dialogRef.current?.querySelectorAll(
-        'button:not([disabled])',
-      );
-      if (focusable && focusable.length === 1) {
-        e.preventDefault();
-      }
+    if (e.key !== 'Tab') return;
+    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled])',
+    );
+    if (!focusable || focusable.length === 0) return;
+
+    if (focusable.length === 1) {
+      e.preventDefault();
+      return;
+    }
+
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
     }
   }
 
@@ -177,6 +192,15 @@ export default function GameOverDialog({
           {getReasonDescription(result)}
         </p>
         <div className={styles.actions}>
+          {onMainMenu && (
+            <button
+              className={styles.secondaryButton}
+              onClick={onMainMenu}
+              data-testid="game-over-main-menu"
+            >
+              Main Menu
+            </button>
+          )}
           <button
             ref={primaryRef}
             className={styles.primaryButton}

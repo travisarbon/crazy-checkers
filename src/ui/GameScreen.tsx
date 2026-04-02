@@ -33,6 +33,7 @@ interface GameScreenProps {
   flipped?: boolean;
   animationSpeedMultiplier?: number;
   onNewGame: () => void;
+  onMainMenu?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -97,6 +98,7 @@ export default function GameScreen({
   flipped = false,
   animationSpeedMultiplier = 1.0,
   onNewGame,
+  onMainMenu,
 }: GameScreenProps) {
   // --- State ---
   const [gameState, setGameState] = useState<GameState>(() =>
@@ -323,6 +325,7 @@ export default function GameScreen({
           onNewGame={onNewGame}
           onUndo={handleUndo}
           onResign={handleResign}
+          onMainMenu={onMainMenu}
         />
       </aside>
 
@@ -331,6 +334,7 @@ export default function GameScreen({
           result={gameState.result}
           lastActiveColor={gameState.activeColor}
           onNewGame={onNewGame}
+          onMainMenu={onMainMenu}
         />
       )}
     </div>
