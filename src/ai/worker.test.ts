@@ -24,7 +24,8 @@ function createTestGameState(): GameState {
 }
 
 function serializeForTest(state: GameState): SerializableGameState {
-  const { ruleSet: _ruleSet, ...rest } = state;
+  const { ruleSet: _, ...rest } = state;
+  void _;
   return { ...rest, ruleSetId: 'american' };
 }
 
@@ -85,7 +86,7 @@ describe('getAIMove (worker function, tested directly without Worker)', () => {
 
     const deserialized = deserializeGameState(serialized);
     expect(deserialized.ruleSet).toBeDefined();
-    expect(deserialized.ruleSet.getLegalMoves).toBeTypeOf('function');
+    expect(() => deserialized.ruleSet.getLegalMoves(deserialized.board, deserialized.activeColor)).not.toThrow();
 
     // Should not throw and should return a legal move
     const move = getAIMove(serialized, 'easy');
@@ -120,7 +121,7 @@ describe('getAIMove (worker function, tested directly without Worker)', () => {
     if (legalMoves.length === 1) {
       const serialized = serializeForTest(customState);
       const move = getAIMove(serialized, 'hard');
-      const onlyMove = legalMoves[0]!;
+      const onlyMove = legalMoves[0] as Move;
 
       expect((move.from as number)).toBe(onlyMove.from as number);
       expect(move.path.length).toBe(onlyMove.path.length);

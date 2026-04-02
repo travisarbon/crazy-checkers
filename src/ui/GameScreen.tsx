@@ -108,6 +108,7 @@ export default function GameScreen({
     computeInitialTakebacks(players),
   );
   const [isAIThinking, setIsAIThinking] = useState(false);
+  const aiThinkingRef = useRef(false);
 
   // --- Animation queue ---
   const animationQueue = useAnimationQueue({
@@ -141,7 +142,7 @@ export default function GameScreen({
   useEffect(() => {
     if (gameState.status !== GameStatus.InProgress) return;
     if (animationQueue.isAnimating) return;
-    if (isAIThinking) return;
+    if (aiThinkingRef.current) return;
 
     const activePlayer =
       gameState.activeColor === PieceColor.White
@@ -153,9 +154,11 @@ export default function GameScreen({
     const difficulty: Difficulty =
       activePlayer === PlayerType.CpuEasy ? 'easy' : 'hard';
 
-    setIsAIThinking(true);
+    aiThinkingRef.current = true;
     let cancelled = false;
 
+    // Kick off the AI request, then set thinking state from the callback
+    // to avoid synchronous setState in the effect body.
     requestAIMove(gameState, difficulty)
       .then((move) => {
         if (cancelled) return;
@@ -168,17 +171,26 @@ export default function GameScreen({
       })
       .finally(() => {
         if (!cancelled) {
+          aiThinkingRef.current = false;
           setIsAIThinking(false);
         }
       });
 
+    // Use a microtask to set the thinking UI state, avoiding a synchronous
+    // setState call in the effect body (react-hooks/set-state-in-effect).
+    void Promise.resolve().then(() => {
+      if (!cancelled) {
+        setIsAIThinking(true);
+      }
+    });
+
     return () => {
       cancelled = true;
+      aiThinkingRef.current = false;
     };
   }, [
     gameState,
     animationQueue.isAnimating,
-    isAIThinking,
     handleMove,
   ]);
 

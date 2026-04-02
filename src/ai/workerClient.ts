@@ -21,7 +21,8 @@ import type { WorkerApi, SerializableGameState } from './worker';
  * The resulting object is safe for structured clone (postMessage).
  */
 function serializeGameState(state: GameState): SerializableGameState {
-  const { ruleSet: _ruleSet, ...rest } = state;
+  const { ruleSet: _, ...rest } = state;
+  void _;
   return { ...rest, ruleSetId: 'american' };
 }
 

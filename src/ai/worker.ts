@@ -53,7 +53,8 @@ export function deserializeGameState(data: SerializableGameState): GameState {
   if (!ruleSet) {
     throw new Error(`Unknown ruleSetId: ${data.ruleSetId}`);
   }
-  const { ruleSetId: _id, ...rest } = data;
+  const { ruleSetId: _, ...rest } = data;
+  void _;
   return { ...rest, ruleSet };
 }
 
