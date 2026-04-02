@@ -47,7 +47,7 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
     const timer = setTimeout(() => {
       firstInputRef.current?.focus();
     }, 50);
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); };
   }, []);
 
   // Prevent background scrolling
@@ -67,7 +67,7 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
       }
     }
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => { window.removeEventListener('keydown', handleKeyDown); };
   }, [onCancel]);
 
   // Focus trap
@@ -78,8 +78,9 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
     );
     if (!focusable || focusable.length === 0) return;
 
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
 
     if (e.shiftKey && document.activeElement === first) {
       e.preventDefault();
@@ -140,7 +141,7 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
               name="gameType"
               value="pass-around"
               checked={gameType === 'pass-around'}
-              onChange={() => setGameType('pass-around')}
+              onChange={() => { setGameType('pass-around'); }}
             />
             Pass Around (two players)
           </label>
@@ -150,7 +151,7 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
               name="gameType"
               value="vs-cpu"
               checked={gameType === 'vs-cpu'}
-              onChange={() => setGameType('vs-cpu')}
+              onChange={() => { setGameType('vs-cpu'); }}
             />
             vs. CPU
           </label>
@@ -167,7 +168,7 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
               name="color"
               value="white"
               checked={colorChoice === 'white'}
-              onChange={() => setColorChoice('white')}
+              onChange={() => { setColorChoice('white'); }}
             />
             White (moves first)
           </label>
@@ -177,7 +178,7 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
               name="color"
               value="black"
               checked={colorChoice === 'black'}
-              onChange={() => setColorChoice('black')}
+              onChange={() => { setColorChoice('black'); }}
             />
             Black
           </label>
@@ -193,7 +194,7 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
                 name="difficulty"
                 value="easy"
                 checked={difficultyChoice === 'easy'}
-                onChange={() => setDifficultyChoice('easy')}
+                onChange={() => { setDifficultyChoice('easy'); }}
               />
               Easy
             </label>
@@ -203,7 +204,7 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
                 name="difficulty"
                 value="hard"
                 checked={difficultyChoice === 'hard'}
-                onChange={() => setDifficultyChoice('hard')}
+                onChange={() => { setDifficultyChoice('hard'); }}
               />
               Hard
             </label>

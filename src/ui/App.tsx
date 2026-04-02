@@ -8,7 +8,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { applyTheme, THEMES, DEFAULT_THEME_ID } from '../themes/theme';
 import { createAmericanRules } from '../engine/rules';
-import { PlayerType } from '../engine/types';
 import type { PlayerSetup, RuleSet } from '../engine/types';
 import GameScreen from './GameScreen';
 import MenuScreen from './MenuScreen';
@@ -53,11 +52,11 @@ export default function App() {
     }
 
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    return () => { window.removeEventListener('popstate', handlePopState); };
   }, [screen.kind]);
 
   // Navigation callbacks
-  const navigateToMenu = useCallback(() => setScreen({ kind: 'menu' }), []);
+  const navigateToMenu = useCallback(() => { setScreen({ kind: 'menu' }); }, []);
 
   const navigateToGame = useCallback((players: PlayerSetup, flipped: boolean) => {
     setScreen({
@@ -69,7 +68,7 @@ export default function App() {
     setGameKey((prev) => prev + 1);
   }, []);
 
-  const navigateToConfig = useCallback(() => setScreen({ kind: 'config' }), []);
+  const navigateToConfig = useCallback(() => { setScreen({ kind: 'config' }); }, []);
 
   // Render
   switch (screen.kind) {
@@ -83,7 +82,7 @@ export default function App() {
           ruleSet={screen.ruleSet}
           players={screen.players}
           flipped={screen.flipped}
-          onNewGame={() => navigateToGame(screen.players, screen.flipped)}
+          onNewGame={() => { navigateToGame(screen.players, screen.flipped); }}
           onMainMenu={navigateToMenu}
         />
       );

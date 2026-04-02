@@ -77,11 +77,11 @@ export default function MenuScreen({ onStartGame, onConfigure }: MenuScreenProps
         {MODES.filter((m) => !m.hidden).map((mode) => (
           <button
             key={mode.id}
-            className={`${styles.modeButton} ${!mode.enabled ? styles.disabled : ''}`}
+            className={`${styles.modeButton ?? ''} ${!mode.enabled ? styles.disabled ?? '' : ''}`}
             disabled={!mode.enabled}
             aria-label={mode.enabled ? mode.label : `${mode.label} — Coming Soon`}
             title={mode.description}
-            onClick={() => handleModeClick(mode.id)}
+            onClick={() => { handleModeClick(mode.id); }}
           >
             <span>{mode.label}</span>
             {!mode.enabled && <span className={styles.badge}>Coming Soon</span>}
