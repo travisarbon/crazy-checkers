@@ -36,7 +36,10 @@ import { getAllAdjacentSquares, isPromotionSquare } from './board';
  * Phase 2 event decorators without modifying game.ts or moves.ts.
  */
 export abstract class EventRuleSetDecorator implements RuleSet {
-  constructor(protected readonly inner: RuleSet) {}
+  protected readonly inner: RuleSet;
+  constructor(inner: RuleSet) {
+    this.inner = inner;
+  }
 
   getLegalMoves(board: BoardState, activeColor: PieceColor): Move[] {
     return this.inner.getLegalMoves(board, activeColor);
@@ -116,7 +119,7 @@ export class KingForADayDecorator extends EventRuleSetDecorator {
     const newBoard = [...board] as SquareState[];
     for (let i = 0; i < newBoard.length; i++) {
       const piece = newBoard[i];
-      if (piece !== null && piece.type === PieceType.Pawn) {
+      if (piece != null && piece.type === PieceType.Pawn) {
         newBoard[i] = { color: piece.color, type: PieceType.King };
       }
     }
@@ -128,7 +131,7 @@ export class KingForADayDecorator extends EventRuleSetDecorator {
     this.originalKingIndices.clear();
     for (let i = 0; i < board.length; i++) {
       const piece = board[i];
-      if (piece !== null && piece.type === PieceType.King) {
+      if (piece != null && piece.type === PieceType.King) {
         this.originalKingIndices.add(i);
       }
     }
@@ -174,7 +177,7 @@ export class KingForADayDecorator extends EventRuleSetDecorator {
 
     for (let i = 0; i < newBoard.length; i++) {
       const piece = newBoard[i];
-      if (piece === null || piece.type !== PieceType.King) continue;
+      if (piece == null || piece.type !== PieceType.King) continue;
 
       if (i === landingIndex) {
         // This is the piece that just moved
