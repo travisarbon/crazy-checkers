@@ -146,7 +146,7 @@ export function playSingleGame(
 
     if (searchResult.move === null || legalMoves.length === 0) {
       throw new Error(
-        `Game ply ${moveCount}: AI returned null move with ${legalMoves.length} legal moves available.`,
+        `Game ply ${String(moveCount)}: AI returned null move with ${String(legalMoves.length)} legal moves available.`,
       );
     }
 
@@ -160,7 +160,7 @@ export function playSingleGame(
 
     if (!legalMoves.some((m) => movesAreEqual(m, selectedMove))) {
       throw new Error(
-        `Game produced an illegal move at ply ${moveCount}. ` +
+        `Game produced an illegal move at ply ${String(moveCount)}. ` +
           `Selected move from=${String(selectedMove.from)} ` +
           `path=${selectedMove.path.map(String).join(',')} ` +
           `is not in the legal move list.`,

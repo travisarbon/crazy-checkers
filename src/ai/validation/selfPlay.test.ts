@@ -125,10 +125,11 @@ describe('runMatch', () => {
     };
     const result = runMatch(config);
 
-    expect(result.games[0]!.whiteDifficulty).toBe('hard');
-    expect(result.games[1]!.whiteDifficulty).toBe('easy');
-    expect(result.games[2]!.whiteDifficulty).toBe('hard');
-    expect(result.games[3]!.whiteDifficulty).toBe('easy');
+    const [g0, g1, g2, g3] = result.games;
+    expect(g0?.whiteDifficulty).toBe('hard');
+    expect(g1?.whiteDifficulty).toBe('easy');
+    expect(g2?.whiteDifficulty).toBe('hard');
+    expect(g3?.whiteDifficulty).toBe('easy');
   }, 300_000);
 
   it('does not alternate colors when disabled', () => {
