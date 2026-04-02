@@ -1,0 +1,139 @@
+import { describe, it, expect } from 'vitest';
+import { createNewGame, makeMove } from '../engine/game';
+import { createAmericanRules } from '../engine/rules';
+import { createInitialBoard } from '../engine/board';
+import { PlayerType, GameStatus, square } from '../engine/types';
+import type { GameState, BoardState, Piece } from '../engine/types';
+import { serializeGameState, deserializeGameState, serializeBoard } from './serialization';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function createTestGame(): GameState {
+  const ruleSet = createAmericanRules();
+  const players = { white: PlayerType.Human, black: PlayerType.Human };
+  return createNewGame(ruleSet, players);
+}
+
+function playMoves(state: GameState, count: number): GameState {
+  let current = state;
+  for (let i = 0; i < count; i++) {
+    const moves = current.ruleSet.getLegalMoves(current.board, current.activeColor);
+    if (moves.length === 0 || current.status !== GameStatus.InProgress) break;
+    const move = moves[0];
+    if (move === undefined) break;
+    current = makeMove(current, move);
+  }
+  return current;
+}
+
+// ---------------------------------------------------------------------------
+// Round-trip tests
+// ---------------------------------------------------------------------------
+
+describe('serializeGameState / deserializeGameState', () => {
+  it('round-trips an initial game state', () => {
+    const original = createTestGame();
+    const restored = deserializeGameState(serializeGameState(original));
+
+    expect(restored.board).toEqual(original.board);
+    expect(restored.activeColor).toBe(original.activeColor);
+    expect(restored.status).toBe(original.status);
+    expect(restored.result).toEqual(original.result);
+    expect(restored.players).toEqual(original.players);
+    expect(restored.moveHistory).toEqual(original.moveHistory);
+    expect(restored.positionHashes).toEqual(original.positionHashes);
+    expect(restored.halfMoveClock).toBe(original.halfMoveClock);
+    expect(restored.plyCount).toBe(original.plyCount);
+  });
+
+  it('round-trips a game after several moves', () => {
+    const original = playMoves(createTestGame(), 8);
+    const restored = deserializeGameState(serializeGameState(original));
+
+    expect(restored.board).toEqual(original.board);
+    expect(restored.activeColor).toBe(original.activeColor);
+    expect(restored.moveHistory.length).toBe(original.moveHistory.length);
+    expect(restored.positionHashes).toEqual(original.positionHashes);
+    expect(restored.plyCount).toBe(original.plyCount);
+
+    for (let i = 0; i < restored.moveHistory.length; i++) {
+      const restoredMove = restored.moveHistory[i];
+      const originalMove = original.moveHistory[i];
+      if (restoredMove === undefined || originalMove === undefined) {
+        throw new Error(`Missing move at index ${String(i)}`);
+      }
+      expect(restoredMove.from).toBe(originalMove.from);
+      expect(restoredMove.path).toEqual(originalMove.path);
+      expect(restoredMove.captured).toEqual(originalMove.captured);
+    }
+  });
+
+  it('positionHashes survive round-trip as bigint', () => {
+    const original = playMoves(createTestGame(), 4);
+    expect(original.positionHashes.length).toBeGreaterThan(0);
+
+    const restored = deserializeGameState(serializeGameState(original));
+    for (let i = 0; i < original.positionHashes.length; i++) {
+      expect(typeof restored.positionHashes[i]).toBe('bigint');
+      expect(restored.positionHashes[i]).toBe(original.positionHashes[i]);
+    }
+  });
+
+  it('move from and path elements pass the square() validator after round-trip', () => {
+    const original = playMoves(createTestGame(), 4);
+    const restored = deserializeGameState(serializeGameState(original));
+
+    for (const move of restored.moveHistory) {
+      expect(() => square(move.from as number)).not.toThrow();
+      for (const sq of move.path) {
+        expect(() => square(sq as number)).not.toThrow();
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// serializeBoard tests
+// ---------------------------------------------------------------------------
+
+describe('serializeBoard', () => {
+  it('produces a 32-character string', () => {
+    const board = createInitialBoard();
+    expect(serializeBoard(board)).toHaveLength(32);
+  });
+
+  it('encodes initial position correctly', () => {
+    const board = createInitialBoard();
+    const encoded = serializeBoard(board);
+
+    // Squares 1-12 (indices 0-11): black pawns
+    for (let i = 0; i < 12; i++) {
+      expect(encoded[i]).toBe('b');
+    }
+    // Squares 13-20 (indices 12-19): empty
+    for (let i = 12; i < 20; i++) {
+      expect(encoded[i]).toBe('.');
+    }
+    // Squares 21-32 (indices 20-31): white pawns
+    for (let i = 20; i < 32; i++) {
+      expect(encoded[i]).toBe('w');
+    }
+  });
+
+  it('handles kings correctly', () => {
+    const board: BoardState = Array.from({ length: 32 }, () => null);
+    const boardWithKing = [
+      ...board.slice(0, 0),
+      { color: 'WHITE', type: 'KING' } as Piece,
+      ...board.slice(1, 5),
+      { color: 'BLACK', type: 'KING' } as Piece,
+      ...board.slice(6),
+    ];
+    const encoded = serializeBoard(boardWithKing);
+    expect(encoded[0]).toBe('W');
+    expect(encoded[5]).toBe('B');
+    expect(encoded[1]).toBe('.');
+  });
+});

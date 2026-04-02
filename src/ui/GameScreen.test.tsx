@@ -84,10 +84,17 @@ describe('GameScreen', () => {
   });
 
   it('resign triggers game over after confirmation', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     renderGameScreen();
     const resignBtn = screen.getByRole('button', { name: /resign/i });
     fireEvent.click(resignBtn);
+
+    // Confirm dialog should appear
+    expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
+    expect(screen.getByText('Resign Game?')).toBeInTheDocument();
+
+    // Click confirm
+    fireEvent.click(screen.getByTestId('confirm-confirm'));
+
     // After resign, turn indicator should show game result
     const indicator = screen.getByTestId('turn-indicator');
     expect(indicator.textContent).toContain('wins');
@@ -96,21 +103,34 @@ describe('GameScreen', () => {
   });
 
   it('resign does nothing when confirmation is cancelled', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     renderGameScreen();
     const resignBtn = screen.getByRole('button', { name: /resign/i });
     fireEvent.click(resignBtn);
+
+    // Confirm dialog should appear
+    expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
+
+    // Click cancel
+    fireEvent.click(screen.getByTestId('confirm-cancel'));
+
+    // Dialog should be gone, game still in progress
+    expect(screen.queryByTestId('confirm-dialog')).not.toBeInTheDocument();
     const indicator = screen.getByTestId('turn-indicator');
     expect(indicator.textContent).toContain("White's turn");
   });
 
   it('new game calls onNewGame after confirmation when game is in progress', () => {
     const onNewGame = vi.fn();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     renderGameScreen({ onNewGame });
     const newGameBtn = screen.getByRole('button', { name: /new game/i });
     fireEvent.click(newGameBtn);
-    expect(window.confirm).toHaveBeenCalled();
+
+    // Confirm dialog should appear
+    expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
+    expect(screen.getByText('New Game?')).toBeInTheDocument();
+
+    // Click confirm
+    fireEvent.click(screen.getByTestId('confirm-confirm'));
     expect(onNewGame).toHaveBeenCalled();
   });
 
@@ -134,17 +154,17 @@ describe('GameScreen', () => {
   });
 
   it('shows game-over dialog after resignation', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     renderGameScreen();
     fireEvent.click(screen.getByRole('button', { name: /resign/i }));
+    fireEvent.click(screen.getByTestId('confirm-confirm'));
     expect(screen.getByTestId('game-over-dialog')).toBeInTheDocument();
   });
 
   it('game-over dialog New Game button calls onNewGame', () => {
     const onNewGame = vi.fn();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     renderGameScreen({ onNewGame });
     fireEvent.click(screen.getByRole('button', { name: /resign/i }));
+    fireEvent.click(screen.getByTestId('confirm-confirm'));
     fireEvent.click(screen.getByTestId('game-over-new-game'));
     expect(onNewGame).toHaveBeenCalled();
   });
@@ -157,7 +177,6 @@ describe('GameScreen', () => {
   });
 
   it('last-move highlights survive after game over (resignation)', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     renderGameScreen();
 
     // Make a move first so there's a last-move highlight
@@ -173,6 +192,7 @@ describe('GameScreen', () => {
     // Now resign — any existing last-move highlights from before should persist
     // (or at minimum, the game-over dialog should not crash)
     fireEvent.click(screen.getByRole('button', { name: /resign/i }));
+    fireEvent.click(screen.getByTestId('confirm-confirm'));
     expect(screen.getByTestId('game-over-dialog')).toBeInTheDocument();
   });
 });

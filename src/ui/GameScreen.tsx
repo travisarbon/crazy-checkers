@@ -13,6 +13,8 @@ import { GameStatus, PieceColor, PlayerType } from '../engine/types';
 import { createNewGame, makeMove, canUndo as engineCanUndo, resign } from '../engine/game';
 import { requestAIMove } from '../ai/workerClient';
 import type { Difficulty } from '../ai/difficulty';
+import { saveGame, clearSavedGame } from '../persistence/settings';
+import { recordGame } from '../persistence/gameHistory';
 import Board from './Board';
 import TurnIndicator from './TurnIndicator';
 import CapturedPieces from './CapturedPieces';
@@ -33,6 +35,8 @@ interface GameScreenProps {
   flipped?: boolean;
   animationSpeedMultiplier?: number;
   moveConfirmation?: boolean;
+  initialGameState?: GameState;
+  gameStartedAt?: number;
   onNewGame: () => void;
   onMainMenu?: () => void;
 }
@@ -99,13 +103,16 @@ export default function GameScreen({
   flipped = false,
   animationSpeedMultiplier = 1.0,
   moveConfirmation = false,
+  initialGameState,
+  gameStartedAt: gameStartedAtProp,
   onNewGame,
   onMainMenu,
 }: GameScreenProps) {
   // --- State ---
   const [gameState, setGameState] = useState<GameState>(() =>
-    createNewGame(ruleSet, players),
+    initialGameState ?? createNewGame(ruleSet, players),
   );
+  const [gameStartedAt] = useState(() => gameStartedAtProp ?? Date.now());
   const pendingStateRef = useRef<GameState | null>(null);
   const [undoStack, setUndoStack] = useState<GameState[]>([]);
   const [takebacksRemaining, setTakebacksRemaining] = useState(
@@ -125,6 +132,21 @@ export default function GameScreen({
       }
     },
   });
+
+  // --- Auto-save on every state change ---
+  useEffect(() => {
+    saveGame(gameState, 'classic', flipped);
+  }, [gameState, flipped]);
+
+  // --- Clear auto-save and record game on completion ---
+  useEffect(() => {
+    if (gameState.status === GameStatus.GameOver) {
+      clearSavedGame();
+      recordGame(gameState, 'classic', gameStartedAt).catch((err: unknown) => {
+        console.warn('Failed to record game history:', err);
+      });
+    }
+  }, [gameState.status, gameState, gameStartedAt]);
 
   // --- Move handler ---
   const handleMove = useCallback(
