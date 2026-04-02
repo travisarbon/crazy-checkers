@@ -92,7 +92,7 @@ describe('TurnIndicator', () => {
       />,
     );
     const thinkingText = screen.getByText('Thinking\u2026');
-    expect(thinkingText.style.animation).toContain('pulse');
+    expect(thinkingText.className).toContain('thinkingText');
   });
 
   it('displays game result when game is over', () => {

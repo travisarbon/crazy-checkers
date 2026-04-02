@@ -8,6 +8,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    exclude: [
+      'src/ai/validation/**',        // Self-play: too slow for routine runs
+      'src/engine/*.stresstest.*',    // Stress tests: also heavyweight
+    ],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts', 'src/**/*.tsx'],

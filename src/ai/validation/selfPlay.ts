@@ -114,6 +114,8 @@ export function playSingleGame(
   blackDifficulty: Difficulty,
   maxMoves: number,
   randomFn: () => number,
+  gameNumber: number = 0,
+  gameSeed: number = 0,
 ): GameRecord {
   const ruleSet = createAmericanRules();
   let currentState: GameState = createNewGame(ruleSet, {
@@ -198,7 +200,7 @@ export function playSingleGame(
   }
 
   return {
-    gameNumber: 0,
+    gameNumber,
     whiteDifficulty,
     blackDifficulty,
     result,
@@ -206,7 +208,7 @@ export function playSingleGame(
     moveCount,
     elapsedMs,
     cappedByMoveLimit,
-    gameSeed: 0,
+    gameSeed,
   };
 }
 
@@ -290,9 +292,9 @@ export function runMatch(config: MatchConfig): MatchResult {
       blackDiff,
       config.maxMovesPerGame,
       randomFn,
+      i + 1,
+      gameSeed,
     );
-    record.gameNumber = i + 1;
-    record.gameSeed = gameSeed;
 
     games.push(record);
 

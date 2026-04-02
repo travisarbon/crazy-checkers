@@ -31,6 +31,8 @@ export const EVAL_WEIGHTS = {
   lossScore: -10_000,
 } as const;
 
+export type EvalWeights = typeof EVAL_WEIGHTS;
+
 // ---------------------------------------------------------------------------
 // Pre-computed square sets
 // ---------------------------------------------------------------------------
@@ -86,6 +88,67 @@ export function kingEscapeCount(board: BoardState, sq: Square): number {
 }
 
 // ---------------------------------------------------------------------------
+// Per-side evaluation helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Evaluates material, advancement, center control, back-row defense, and
+ * trapped-king factors for a single side's pieces.
+ */
+function evaluatePieces(
+  board: BoardState,
+  squares: Square[],
+  pieceColor: PieceColor,
+  backRow: ReadonlySet<number>,
+  advancementPerRow: number,
+  kingValue: number,
+): number {
+  let score = 0;
+
+  for (const sq of squares) {
+    const piece = getBoardSquare(board, sq);
+    if (piece === null) continue;
+    const sqNum = sq as number;
+
+    // Material
+    if (piece.type === PieceType.King) {
+      score += kingValue;
+    } else {
+      score += EVAL_WEIGHTS.pawnValue;
+    }
+
+    // Advancement (pawns only)
+    if (piece.type === PieceType.Pawn) {
+      score += getPawnAdvancement(sq, pieceColor) * advancementPerRow;
+    }
+
+    // Center control
+    if (CENTER_SQUARES.has(sqNum)) {
+      score += EVAL_WEIGHTS.centerBonus;
+    } else if (EXPANDED_CENTER_SQUARES.has(sqNum)) {
+      score += EVAL_WEIGHTS.expandedCenterBonus;
+    }
+
+    // Back-row defense (pawns on their starting back row)
+    if (piece.type === PieceType.Pawn && backRow.has(sqNum)) {
+      score += EVAL_WEIGHTS.backRowBonus;
+    }
+
+    // Trapped kings
+    if (piece.type === PieceType.King) {
+      const escapes = kingEscapeCount(board, sq);
+      if (escapes === 0) {
+        score -= EVAL_WEIGHTS.trappedKingPenalty;
+      } else if (escapes === 1) {
+        score -= EVAL_WEIGHTS.semiTrappedKingPenalty;
+      }
+    }
+  }
+
+  return score;
+}
+
+// ---------------------------------------------------------------------------
 // Main evaluation function
 // ---------------------------------------------------------------------------
 
@@ -133,98 +196,17 @@ export function evaluate(board: BoardState, color: PieceColor): number {
     ? EVAL_WEIGHTS.endgameAdvancementPerRow
     : EVAL_WEIGHTS.advancementPerRow;
 
-  // --- Score each side ---
-  let myScore = 0;
-  let oppScore = 0;
-
+  // --- Score each side using the factored helper ---
   const backRow = color === PieceColor.White ? WHITE_BACK_ROW : BLACK_BACK_ROW;
   const oppBackRow = color === PieceColor.White ? BLACK_BACK_ROW : WHITE_BACK_ROW;
 
-  // Score my pieces
-  for (const sq of myPieces) {
-    const piece = getBoardSquare(board, sq);
-    if (piece === null) continue;
-    const sqNum = sq as number;
+  const myScore =
+    evaluatePieces(board, myPieces, color, backRow, advancementPerRow, kingValue) +
+    myMoves.length * EVAL_WEIGHTS.mobilityPerMove;
 
-    // Material
-    if (piece.type === PieceType.King) {
-      myScore += kingValue;
-    } else {
-      myScore += EVAL_WEIGHTS.pawnValue;
-    }
-
-    // Advancement (pawns only)
-    if (piece.type === PieceType.Pawn) {
-      myScore += getPawnAdvancement(sq, color) * advancementPerRow;
-    }
-
-    // Center control
-    if (CENTER_SQUARES.has(sqNum)) {
-      myScore += EVAL_WEIGHTS.centerBonus;
-    } else if (EXPANDED_CENTER_SQUARES.has(sqNum)) {
-      myScore += EVAL_WEIGHTS.expandedCenterBonus;
-    }
-
-    // Back-row defense (pawns on their starting back row)
-    if (piece.type === PieceType.Pawn && backRow.has(sqNum)) {
-      myScore += EVAL_WEIGHTS.backRowBonus;
-    }
-
-    // Trapped kings
-    if (piece.type === PieceType.King) {
-      const escapes = kingEscapeCount(board, sq);
-      if (escapes === 0) {
-        myScore -= EVAL_WEIGHTS.trappedKingPenalty;
-      } else if (escapes === 1) {
-        myScore -= EVAL_WEIGHTS.semiTrappedKingPenalty;
-      }
-    }
-  }
-
-  // Score opponent pieces
-  for (const sq of oppPieces) {
-    const piece = getBoardSquare(board, sq);
-    if (piece === null) continue;
-    const sqNum = sq as number;
-
-    // Material
-    if (piece.type === PieceType.King) {
-      oppScore += kingValue;
-    } else {
-      oppScore += EVAL_WEIGHTS.pawnValue;
-    }
-
-    // Advancement (pawns only)
-    if (piece.type === PieceType.Pawn) {
-      oppScore += getPawnAdvancement(sq, opponentColor(color)) * advancementPerRow;
-    }
-
-    // Center control
-    if (CENTER_SQUARES.has(sqNum)) {
-      oppScore += EVAL_WEIGHTS.centerBonus;
-    } else if (EXPANDED_CENTER_SQUARES.has(sqNum)) {
-      oppScore += EVAL_WEIGHTS.expandedCenterBonus;
-    }
-
-    // Back-row defense
-    if (piece.type === PieceType.Pawn && oppBackRow.has(sqNum)) {
-      oppScore += EVAL_WEIGHTS.backRowBonus;
-    }
-
-    // Trapped kings
-    if (piece.type === PieceType.King) {
-      const escapes = kingEscapeCount(board, sq);
-      if (escapes === 0) {
-        oppScore -= EVAL_WEIGHTS.trappedKingPenalty;
-      } else if (escapes === 1) {
-        oppScore -= EVAL_WEIGHTS.semiTrappedKingPenalty;
-      }
-    }
-  }
-
-  // --- Mobility ---
-  myScore += myMoves.length * EVAL_WEIGHTS.mobilityPerMove;
-  oppScore += oppMoves.length * EVAL_WEIGHTS.mobilityPerMove;
+  const oppScore =
+    evaluatePieces(board, oppPieces, opponentColor(color), oppBackRow, advancementPerRow, kingValue) +
+    oppMoves.length * EVAL_WEIGHTS.mobilityPerMove;
 
   return myScore - oppScore;
 }

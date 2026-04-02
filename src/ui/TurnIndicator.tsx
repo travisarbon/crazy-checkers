@@ -5,6 +5,7 @@
 
 import type { PieceColor, GameResult } from '../engine/types';
 import { PieceColor as PC, GameResultType, GameEndReason } from '../engine/types';
+import styles from './TurnIndicator.module.css';
 
 interface TurnIndicatorProps {
   activeColor: PieceColor;
@@ -74,13 +75,11 @@ export default function TurnIndicator({
         <circle cx={10} cy={10} r={8} fill={fillVar} stroke={strokeVar} strokeWidth={2} />
       </svg>
       <span
+        className={isThinking && !isGameOver ? styles.thinkingText : undefined}
         style={{
           fontSize: '1rem',
           fontWeight: 600,
           color: 'var(--ui-text)',
-          ...(isThinking && !isGameOver
-            ? { animation: 'pulse 1.2s ease-in-out infinite' }
-            : {}),
         }}
       >
         {label}
