@@ -55,6 +55,8 @@ function getReasonDescription(result: GameResult, lastActiveColor: PieceColor): 
       return 'Forty consecutive moves without a capture or pawn advance.';
     case GameEndReason.Resignation:
       return `${colorName(lastActiveColor)} resigned the game.`;
+    case GameEndReason.Time:
+      return `${colorName(lastActiveColor)} ran out of time.`;
   }
 }
 

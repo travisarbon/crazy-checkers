@@ -9,6 +9,57 @@ export const PieceColor = {
 } as const;
 export type PieceColor = (typeof PieceColor)[keyof typeof PieceColor];
 
+/** The seven Crazy mode events (Design Document §2.2). */
+export const CrazyEvent = {
+  KingForADay: 'KING_FOR_A_DAY',
+  LiveGrenade: 'LIVE_GRENADE',
+  HotPotato: 'HOT_POTATO',
+  ChecksMix: 'CHECKS_MIX',
+  OppositeDay: 'OPPOSITE_DAY',
+  UpInTheAir: 'UP_IN_THE_AIR',
+  NoTouching: 'NO_TOUCHING',
+} as const;
+export type CrazyEvent = (typeof CrazyEvent)[keyof typeof CrazyEvent];
+
+/**
+ * An active event instance with remaining duration and optional metadata.
+ *
+ * All event state that decorators need is encoded here, not in instance
+ * variables, to support immutable GameState and correct AI search branching.
+ */
+export interface ActiveEvent {
+  /** Which event this is. */
+  readonly type: CrazyEvent;
+
+  /**
+   * Remaining half-turns (plies) for this event.
+   * - Positive integer: ticks down each ply.
+   * - 0: instant effect (Checks Mix) — applied once then removed.
+   * - -1: lasts until a condition is met (Live Grenade — until next capture).
+   */
+  readonly remainingPlies: number;
+
+  /** Which player triggered this event (the player who completed the multi-jump). */
+  readonly triggeredBy: PieceColor;
+
+  /** The ply count at which this event was triggered. */
+  readonly triggeredAtPly: number;
+
+  /**
+   * Optional event-specific data. Each event type defines its own metadata
+   * shape. This field enables stateless decorators: instead of storing state
+   * in instance variables, decorators read metadata from the ActiveEvent.
+   */
+  readonly metadata?: Readonly<Record<string, unknown>>;
+}
+
+/** The game mode determines which rule set and event logic apply. */
+export const GameMode = {
+  Classic: 'CLASSIC',
+  Crazy: 'CRAZY',
+} as const;
+export type GameMode = (typeof GameMode)[keyof typeof GameMode];
+
 /** Piece rank. Pawns promote to kings on the far row. */
 export const PieceType = {
   Pawn: 'PAWN',
@@ -100,6 +151,7 @@ export const GameEndReason = {
   Repetition: 'REPETITION',
   FortyMoveRule: 'FORTY_MOVE_RULE',
   Resignation: 'RESIGNATION',
+  Time: 'TIME',
 } as const;
 export type GameEndReason = (typeof GameEndReason)[keyof typeof GameEndReason];
 
@@ -204,6 +256,16 @@ export interface GameState {
    * Incremented by 1 after each move.
    */
   readonly plyCount: number;
+
+  /** The game mode. Classic games have no events. @todo Task 7.3: make required. */
+  readonly mode?: GameMode;
+
+  /**
+   * Ordered list of currently active events (oldest first).
+   * Empty array for Classic mode and for Crazy mode before any event triggers.
+   * @todo Task 7.3: make required.
+   */
+  readonly activeEvents?: readonly ActiveEvent[];
 }
 
 /** Diagonal directions for adjacency lookups. */
