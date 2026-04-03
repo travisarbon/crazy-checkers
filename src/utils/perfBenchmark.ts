@@ -9,7 +9,7 @@
  */
 
 import type { BoardState, GameState, Piece, SquareState } from '../engine/types';
-import { GameStatus, PieceColor, PieceType, PlayerType } from '../engine/types';
+import { GameMode, GameStatus, PieceColor, PieceType, PlayerType } from '../engine/types';
 import { createInitialBoard } from '../engine/board';
 import { createAmericanRules } from '../engine/rules';
 import { createNewGame, makeMove } from '../engine/game';
@@ -520,6 +520,8 @@ function createBenchmarkGameState(board: BoardState, activeColor: PieceColor): G
     positionHashes: [0n],
     halfMoveClock: 0,
     plyCount: 0,
+    mode: GameMode.Classic,
+    activeEvents: [],
   };
 }
 

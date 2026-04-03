@@ -666,6 +666,8 @@ describe('makeMove — hook integration', () => {
       positionHashes: [computeZobristHash(board, activeColor)],
       halfMoveClock: 0,
       plyCount: 0,
+      mode: GameMode.Classic,
+      activeEvents: [],
       ...overrides,
     };
   }

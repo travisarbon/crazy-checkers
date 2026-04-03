@@ -128,8 +128,8 @@ describe('KingForADayDecorator', () => {
       const base = createAmericanRules();
       const decorator = new KingForADayDecorator(base);
       // Verify no mutable state fields exist (turnsRemaining, originalKingIndices, etc.)
-      expect((decorator as Record<string, unknown>)['turnsRemaining']).toBeUndefined();
-      expect((decorator as Record<string, unknown>)['originalKingIndices']).toBeUndefined();
+      expect((decorator as unknown as Record<string, unknown>)['turnsRemaining']).toBeUndefined();
+      expect((decorator as unknown as Record<string, unknown>)['originalKingIndices']).toBeUndefined();
     });
   });
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { iterativeSearch } from './search';
 import type { SearchConfig } from './search';
 import { buildBoard, W, B, P, K } from '../engine/test-utils';
-import { PieceColor, square, GameStatus, PlayerType } from '../engine/types';
+import { GameMode, PieceColor, square, GameStatus, PlayerType } from '../engine/types';
 import type { BoardState, GameState, Move } from '../engine/types';
 import { createAmericanRules } from '../engine/rules';
 import { createNewGame, makeMove } from '../engine/game';
@@ -23,6 +23,8 @@ function stateFromBoard(board: BoardState, activeColor: PieceColor = PieceColor.
     positionHashes: [0n],
     halfMoveClock: 0,
     plyCount: 0,
+    mode: GameMode.Classic,
+    activeEvents: [],
   };
 }
 
