@@ -68,9 +68,7 @@ export abstract class EventRuleSetDecorator implements RuleSet {
   }
 
   onCapture(board: BoardState, landingSquare: Square, captured: Square[]): BoardState {
-    return this.inner.onCapture
-      ? this.inner.onCapture(board, landingSquare, captured)
-      : board;
+    return this.inner.onCapture ? this.inner.onCapture(board, landingSquare, captured) : board;
   }
 
   onCheckGameOver(

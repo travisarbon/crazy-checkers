@@ -5,10 +5,7 @@ import { createAmericanRules } from '../engine/rules';
 import { PlayerType } from '../engine/types';
 import type { PlayerSetup, RuleSet } from '../engine/types';
 
-function renderGameScreen(overrides?: {
-  players?: PlayerSetup;
-  onNewGame?: () => void;
-}) {
+function renderGameScreen(overrides?: { players?: PlayerSetup; onNewGame?: () => void }) {
   const ruleSet: RuleSet = createAmericanRules();
   const players: PlayerSetup = overrides?.players ?? {
     white: PlayerType.Human,
@@ -16,9 +13,7 @@ function renderGameScreen(overrides?: {
   };
   const onNewGame = overrides?.onNewGame ?? vi.fn();
 
-  return render(
-    <GameScreen ruleSet={ruleSet} players={players} onNewGame={onNewGame} />,
-  );
+  return render(<GameScreen ruleSet={ruleSet} players={players} onNewGame={onNewGame} />);
 }
 
 describe('GameScreen', () => {
@@ -44,7 +39,7 @@ describe('GameScreen', () => {
     expect(screen.getByTestId('board')).toBeInTheDocument();
   });
 
-  it('renders turn indicator showing White\'s turn initially', () => {
+  it("renders turn indicator showing White's turn initially", () => {
     renderGameScreen();
     const indicator = screen.getByTestId('turn-indicator');
     expect(indicator).toBeInTheDocument();

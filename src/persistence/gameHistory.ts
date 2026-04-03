@@ -102,7 +102,10 @@ export async function recordGame(
  */
 export async function getAllGameRecords(): Promise<GameRecord[]> {
   const db = await getDb();
-  const records: GameRecord[] = await db.getAllFromIndex(GAMES_STORE, 'by-completedAt') as GameRecord[];
+  const records: GameRecord[] = (await db.getAllFromIndex(
+    GAMES_STORE,
+    'by-completedAt',
+  )) as GameRecord[];
   return records.reverse();
 }
 
@@ -111,7 +114,7 @@ export async function getAllGameRecords(): Promise<GameRecord[]> {
  */
 export async function getGameRecord(id: string): Promise<GameRecord | undefined> {
   const db = await getDb();
-  return await db.get(GAMES_STORE, id) as GameRecord | undefined;
+  return (await db.get(GAMES_STORE, id)) as GameRecord | undefined;
 }
 
 /**

@@ -75,12 +75,7 @@ export function getAIMove(data: SerializableGameState, difficulty: Difficulty): 
   const searchResult = iterativeSearch(state, searchConfig);
   const legalMoves = state.ruleSet.getLegalMoves(state.board, state.activeColor);
 
-  return selectMove(
-    searchResult,
-    searchResult.rootMoveScores,
-    legalMoves,
-    config,
-  );
+  return selectMove(searchResult, searchResult.rootMoveScores, legalMoves, config);
 }
 
 const workerApi = { getAIMove };

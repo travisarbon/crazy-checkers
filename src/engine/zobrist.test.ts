@@ -85,7 +85,13 @@ describe('updateZobristHash', () => {
     ];
 
     const hashBefore = computeZobristHash(boardBefore, PieceColor.White);
-    const incrementalHash = updateZobristHash(hashBefore, move, movingPiece, landingPiece, captured);
+    const incrementalHash = updateZobristHash(
+      hashBefore,
+      move,
+      movingPiece,
+      landingPiece,
+      captured,
+    );
 
     const boardAfter = buildBoard([{ sq: 15, color: W, type: P }]);
     const fullHash = computeZobristHash(boardAfter, PieceColor.Black);
@@ -114,7 +120,13 @@ describe('updateZobristHash', () => {
     ];
 
     const hashBefore2 = computeZobristHash(boardBefore2, PieceColor.White);
-    const incrementalHash2 = updateZobristHash(hashBefore2, move2, movingPiece2, landingPiece2, captured2);
+    const incrementalHash2 = updateZobristHash(
+      hashBefore2,
+      move2,
+      movingPiece2,
+      landingPiece2,
+      captured2,
+    );
 
     const boardAfter2 = buildBoard([{ sq: 8, color: W, type: K }]);
     const fullHash2 = computeZobristHash(boardAfter2, PieceColor.Black);
@@ -145,9 +157,9 @@ describe('updateZobristHash — edge cases', () => {
     const landingPiece: Piece = { color: PieceColor.White, type: PieceType.Pawn };
     const emptyPathMove: Move = { from: square(22), path: [], captured: [] };
 
-    expect(() =>
-      updateZobristHash(0n, emptyPathMove, movingPiece, landingPiece, []),
-    ).toThrow('move has empty path');
+    expect(() => updateZobristHash(0n, emptyPathMove, movingPiece, landingPiece, [])).toThrow(
+      'move has empty path',
+    );
   });
 });
 

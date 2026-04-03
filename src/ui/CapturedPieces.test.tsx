@@ -16,12 +16,7 @@ describe('CapturedPieces', () => {
   });
 
   it('adds pendingCaptures to the derived counts', () => {
-    render(
-      <CapturedPieces
-        moveHistory={emptyHistory}
-        pendingCaptures={{ white: 2, black: 1 }}
-      />,
-    );
+    render(<CapturedPieces moveHistory={emptyHistory} pendingCaptures={{ white: 2, black: 1 }} />);
     const whiteCount = screen.getByTestId('capture-count-white');
     const blackCount = screen.getByTestId('capture-count-black');
     expect(whiteCount.textContent).toContain('2');
@@ -44,27 +39,15 @@ describe('CapturedPieces', () => {
   });
 
   it('combines history and pending captures', () => {
-    const history: Move[] = [
-      { from: square(22), path: [square(15)], captured: [square(18)] },
-    ];
+    const history: Move[] = [{ from: square(22), path: [square(15)], captured: [square(18)] }];
 
-    render(
-      <CapturedPieces
-        moveHistory={history}
-        pendingCaptures={{ white: 0, black: 0 }}
-      />,
-    );
+    render(<CapturedPieces moveHistory={history} pendingCaptures={{ white: 0, black: 0 }} />);
     const whiteCount = screen.getByTestId('capture-count-white');
     expect(whiteCount.textContent).toContain('1');
   });
 
   it('shows zero pending as no change from base', () => {
-    render(
-      <CapturedPieces
-        moveHistory={emptyHistory}
-        pendingCaptures={{ white: 0, black: 0 }}
-      />,
-    );
+    render(<CapturedPieces moveHistory={emptyHistory} pendingCaptures={{ white: 0, black: 0 }} />);
     const whiteCount = screen.getByTestId('capture-count-white');
     const blackCount = screen.getByTestId('capture-count-black');
     expect(whiteCount.textContent).toContain('0');

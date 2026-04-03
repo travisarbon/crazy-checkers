@@ -66,8 +66,7 @@ export class AmericanRules implements RuleSet {
 
     if (legalMoves.length === 0) {
       const pieces = getSquaresWithColor(board, activeColor);
-      const reason =
-        pieces.length === 0 ? GameEndReason.NoPiecesLeft : GameEndReason.NoLegalMoves;
+      const reason = pieces.length === 0 ? GameEndReason.NoPiecesLeft : GameEndReason.NoLegalMoves;
       const type =
         activeColor === PieceColor.White ? GameResultType.BlackWin : GameResultType.WhiteWin;
 

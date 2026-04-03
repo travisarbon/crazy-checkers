@@ -252,7 +252,11 @@ export function useGameInteraction({
 
         // Move confirmation: clicking a different destination than the pending
         // one switches the pending target.
-        if (moveConfirmation && pendingConfirmSquare !== null && (sq as number) !== (pendingConfirmSquare as number)) {
+        if (
+          moveConfirmation &&
+          pendingConfirmSquare !== null &&
+          (sq as number) !== (pendingConfirmSquare as number)
+        ) {
           setPendingConfirmSquare(sq);
           return;
         }

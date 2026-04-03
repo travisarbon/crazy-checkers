@@ -100,23 +100,28 @@ export default function MoveHistory({
   currentMoveIndex,
   collapsible = false,
 }: MoveHistoryProps) {
-  const content = (
-    <MoveList moveHistory={moveHistory} currentMoveIndex={currentMoveIndex} />
-  );
+  const content = <MoveList moveHistory={moveHistory} currentMoveIndex={currentMoveIndex} />;
 
   if (collapsible) {
     return (
       <details className={styles.collapsible} data-testid="move-history">
-        <summary className={styles.summary}>
-          Move History ({moveHistory.length} moves)
-        </summary>
+        <summary className={styles.summary}>Move History ({moveHistory.length} moves)</summary>
         {content}
       </details>
     );
   }
 
   return (
-    <div data-testid="move-history" style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div
+      data-testid="move-history"
+      style={{
+        flex: 1,
+        minHeight: 0,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <div className={styles.heading}>Move History</div>
       {content}
     </div>

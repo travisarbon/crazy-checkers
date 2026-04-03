@@ -2,11 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createAmericanRules } from './rules';
 import type { RuleSet } from './rules';
 import { createInitialBoard, getBoardSquare } from './board';
-import {
-  GameEndReason,
-  GameResultType,
-  square,
-} from './types';
+import { GameEndReason, GameResultType, square } from './types';
 import type { BoardState, Move } from './types';
 import { W, B, P, K, emptyBoard, buildBoard } from './test-utils';
 

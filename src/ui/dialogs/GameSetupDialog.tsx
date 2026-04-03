@@ -47,7 +47,9 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
     const timer = setTimeout(() => {
       firstInputRef.current?.focus();
     }, 50);
-    return () => { clearTimeout(timer); };
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
 
   // Prevent background scrolling
@@ -67,7 +69,9 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
       }
     }
     window.addEventListener('keydown', handleKeyDown);
-    return () => { window.removeEventListener('keydown', handleKeyDown); };
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [onCancel]);
 
   // Focus trap
@@ -129,7 +133,9 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
         onKeyDown={handleKeyDown}
         data-testid="game-setup-dialog"
       >
-        <h2 id="setup-title" className={styles.dialogTitle}>Classic Mode</h2>
+        <h2 id="setup-title" className={styles.dialogTitle}>
+          Classic Mode
+        </h2>
 
         {/* Game Type */}
         <fieldset className={styles.fieldset}>
@@ -141,7 +147,9 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
               name="gameType"
               value="pass-around"
               checked={gameType === 'pass-around'}
-              onChange={() => { setGameType('pass-around'); }}
+              onChange={() => {
+                setGameType('pass-around');
+              }}
             />
             Pass Around (two players)
           </label>
@@ -151,7 +159,9 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
               name="gameType"
               value="vs-cpu"
               checked={gameType === 'vs-cpu'}
-              onChange={() => { setGameType('vs-cpu'); }}
+              onChange={() => {
+                setGameType('vs-cpu');
+              }}
             />
             vs. CPU
           </label>
@@ -168,7 +178,9 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
               name="color"
               value="white"
               checked={colorChoice === 'white'}
-              onChange={() => { setColorChoice('white'); }}
+              onChange={() => {
+                setColorChoice('white');
+              }}
             />
             White (moves first)
           </label>
@@ -178,7 +190,9 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
               name="color"
               value="black"
               checked={colorChoice === 'black'}
-              onChange={() => { setColorChoice('black'); }}
+              onChange={() => {
+                setColorChoice('black');
+              }}
             />
             Black
           </label>
@@ -194,7 +208,9 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
                 name="difficulty"
                 value="easy"
                 checked={difficultyChoice === 'easy'}
-                onChange={() => { setDifficultyChoice('easy'); }}
+                onChange={() => {
+                  setDifficultyChoice('easy');
+                }}
               />
               Easy
             </label>
@@ -204,7 +220,9 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
                 name="difficulty"
                 value="hard"
                 checked={difficultyChoice === 'hard'}
-                onChange={() => { setDifficultyChoice('hard'); }}
+                onChange={() => {
+                  setDifficultyChoice('hard');
+                }}
               />
               Hard
             </label>
@@ -213,11 +231,7 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
 
         {/* Footer */}
         <div className={styles.dialogFooter}>
-          <button
-            className={styles.secondaryButton}
-            onClick={onCancel}
-            data-testid="setup-cancel"
-          >
+          <button className={styles.secondaryButton} onClick={onCancel} data-testid="setup-cancel">
             Cancel
           </button>
           <button

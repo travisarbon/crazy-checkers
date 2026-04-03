@@ -81,10 +81,7 @@ function WinnerIcon({ color }: { color: PieceColor }) {
   return (
     <svg width={56} height={56} aria-hidden="true" data-testid="winner-icon">
       <circle cx={28} cy={28} r={24} fill={fill} stroke={stroke} strokeWidth={3} />
-      <path
-        d="M 16,32 L 20,22 L 24,28 L 28,22 L 32,28 L 36,22 L 40,32 Z"
-        fill="var(--ui-accent)"
-      />
+      <path d="M 16,32 L 20,22 L 24,28 L 28,22 L 32,28 L 36,22 L 40,32 Z" fill="var(--ui-accent)" />
     </svg>
   );
 }
@@ -152,9 +149,7 @@ export default function GameOverDialog({
   // Focus trap: keep Tab cycling within the dialog
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key !== 'Tab') return;
-    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-      'button:not([disabled])',
-    );
+    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])');
     if (!focusable || focusable.length === 0) return;
 
     if (focusable.length === 1) {

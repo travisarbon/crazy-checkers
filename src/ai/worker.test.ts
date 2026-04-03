@@ -43,9 +43,7 @@ function isLegalMove(state: GameState, move: Move): boolean {
  * Creates a board with only a few pieces for testing specific scenarios.
  * All squares are null by default; pass piece placements as an array of [squareNum, piece].
  */
-function createSparseBoard(
-  placements: Array<[number, Piece]>,
-): BoardState {
+function createSparseBoard(placements: Array<[number, Piece]>): BoardState {
   const board: SquareState[] = Array.from({ length: 32 }, () => null);
   for (const [sq, piece] of placements) {
     board[sq - 1] = piece;
@@ -86,7 +84,9 @@ describe('getAIMove (worker function, tested directly without Worker)', () => {
 
     const deserialized = deserializeGameState(serialized);
     expect(deserialized.ruleSet).toBeDefined();
-    expect(() => deserialized.ruleSet.getLegalMoves(deserialized.board, deserialized.activeColor)).not.toThrow();
+    expect(() =>
+      deserialized.ruleSet.getLegalMoves(deserialized.board, deserialized.activeColor),
+    ).not.toThrow();
 
     // Should not throw and should return a legal move
     const move = getAIMove(serialized, 'easy');
@@ -123,7 +123,7 @@ describe('getAIMove (worker function, tested directly without Worker)', () => {
       const move = getAIMove(serialized, 'hard');
       const onlyMove = legalMoves[0] as Move;
 
-      expect((move.from as number)).toBe(onlyMove.from as number);
+      expect(move.from as number).toBe(onlyMove.from as number);
       expect(move.path.length).toBe(onlyMove.path.length);
     } else {
       // If there are multiple moves, the test setup doesn't isolate as expected;

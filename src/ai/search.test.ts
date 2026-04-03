@@ -11,10 +11,7 @@ import { EVAL_WEIGHTS } from './evaluator';
 const rules = createAmericanRules();
 
 /** Helper to create a GameState from a custom board for testing. */
-function stateFromBoard(
-  board: BoardState,
-  activeColor: PieceColor = PieceColor.White,
-): GameState {
+function stateFromBoard(board: BoardState, activeColor: PieceColor = PieceColor.White): GameState {
   return {
     board,
     activeColor,

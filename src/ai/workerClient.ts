@@ -43,17 +43,11 @@ function getWorkerApi(): Remote<WorkerApi> | null {
   if (workerApi) return workerApi;
 
   try {
-    worker = new Worker(
-      new URL('./worker.ts', import.meta.url),
-      { type: 'module' },
-    );
+    worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
     workerApi = wrap<WorkerApi>(worker);
     return workerApi;
   } catch (error) {
-    console.warn(
-      'Failed to create AI Web Worker. Falling back to main-thread computation.',
-      error,
-    );
+    console.warn('Failed to create AI Web Worker. Falling back to main-thread computation.', error);
     fallbackMode = true;
     return null;
   }
@@ -69,12 +63,7 @@ function mainThreadFallback(state: GameState, difficulty: Difficulty): Move {
   const searchResult = iterativeSearch(state, searchConfig);
   const legalMoves = state.ruleSet.getLegalMoves(state.board, state.activeColor);
 
-  return selectMove(
-    searchResult,
-    searchResult.rootMoveScores,
-    legalMoves,
-    config,
-  );
+  return selectMove(searchResult, searchResult.rootMoveScores, legalMoves, config);
 }
 
 // ---------------------------------------------------------------------------
@@ -87,10 +76,7 @@ function mainThreadFallback(state: GameState, difficulty: Difficulty): Move {
  * Delegates to the Web Worker if available, otherwise falls back to
  * main-thread computation (blocking, but functional).
  */
-export async function requestAIMove(
-  state: GameState,
-  difficulty: Difficulty,
-): Promise<Move> {
+export async function requestAIMove(state: GameState, difficulty: Difficulty): Promise<Move> {
   const api = getWorkerApi();
 
   if (api) {

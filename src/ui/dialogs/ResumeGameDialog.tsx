@@ -25,10 +25,14 @@ interface ResumeGameDialogProps {
 
 function formatPlayer(playerType: string): string {
   switch (playerType) {
-    case 'HUMAN': return 'Human';
-    case 'CPU_EASY': return 'CPU Easy';
-    case 'CPU_HARD': return 'CPU Hard';
-    default: return playerType;
+    case 'HUMAN':
+      return 'Human';
+    case 'CPU_EASY':
+      return 'CPU Easy';
+    case 'CPU_HARD':
+      return 'CPU Hard';
+    default:
+      return playerType;
   }
 }
 
@@ -65,14 +69,18 @@ export default function ResumeGameDialog({
     const timer = setTimeout(() => {
       primaryRef.current?.focus();
     }, 300);
-    return () => { clearTimeout(timer); };
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
 
   // Prevent background scrolling
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, []);
 
   // Focus trap + Escape to discard
@@ -83,9 +91,7 @@ export default function ResumeGameDialog({
     }
 
     if (e.key !== 'Tab') return;
-    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-      'button:not([disabled])',
-    );
+    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])');
     if (!focusable || focusable.length === 0) return;
 
     if (focusable.length === 1) {
@@ -122,18 +128,13 @@ export default function ResumeGameDialog({
           Resume Game?
         </h2>
         <p className={styles.description}>
-          You have an unfinished {savedGame.mode} game from{' '}
-          {formatTimestamp(savedGame.timestamp)}.
+          You have an unfinished {savedGame.mode} game from {formatTimestamp(savedGame.timestamp)}.
         </p>
         <div className={styles.details}>
           <dt className={styles.detailLabel}>Players</dt>
-          <dd className={styles.detailValue}>
-            {formatPlayerSetup(savedGame.playerSetup)}
-          </dd>
+          <dd className={styles.detailValue}>{formatPlayerSetup(savedGame.playerSetup)}</dd>
           <dt className={styles.detailLabel}>Moves played</dt>
-          <dd className={styles.detailValue}>
-            {String(savedGame.state.plyCount)}
-          </dd>
+          <dd className={styles.detailValue}>{String(savedGame.state.plyCount)}</dd>
         </div>
         <div className={styles.actions}>
           <button

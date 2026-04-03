@@ -32,10 +32,7 @@ describe('Board visual polish', () => {
     it('applies boardSquareInteractive class to selectable piece squares', () => {
       const selectablePieces = new Set([21, 22]);
       const { container } = render(
-        <Board
-          board={createInitialBoard()}
-          selectablePieces={selectablePieces}
-        />,
+        <Board board={createInitialBoard()} selectablePieces={selectablePieces} />,
       );
 
       const sq21 = container.querySelector('[data-square="21"]');
@@ -47,10 +44,7 @@ describe('Board visual polish', () => {
     it('does not apply boardSquareInteractive to non-interactive squares', () => {
       const selectablePieces = new Set([22]);
       const { container } = render(
-        <Board
-          board={createInitialBoard()}
-          selectablePieces={selectablePieces}
-        />,
+        <Board board={createInitialBoard()} selectablePieces={selectablePieces} />,
       );
 
       const sq1 = container.querySelector('[data-square="1"]');
@@ -112,18 +106,14 @@ describe('Board visual polish', () => {
     it('applies filter to pieces when pieceShadow is true', () => {
       render(<Board board={createInitialBoard()} pieceShadow={true} />);
       const pieces = screen.getAllByTestId('piece');
-      const withFilter = pieces.filter(
-        (p) => p.getAttribute('filter') === 'url(#piece-shadow)',
-      );
+      const withFilter = pieces.filter((p) => p.getAttribute('filter') === 'url(#piece-shadow)');
       expect(withFilter.length).toBeGreaterThan(0);
     });
 
     it('does not apply filter when pieceShadow is false', () => {
       render(<Board board={createInitialBoard()} pieceShadow={false} />);
       const pieces = screen.getAllByTestId('piece');
-      const withFilter = pieces.filter(
-        (p) => p.getAttribute('filter') === 'url(#piece-shadow)',
-      );
+      const withFilter = pieces.filter((p) => p.getAttribute('filter') === 'url(#piece-shadow)');
       expect(withFilter).toHaveLength(0);
     });
   });

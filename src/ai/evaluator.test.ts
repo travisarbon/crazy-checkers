@@ -446,9 +446,7 @@ describe('Endgame mode', () => {
   });
 
   it('endgame advancement is higher than midgame advancement', () => {
-    expect(EVAL_WEIGHTS.endgameAdvancementPerRow).toBeGreaterThan(
-      EVAL_WEIGHTS.advancementPerRow,
-    );
+    expect(EVAL_WEIGHTS.endgameAdvancementPerRow).toBeGreaterThan(EVAL_WEIGHTS.advancementPerRow);
   });
 
   it('king advantage is amplified in endgame', () => {

@@ -5,15 +5,7 @@
  * The UI (Zustand store) and AI (Web Worker) consume these functions.
  */
 
-import type {
-  GameResult,
-  GameState,
-  Move,
-  Piece,
-  PlayerSetup,
-  RuleSet,
-  Square,
-} from './types';
+import type { GameResult, GameState, Move, Piece, PlayerSetup, RuleSet, Square } from './types';
 import {
   GameEndReason,
   GameResultType,
@@ -153,7 +145,11 @@ export function makeMove(state: GameState, move: Move): GameState {
 
   // If hooks modified the board beyond the move, incremental update
   // would be incorrect. Use full recomputation when hooks are present.
-  const hasHooks = !!(state.ruleSet.onTurnStart ?? state.ruleSet.onTurnEnd ?? state.ruleSet.onCapture);
+  const hasHooks = !!(
+    state.ruleSet.onTurnStart ??
+    state.ruleSet.onTurnEnd ??
+    state.ruleSet.onCapture
+  );
   if (!hasHooks && landingPiece !== null) {
     newHash = updateZobristHash(
       state.positionHashes[state.positionHashes.length - 1] ?? 0n,
@@ -169,7 +165,7 @@ export function makeMove(state: GameState, move: Move): GameState {
   // ── Update half-move clock ──────────────────────────────────────────
   const isCapture = move.captured.length > 0;
   const isPawnAdvance = movingPiece.type === PieceType.Pawn;
-  const halfMoveClock = (isCapture || isPawnAdvance) ? 0 : state.halfMoveClock + 1;
+  const halfMoveClock = isCapture || isPawnAdvance ? 0 : state.halfMoveClock + 1;
 
   // ── Assemble position hash history ──────────────────────────────────
   const newPositionHashes = [...state.positionHashes, newHash];
@@ -245,9 +241,8 @@ export function resign(state: GameState, resigningColor: PieceColor): GameState 
     throw new Error('Cannot resign: game is not in progress.');
   }
 
-  const winner = resigningColor === PieceColor.White
-    ? GameResultType.BlackWin
-    : GameResultType.WhiteWin;
+  const winner =
+    resigningColor === PieceColor.White ? GameResultType.BlackWin : GameResultType.WhiteWin;
 
   return {
     ...state,
@@ -268,9 +263,7 @@ export function getCurrentLegalMoves(state: GameState): Move[] {
 
 /** Returns the PlayerType for the currently active color. */
 export function getActivePlayerType(state: GameState): PlayerType {
-  return state.activeColor === PieceColor.White
-    ? state.players.white
-    : state.players.black;
+  return state.activeColor === PieceColor.White ? state.players.white : state.players.black;
 }
 
 /** Returns true if the active player is a CPU. */

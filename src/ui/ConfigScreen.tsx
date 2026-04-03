@@ -58,7 +58,9 @@ function ThemeSection({
 
   return (
     <section className={styles.section} aria-labelledby="theme-heading">
-      <h2 id="theme-heading" className={styles.sectionTitle}>Theme</h2>
+      <h2 id="theme-heading" className={styles.sectionTitle}>
+        Theme
+      </h2>
       <div
         className={styles.themeGrid}
         role="radiogroup"
@@ -69,7 +71,9 @@ function ThemeSection({
           const cardClass = [
             styles.themeCard,
             id === selectedThemeId ? styles.themeCardSelected : '',
-          ].filter(Boolean).join(' ');
+          ]
+            .filter(Boolean)
+            .join(' ');
 
           return (
             <button
@@ -80,7 +84,9 @@ function ThemeSection({
               aria-label={theme.name}
               data-theme-id={id}
               tabIndex={id === selectedThemeId ? 0 : -1}
-              onClick={() => { onSelect(id as Settings['themeId']); }}
+              onClick={() => {
+                onSelect(id as Settings['themeId']);
+              }}
             >
               <BoardPreview theme={theme} size={80} />
               <span className={styles.themeLabel}>{theme.name}</span>
@@ -107,11 +113,15 @@ function AnimationSpeedSection({
   }
 
   const speedLabel =
-    speed <= 0.6 ? 'Fast' :
-    speed <= 0.8 ? 'Slightly fast' :
-    speed <= 1.2 ? 'Normal' :
-    speed <= 1.6 ? 'Slightly slow' :
-    'Slow';
+    speed <= 0.6
+      ? 'Fast'
+      : speed <= 0.8
+        ? 'Slightly fast'
+        : speed <= 1.2
+          ? 'Normal'
+          : speed <= 1.6
+            ? 'Slightly slow'
+            : 'Slow';
 
   return (
     <section className={styles.section} aria-labelledby="anim-speed-heading">
@@ -161,15 +171,19 @@ function MoveConfirmationSection({
           id="move-confirm-toggle"
           role="switch"
           aria-checked={enabled}
-          className={[styles.toggleSwitch, enabled ? styles.toggleOn : ''].filter(Boolean).join(' ')}
-          onClick={() => { onChange(!enabled); }}
+          className={[styles.toggleSwitch, enabled ? styles.toggleOn : '']
+            .filter(Boolean)
+            .join(' ')}
+          onClick={() => {
+            onChange(!enabled);
+          }}
         >
           <span className={styles.toggleKnob} />
         </button>
       </div>
       <p className={styles.settingHint}>
-        When enabled, selecting a destination highlights it and requires a second
-        click to confirm. Press Escape or click elsewhere to cancel.
+        When enabled, selecting a destination highlights it and requires a second click to confirm.
+        Press Escape or click elsewhere to cancel.
       </p>
     </section>
   );
@@ -178,13 +192,11 @@ function MoveConfirmationSection({
 function DataSection() {
   return (
     <section className={styles.section} aria-labelledby="data-heading">
-      <h2 id="data-heading" className={styles.sectionTitle}>Data</h2>
+      <h2 id="data-heading" className={styles.sectionTitle}>
+        Data
+      </h2>
       <div className={styles.dataButtons}>
-        <button
-          className={styles.dataButton}
-          disabled
-          title="Coming in a future update"
-        >
+        <button className={styles.dataButton} disabled title="Coming in a future update">
           Export Data
         </button>
         <button
@@ -206,11 +218,7 @@ function DataSection() {
 // ConfigScreen
 // ---------------------------------------------------------------------------
 
-export default function ConfigScreen({
-  settings,
-  onSettingsChange,
-  onBack,
-}: ConfigScreenProps) {
+export default function ConfigScreen({ settings, onSettingsChange, onBack }: ConfigScreenProps) {
   const setTheme = (themeId: Settings['themeId']) => {
     onSettingsChange({ ...settings, themeId });
   };
@@ -226,26 +234,16 @@ export default function ConfigScreen({
   return (
     <div className={styles.configScreen} data-testid="config-screen" role="main">
       <header className={styles.header}>
-        <button
-          className={styles.backButton}
-          onClick={onBack}
-          aria-label="Back to main menu"
-        >
+        <button className={styles.backButton} onClick={onBack} aria-label="Back to main menu">
           &larr; Back
         </button>
         <h1 className={styles.title}>Configure</h1>
       </header>
 
       <div className={styles.sections}>
-        <ThemeSection
-          selectedThemeId={settings.themeId}
-          onSelect={setTheme}
-        />
+        <ThemeSection selectedThemeId={settings.themeId} onSelect={setTheme} />
 
-        <AnimationSpeedSection
-          speed={settings.animationSpeed}
-          onChange={setAnimationSpeed}
-        />
+        <AnimationSpeedSection speed={settings.animationSpeed} onChange={setAnimationSpeed} />
 
         <MoveConfirmationSection
           enabled={settings.moveConfirmation}

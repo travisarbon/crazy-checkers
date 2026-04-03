@@ -20,9 +20,10 @@ function describeMoveEvent(move: Move, gameState: GameState): string {
   const parts: string[] = [];
 
   // Who moved
-  const moverColor = gameState.activeColor === PieceColor.White
-    ? 'Black' // activeColor has already advanced
-    : 'White';
+  const moverColor =
+    gameState.activeColor === PieceColor.White
+      ? 'Black' // activeColor has already advanced
+      : 'White';
 
   // Move notation
   const notation = moveToString(move);

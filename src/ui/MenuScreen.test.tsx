@@ -6,18 +6,18 @@ import MenuScreen from './MenuScreen';
 // Helper
 // ---------------------------------------------------------------------------
 
-function renderMenu(overrides?: Partial<{
-  onStartGame: () => void;
-  onConfigure: () => void;
-}>) {
+function renderMenu(
+  overrides?: Partial<{
+    onStartGame: () => void;
+    onConfigure: () => void;
+  }>,
+) {
   const onStartGame = overrides?.onStartGame ?? vi.fn();
   const onConfigure = overrides?.onConfigure ?? vi.fn();
   return {
     onStartGame,
     onConfigure,
-    ...render(
-      <MenuScreen onStartGame={onStartGame} onConfigure={onConfigure} />,
-    ),
+    ...render(<MenuScreen onStartGame={onStartGame} onConfigure={onConfigure} />),
   };
 }
 

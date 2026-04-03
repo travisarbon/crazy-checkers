@@ -6,24 +6,12 @@ import type { GameResult } from '../engine/types';
 
 describe('TurnIndicator', () => {
   it('displays "White\'s turn" when White is active', () => {
-    render(
-      <TurnIndicator
-        activeColor={PieceColor.White}
-        isGameOver={false}
-        result={null}
-      />,
-    );
+    render(<TurnIndicator activeColor={PieceColor.White} isGameOver={false} result={null} />);
     expect(screen.getByText("White's turn")).toBeInTheDocument();
   });
 
   it('displays "Black\'s turn" when Black is active', () => {
-    render(
-      <TurnIndicator
-        activeColor={PieceColor.Black}
-        isGameOver={false}
-        result={null}
-      />,
-    );
+    render(<TurnIndicator activeColor={PieceColor.Black} isGameOver={false} result={null} />);
     expect(screen.getByText("Black's turn")).toBeInTheDocument();
   });
 
@@ -100,13 +88,7 @@ describe('TurnIndicator', () => {
       type: GameResultType.Draw,
       reason: GameEndReason.Repetition,
     };
-    render(
-      <TurnIndicator
-        activeColor={PieceColor.White}
-        isGameOver={true}
-        result={result}
-      />,
-    );
+    render(<TurnIndicator activeColor={PieceColor.White} isGameOver={true} result={result} />);
     expect(screen.getByText(/Draw.*repetition/)).toBeInTheDocument();
   });
 });

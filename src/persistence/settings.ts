@@ -90,9 +90,10 @@ function mergeWithDefaults(data: unknown): Settings {
   const animationSpeed = isValidAnimationSpeed(obj.animationSpeed)
     ? obj.animationSpeed
     : DEFAULT_SETTINGS.animationSpeed;
-  const moveConfirmation = typeof obj.moveConfirmation === 'boolean'
-    ? obj.moveConfirmation
-    : DEFAULT_SETTINGS.moveConfirmation;
+  const moveConfirmation =
+    typeof obj.moveConfirmation === 'boolean'
+      ? obj.moveConfirmation
+      : DEFAULT_SETTINGS.moveConfirmation;
 
   return { themeId, animationSpeed, moveConfirmation };
 }
@@ -112,7 +113,13 @@ function migrateThemeId(value: unknown): Settings['themeId'] | null {
 }
 
 function isValidThemeId(value: unknown): value is Settings['themeId'] {
-  return value === 'crazy' || value === 'cork' || value === 'current' || value === 'classic' || value === 'contrast';
+  return (
+    value === 'crazy' ||
+    value === 'cork' ||
+    value === 'current' ||
+    value === 'classic' ||
+    value === 'contrast'
+  );
 }
 
 function isValidAnimationSpeed(value: unknown): value is number {
@@ -145,11 +152,7 @@ const SAVED_GAME_VERSION = 1;
  * Auto-saves the current game state to localStorage.
  * Only saves games that are IN_PROGRESS.
  */
-export function saveGame(
-  state: GameState,
-  mode: string,
-  flipped: boolean,
-): void {
+export function saveGame(state: GameState, mode: string, flipped: boolean): void {
   if (state.status !== 'IN_PROGRESS') return;
 
   try {
@@ -206,9 +209,11 @@ function isValidSavedGame(value: unknown): value is SavedGame {
   const obj = value as Record<string, unknown>;
   return (
     typeof obj.version === 'number' &&
-    typeof obj.state === 'object' && obj.state !== null &&
+    typeof obj.state === 'object' &&
+    obj.state !== null &&
     typeof obj.mode === 'string' &&
-    typeof obj.playerSetup === 'object' && obj.playerSetup !== null &&
+    typeof obj.playerSetup === 'object' &&
+    obj.playerSetup !== null &&
     typeof obj.flipped === 'boolean' &&
     typeof obj.timestamp === 'number'
   );

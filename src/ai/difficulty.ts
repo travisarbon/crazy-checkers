@@ -161,15 +161,9 @@ export function selectMove(
   }
 
   // --- Score-window randomization ---
-  if (
-    config.moveRandomization < 1.0 &&
-    allMoveScores.length > 0
-  ) {
+  if (config.moveRandomization < 1.0 && allMoveScores.length > 0) {
     // Find the best score among all root moves.
-    const bestScore = allMoveScores.reduce(
-      (max, entry) => Math.max(max, entry.score),
-      -Infinity,
-    );
+    const bestScore = allMoveScores.reduce((max, entry) => Math.max(max, entry.score), -Infinity);
 
     // Compute the threshold. Works for both positive and negative scores:
     //   positive best=100, 0.9 window -> threshold = 100 - 10 = 90
@@ -177,9 +171,7 @@ export function selectMove(
     const spread = Math.abs(bestScore) * (1 - config.moveRandomization);
     const threshold = bestScore - spread;
 
-    const candidates = allMoveScores.filter(
-      (entry) => entry.score >= threshold,
-    );
+    const candidates = allMoveScores.filter((entry) => entry.score >= threshold);
 
     if (candidates.length > 0) {
       const index = Math.floor(randomFn() * candidates.length);

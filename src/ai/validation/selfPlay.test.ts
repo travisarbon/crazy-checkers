@@ -78,9 +78,7 @@ describe('playSingleGame', () => {
 
     // With high probability at least one field differs
     const identical =
-      r1.result === r2.result &&
-      r1.reason === r2.reason &&
-      r1.moveCount === r2.moveCount;
+      r1.result === r2.result && r1.reason === r2.reason && r1.moveCount === r2.moveCount;
     expect(identical).toBe(false);
   }, 60_000);
 
@@ -151,9 +149,7 @@ describe('runMatch', () => {
   it('computes correct aggregate statistics', () => {
     const result = runMatch(baseConfig);
 
-    expect(
-      result.wins.white + result.wins.black + result.wins.draw,
-    ).toBe(result.totalGames);
+    expect(result.wins.white + result.wins.black + result.wins.draw).toBe(result.totalGames);
 
     const totalMoves = result.games.reduce((s, g) => s + g.moveCount, 0);
     expect(result.avgMoveCount).toBeCloseTo(totalMoves / result.totalGames);

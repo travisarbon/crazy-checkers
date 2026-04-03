@@ -73,19 +73,19 @@ export default function GameControls({
   }
 
   const dialogTitle =
-    pendingAction === 'resign' ? 'Resign Game?'
-    : pendingAction === 'mainMenu' ? 'Return to Menu?'
-    : 'New Game?';
+    pendingAction === 'resign'
+      ? 'Resign Game?'
+      : pendingAction === 'mainMenu'
+        ? 'Return to Menu?'
+        : 'New Game?';
   const dialogMessage =
     pendingAction === 'resign'
       ? 'Are you sure you want to resign? This will count as a loss.'
-    : pendingAction === 'mainMenu'
-      ? 'Your game will be saved and can be resumed.'
-    : 'Start a new game? Your current game will be lost.';
+      : pendingAction === 'mainMenu'
+        ? 'Your game will be saved and can be resumed.'
+        : 'Start a new game? Your current game will be lost.';
   const dialogConfirmLabel =
-    pendingAction === 'resign' ? 'Resign'
-    : pendingAction === 'mainMenu' ? 'Main Menu'
-    : 'New Game';
+    pendingAction === 'resign' ? 'Resign' : pendingAction === 'mainMenu' ? 'Main Menu' : 'New Game';
 
   return (
     <>

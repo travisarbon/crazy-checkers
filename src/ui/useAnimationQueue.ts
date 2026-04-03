@@ -89,10 +89,7 @@ const SQUARE_SIZE = 100;
 /**
  * Converts an engine Square to SVG viewBox center coordinates.
  */
-export function squareCenterCoords(
-  sq: Square,
-  flipped: boolean,
-): { cx: number; cy: number } {
+export function squareCenterCoords(sq: Square, flipped: boolean): { cx: number; cy: number } {
   const { row, col } = squareToGrid(sq);
   const renderRow = flipped ? 7 - row : row;
   return {
@@ -254,7 +251,11 @@ export interface UseAnimationQueueResult {
    * Enqueue an animation sequence. Replaces any currently playing animation.
    * The `boardBeforeMove` is rendered while the animation plays.
    */
-  enqueue: (steps: AnimationStep[], boardBeforeMove: BoardState, capturingColor?: PieceColor) => void;
+  enqueue: (
+    steps: AnimationStep[],
+    boardBeforeMove: BoardState,
+    capturingColor?: PieceColor,
+  ) => void;
 
   /**
    * The board to display during animation. Null when idle.
@@ -298,10 +299,18 @@ export function useAnimationQueue({
   const movingPieceKeyRef = useRef<number | null>(null);
 
   // Keep refs in sync via effects (refs must not be written during render)
-  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
-  useEffect(() => { onCaptureAnimatedRef.current = onCaptureAnimated; }, [onCaptureAnimated]);
-  useEffect(() => { speedRef.current = speedMultiplier; }, [speedMultiplier]);
-  useEffect(() => { flippedRef.current = flipped; }, [flipped]);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+  useEffect(() => {
+    onCaptureAnimatedRef.current = onCaptureAnimated;
+  }, [onCaptureAnimated]);
+  useEffect(() => {
+    speedRef.current = speedMultiplier;
+  }, [speedMultiplier]);
+  useEffect(() => {
+    flippedRef.current = flipped;
+  }, [flipped]);
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -338,182 +347,213 @@ export function useAnimationQueue({
   // Use a ref for processNextStep to break the circular useCallback dependency.
   // Wrapped in useEffect to avoid writing refs during render.
   useEffect(() => {
-  processNextStepRef.current = () => {
-    const steps = stepsRef.current;
-    const idx = stepIndexRef.current;
+    processNextStepRef.current = () => {
+      const steps = stepsRef.current;
+      const idx = stepIndexRef.current;
 
-    if (idx >= steps.length) {
-      finishAnimation();
-      return;
-    }
+      if (idx >= steps.length) {
+        finishAnimation();
+        return;
+      }
 
-    const step = steps[idx];
-    if (!step) {
-      finishAnimation();
-      return;
-    }
-    const multiplier = speedRef.current;
-    const fl = flippedRef.current;
-    const duration = step.durationMs * multiplier;
+      const step = steps[idx];
+      if (!step) {
+        finishAnimation();
+        return;
+      }
+      const multiplier = speedRef.current;
+      const fl = flippedRef.current;
+      const duration = step.durationMs * multiplier;
 
-    const advance = () => {
-      stepIndexRef.current = idx + 1;
-      processNextStepRef.current();
-    };
+      const advance = () => {
+        stepIndexRef.current = idx + 1;
+        processNextStepRef.current();
+      };
 
-    switch (step.type) {
-      case 'slide': {
-        const fromCoords = squareCenterCoords(step.fromSquare, fl);
-        const toCoords = squareCenterCoords(step.toSquare, fl);
-        const slideEasing = step.easing;
+      switch (step.type) {
+        case 'slide': {
+          const fromCoords = squareCenterCoords(step.fromSquare, fl);
+          const toCoords = squareCenterCoords(step.toSquare, fl);
+          const slideEasing = step.easing;
 
-        // On the first slide in a sequence, lock the stable key so the
-        // floating layer uses a consistent React key across all hops.
-        if (movingPieceKeyRef.current === null) {
-          movingPieceKeyRef.current = step.fromSquare as number;
-        }
-        const stableKey = movingPieceKeyRef.current;
-
-        // Set piece at start position with no transition, then animate to target
-        setAnimatingPieces(
-          new Map([
-            [
-              step.fromSquare as number,
-              { overridePosition: fromCoords, opacity: null, scale: null, transitionDurationMs: 0, stableKey },
-            ],
-          ]),
-        );
-
-        // Use a double-RAF to ensure the initial position is committed to the
-        // DOM before we set the transition target. A single RAF is not enough
-        // because React may batch the state update and not paint before the
-        // callback fires — especially on Firefox where microtask scheduling
-        // differs from Chromium.
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (!isAnimatingRef.current) return;
-            setAnimatingPieces(
-              new Map([
-                [
-                  step.fromSquare as number,
-                  { overridePosition: toCoords, opacity: null, scale: null, transitionDurationMs: duration, easing: slideEasing, stableKey },
-                ],
-              ]),
-            );
-          });
-        });
-
-        // After slide completes, update the animation board and advance
-        const timer = setTimeout(() => {
-          activeTimersRef.current.delete(timer);
-          if (!isAnimatingRef.current) return;
-
-          // Move piece on the animation board
-          if (boardRef.current) {
-            const board = [...boardRef.current];
-            const piece = board[(step.fromSquare as number) - 1] ?? null;
-            board[(step.fromSquare as number) - 1] = null;
-            board[(step.toSquare as number) - 1] = piece;
-            boardRef.current = board;
-            setAnimationBoard(board);
+          // On the first slide in a sequence, lock the stable key so the
+          // floating layer uses a consistent React key across all hops.
+          if (movingPieceKeyRef.current === null) {
+            movingPieceKeyRef.current = step.fromSquare as number;
           }
+          const stableKey = movingPieceKeyRef.current;
 
-          // Keep piece floating at destination to prevent flash between hops.
-          // The piece is now at toSquare on the animation board; keeping it in
-          // the animatingPieces map (with no transition) maintains DOM continuity
-          // so it doesn't unmount/remount between steps.
-          const destCoords = squareCenterCoords(step.toSquare, fl);
+          // Set piece at start position with no transition, then animate to target
           setAnimatingPieces(
             new Map([
               [
-                step.toSquare as number,
-                { overridePosition: destCoords, opacity: null, scale: null, transitionDurationMs: 0, stableKey },
+                step.fromSquare as number,
+                {
+                  overridePosition: fromCoords,
+                  opacity: null,
+                  scale: null,
+                  transitionDurationMs: 0,
+                  stableKey,
+                },
               ],
             ]),
           );
-          advance();
-        }, duration);
-        activeTimersRef.current.add(timer);
-        break;
-      }
 
-      case 'fadeOut': {
-        setFadingSquares(new Set([step.square as number]));
+          // Use a double-RAF to ensure the initial position is committed to the
+          // DOM before we set the transition target. A single RAF is not enough
+          // because React may batch the state update and not paint before the
+          // callback fires — especially on Firefox where microtask scheduling
+          // differs from Chromium.
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (!isAnimatingRef.current) return;
+              setAnimatingPieces(
+                new Map([
+                  [
+                    step.fromSquare as number,
+                    {
+                      overridePosition: toCoords,
+                      opacity: null,
+                      scale: null,
+                      transitionDurationMs: duration,
+                      easing: slideEasing,
+                      stableKey,
+                    },
+                  ],
+                ]),
+              );
+            });
+          });
 
-        const timer = setTimeout(() => {
-          activeTimersRef.current.delete(timer);
-          if (!isAnimatingRef.current) return;
+          // After slide completes, update the animation board and advance
+          const timer = setTimeout(() => {
+            activeTimersRef.current.delete(timer);
+            if (!isAnimatingRef.current) return;
 
-          // Remove captured piece from animation board
-          if (boardRef.current) {
-            const board = [...boardRef.current];
-            board[(step.square as number) - 1] = null;
-            boardRef.current = board;
-            setAnimationBoard(board);
-          }
+            // Move piece on the animation board
+            if (boardRef.current) {
+              const board = [...boardRef.current];
+              const piece = board[(step.fromSquare as number) - 1] ?? null;
+              board[(step.fromSquare as number) - 1] = null;
+              board[(step.toSquare as number) - 1] = piece;
+              boardRef.current = board;
+              setAnimationBoard(board);
+            }
 
-          // Notify that a capture animation completed
-          if (capturingColorRef.current !== undefined) {
-            onCaptureAnimatedRef.current?.(capturingColorRef.current);
-          }
+            // Keep piece floating at destination to prevent flash between hops.
+            // The piece is now at toSquare on the animation board; keeping it in
+            // the animatingPieces map (with no transition) maintains DOM continuity
+            // so it doesn't unmount/remount between steps.
+            const destCoords = squareCenterCoords(step.toSquare, fl);
+            setAnimatingPieces(
+              new Map([
+                [
+                  step.toSquare as number,
+                  {
+                    overridePosition: destCoords,
+                    opacity: null,
+                    scale: null,
+                    transitionDurationMs: 0,
+                    stableKey,
+                  },
+                ],
+              ]),
+            );
+            advance();
+          }, duration);
+          activeTimersRef.current.add(timer);
+          break;
+        }
 
-          setFadingSquares(new Set());
-          advance();
-        }, duration);
-        activeTimersRef.current.add(timer);
-        break;
-      }
+        case 'fadeOut': {
+          setFadingSquares(new Set([step.square as number]));
 
-      case 'kingPulse': {
-        const coords = squareCenterCoords(step.square, fl);
-        const halfDuration = duration / 2;
-        // Scale up
-        setAnimatingPieces(
-          new Map([
-            [
-              step.square as number,
-              { overridePosition: coords, opacity: null, scale: 1.15, transitionDurationMs: halfDuration, easing: step.easingUp },
-            ],
-          ]),
-        );
+          const timer = setTimeout(() => {
+            activeTimersRef.current.delete(timer);
+            if (!isAnimatingRef.current) return;
 
-        // Scale back to normal at halfway point
-        const halfTimer = setTimeout(() => {
-          activeTimersRef.current.delete(halfTimer);
-          if (!isAnimatingRef.current) return;
+            // Remove captured piece from animation board
+            if (boardRef.current) {
+              const board = [...boardRef.current];
+              board[(step.square as number) - 1] = null;
+              boardRef.current = board;
+              setAnimationBoard(board);
+            }
+
+            // Notify that a capture animation completed
+            if (capturingColorRef.current !== undefined) {
+              onCaptureAnimatedRef.current?.(capturingColorRef.current);
+            }
+
+            setFadingSquares(new Set());
+            advance();
+          }, duration);
+          activeTimersRef.current.add(timer);
+          break;
+        }
+
+        case 'kingPulse': {
+          const coords = squareCenterCoords(step.square, fl);
+          const halfDuration = duration / 2;
+          // Scale up
           setAnimatingPieces(
             new Map([
               [
                 step.square as number,
-                { overridePosition: coords, opacity: null, scale: 1.0, transitionDurationMs: halfDuration, easing: step.easingDown },
+                {
+                  overridePosition: coords,
+                  opacity: null,
+                  scale: 1.15,
+                  transitionDurationMs: halfDuration,
+                  easing: step.easingUp,
+                },
               ],
             ]),
           );
-        }, halfDuration);
-        activeTimersRef.current.add(halfTimer);
 
-        // Complete
-        const timer = setTimeout(() => {
-          activeTimersRef.current.delete(timer);
-          if (!isAnimatingRef.current) return;
-          setAnimatingPieces(new Map());
-          advance();
-        }, duration);
-        activeTimersRef.current.add(timer);
-        break;
-      }
+          // Scale back to normal at halfway point
+          const halfTimer = setTimeout(() => {
+            activeTimersRef.current.delete(halfTimer);
+            if (!isAnimatingRef.current) return;
+            setAnimatingPieces(
+              new Map([
+                [
+                  step.square as number,
+                  {
+                    overridePosition: coords,
+                    opacity: null,
+                    scale: 1.0,
+                    transitionDurationMs: halfDuration,
+                    easing: step.easingDown,
+                  },
+                ],
+              ]),
+            );
+          }, halfDuration);
+          activeTimersRef.current.add(halfTimer);
 
-      case 'pause': {
-        const timer = setTimeout(() => {
-          activeTimersRef.current.delete(timer);
-          if (!isAnimatingRef.current) return;
-          advance();
-        }, duration);
-        activeTimersRef.current.add(timer);
-        break;
+          // Complete
+          const timer = setTimeout(() => {
+            activeTimersRef.current.delete(timer);
+            if (!isAnimatingRef.current) return;
+            setAnimatingPieces(new Map());
+            advance();
+          }, duration);
+          activeTimersRef.current.add(timer);
+          break;
+        }
+
+        case 'pause': {
+          const timer = setTimeout(() => {
+            activeTimersRef.current.delete(timer);
+            if (!isAnimatingRef.current) return;
+            advance();
+          }, duration);
+          activeTimersRef.current.add(timer);
+          break;
+        }
       }
-    }
-  };
+    };
   }, [finishAnimation]);
 
   const enqueue = useCallback(

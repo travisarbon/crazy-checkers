@@ -41,9 +41,7 @@ export type EvalWeights = typeof EVAL_WEIGHTS;
 export const CENTER_SQUARES: ReadonlySet<number> = new Set([14, 15, 18, 19]);
 
 /** Expanded center ring around the core center squares. */
-export const EXPANDED_CENTER_SQUARES: ReadonlySet<number> = new Set([
-  6, 7, 10, 11, 22, 23, 26, 27,
-]);
+export const EXPANDED_CENTER_SQUARES: ReadonlySet<number> = new Set([6, 7, 10, 11, 22, 23, 26, 27]);
 
 /** White's starting back row (squares 29–32). */
 export const WHITE_BACK_ROW: ReadonlySet<number> = new Set([29, 30, 31, 32]);
@@ -205,7 +203,14 @@ export function evaluate(board: BoardState, color: PieceColor): number {
     myMoves.length * EVAL_WEIGHTS.mobilityPerMove;
 
   const oppScore =
-    evaluatePieces(board, oppPieces, opponentColor(color), oppBackRow, advancementPerRow, kingValue) +
+    evaluatePieces(
+      board,
+      oppPieces,
+      opponentColor(color),
+      oppBackRow,
+      advancementPerRow,
+      kingValue,
+    ) +
     oppMoves.length * EVAL_WEIGHTS.mobilityPerMove;
 
   return myScore - oppScore;

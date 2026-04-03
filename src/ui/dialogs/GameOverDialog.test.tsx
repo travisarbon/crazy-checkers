@@ -8,12 +8,14 @@ import type { GameResult } from '../../engine/types';
 // Helper
 // ---------------------------------------------------------------------------
 
-function renderDialog(overrides?: Partial<{
-  result: GameResult;
-  lastActiveColor: PieceColor;
-  onNewGame: () => void;
-  onReview: () => void;
-}>) {
+function renderDialog(
+  overrides?: Partial<{
+    result: GameResult;
+    lastActiveColor: PieceColor;
+    onNewGame: () => void;
+    onReview: () => void;
+  }>,
+) {
   const result: GameResult = overrides?.result ?? {
     type: GameResultType.WhiteWin,
     reason: GameEndReason.NoPiecesLeft,

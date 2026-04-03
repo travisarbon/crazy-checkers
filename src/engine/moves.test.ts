@@ -20,7 +20,6 @@ function destinations(moves: Move[]): number[] {
   return moves.map((m) => m.path[m.path.length - 1] as number).sort((a, b) => a - b);
 }
 
-
 // ===========================================================================
 // getSimpleMovesForPiece
 // ===========================================================================
@@ -324,9 +323,7 @@ describe('getJumpsForPiece', () => {
       ]);
       const jumps = getJumpsForPiece(board, square(14));
       // At least one chain should include 14 in its path (returned to start)
-      const returnsToStart = jumps.some((j) =>
-        j.path.some((s) => (s as number) === 14),
-      );
+      const returnsToStart = jumps.some((j) => j.path.some((s) => (s as number) === 14));
       expect(returnsToStart).toBe(true);
     });
   });
@@ -639,7 +636,7 @@ describe('getLegalMovesForPiece', () => {
       expect(moves).toHaveLength(0); // 24 has no jumps, and jumps exist elsewhere
     });
 
-    it("when this piece has a jump, only its jumps are returned", () => {
+    it('when this piece has a jump, only its jumps are returned', () => {
       const board = buildBoard([
         { sq: 22, color: W, type: P },
         { sq: 24, color: W, type: P },
@@ -694,9 +691,7 @@ describe('getMovesToSquare', () => {
   });
 
   it('returns empty array when no moves match', () => {
-    const moves: Move[] = [
-      { from: square(22), path: [square(15)], captured: [] },
-    ];
+    const moves: Move[] = [{ from: square(22), path: [square(15)], captured: [] }];
     expect(getMovesToSquare(moves, square(20))).toHaveLength(0);
   });
 

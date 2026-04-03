@@ -51,20 +51,32 @@ export default function CapturedPieces({ moveHistory, pendingCaptures }: Capture
   useEffect(() => {
     if (white > prevWhiteRef.current) {
       // Use microtask to avoid synchronous setState in effect body
-      void Promise.resolve().then(() => { setWhiteBump(true); });
-      const timer = setTimeout(() => { setWhiteBump(false); }, 200);
+      void Promise.resolve().then(() => {
+        setWhiteBump(true);
+      });
+      const timer = setTimeout(() => {
+        setWhiteBump(false);
+      }, 200);
       prevWhiteRef.current = white;
-      return () => { clearTimeout(timer); };
+      return () => {
+        clearTimeout(timer);
+      };
     }
     prevWhiteRef.current = white;
   }, [white]);
 
   useEffect(() => {
     if (black > prevBlackRef.current) {
-      void Promise.resolve().then(() => { setBlackBump(true); });
-      const timer = setTimeout(() => { setBlackBump(false); }, 200);
+      void Promise.resolve().then(() => {
+        setBlackBump(true);
+      });
+      const timer = setTimeout(() => {
+        setBlackBump(false);
+      }, 200);
       prevBlackRef.current = black;
-      return () => { clearTimeout(timer); };
+      return () => {
+        clearTimeout(timer);
+      };
     }
     prevBlackRef.current = black;
   }, [black]);
@@ -86,7 +98,11 @@ export default function CapturedPieces({ moveHistory, pendingCaptures }: Capture
           />
         </svg>
         <span
-          className={[capturedStyles.captureCount, whiteBump ? capturedStyles.captureCountBump : ''].filter(Boolean).join(' ') || undefined}
+          className={
+            [capturedStyles.captureCount, whiteBump ? capturedStyles.captureCountBump : '']
+              .filter(Boolean)
+              .join(' ') || undefined
+          }
           style={{ opacity: white === 0 ? 0.4 : 1 }}
           data-testid="capture-count-white"
         >
@@ -108,7 +124,11 @@ export default function CapturedPieces({ moveHistory, pendingCaptures }: Capture
           />
         </svg>
         <span
-          className={[capturedStyles.captureCount, blackBump ? capturedStyles.captureCountBump : ''].filter(Boolean).join(' ') || undefined}
+          className={
+            [capturedStyles.captureCount, blackBump ? capturedStyles.captureCountBump : '']
+              .filter(Boolean)
+              .join(' ') || undefined
+          }
           style={{ opacity: black === 0 ? 0.4 : 1 }}
           data-testid="capture-count-black"
         >

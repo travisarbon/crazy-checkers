@@ -49,14 +49,18 @@ export default function ConfirmDialog({
     const timer = setTimeout(() => {
       confirmRef.current?.focus();
     }, 300);
-    return () => { clearTimeout(timer); };
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
 
   // Prevent background scrolling
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, []);
 
   // Focus trap + Escape to cancel
@@ -67,9 +71,7 @@ export default function ConfirmDialog({
     }
 
     if (e.key !== 'Tab') return;
-    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-      'button:not([disabled])',
-    );
+    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])');
     if (!focusable || focusable.length === 0) return;
 
     if (focusable.length === 1) {

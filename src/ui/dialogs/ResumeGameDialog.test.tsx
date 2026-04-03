@@ -35,13 +35,7 @@ const mockSavedGame: SavedGame = {
 
 describe('ResumeGameDialog', () => {
   it('renders game info', () => {
-    render(
-      <ResumeGameDialog
-        savedGame={mockSavedGame}
-        onResume={vi.fn()}
-        onDiscard={vi.fn()}
-      />,
-    );
+    render(<ResumeGameDialog savedGame={mockSavedGame} onResume={vi.fn()} onDiscard={vi.fn()} />);
 
     expect(screen.getByText('Resume Game?')).toBeInTheDocument();
     expect(screen.getByText(/classic/)).toBeInTheDocument();
@@ -51,13 +45,7 @@ describe('ResumeGameDialog', () => {
 
   it('Resume button calls onResume', () => {
     const onResume = vi.fn();
-    render(
-      <ResumeGameDialog
-        savedGame={mockSavedGame}
-        onResume={onResume}
-        onDiscard={vi.fn()}
-      />,
-    );
+    render(<ResumeGameDialog savedGame={mockSavedGame} onResume={onResume} onDiscard={vi.fn()} />);
 
     fireEvent.click(screen.getByTestId('resume-resume'));
     expect(onResume).toHaveBeenCalledOnce();
@@ -65,13 +53,7 @@ describe('ResumeGameDialog', () => {
 
   it('Discard button calls onDiscard', () => {
     const onDiscard = vi.fn();
-    render(
-      <ResumeGameDialog
-        savedGame={mockSavedGame}
-        onResume={vi.fn()}
-        onDiscard={onDiscard}
-      />,
-    );
+    render(<ResumeGameDialog savedGame={mockSavedGame} onResume={vi.fn()} onDiscard={onDiscard} />);
 
     fireEvent.click(screen.getByTestId('resume-discard'));
     expect(onDiscard).toHaveBeenCalledOnce();
@@ -79,26 +61,14 @@ describe('ResumeGameDialog', () => {
 
   it('Escape key calls onDiscard', () => {
     const onDiscard = vi.fn();
-    render(
-      <ResumeGameDialog
-        savedGame={mockSavedGame}
-        onResume={vi.fn()}
-        onDiscard={onDiscard}
-      />,
-    );
+    render(<ResumeGameDialog savedGame={mockSavedGame} onResume={vi.fn()} onDiscard={onDiscard} />);
 
     fireEvent.keyDown(screen.getByTestId('resume-dialog'), { key: 'Escape' });
     expect(onDiscard).toHaveBeenCalledOnce();
   });
 
   it('has dialog role and aria-modal', () => {
-    render(
-      <ResumeGameDialog
-        savedGame={mockSavedGame}
-        onResume={vi.fn()}
-        onDiscard={vi.fn()}
-      />,
-    );
+    render(<ResumeGameDialog savedGame={mockSavedGame} onResume={vi.fn()} onDiscard={vi.fn()} />);
 
     const dialog = screen.getByRole('dialog');
     expect(dialog).toHaveAttribute('aria-modal', 'true');

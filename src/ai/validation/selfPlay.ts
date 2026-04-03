@@ -8,12 +8,7 @@ import {
 import { createAmericanRules } from '../../engine/rules';
 import { createNewGame, makeMove, movesAreEqual } from '../../engine/game';
 import { iterativeSearch } from '../search';
-import {
-  getDifficultyConfig,
-  toSearchConfig,
-  selectMove,
-  type Difficulty,
-} from '../difficulty';
+import { getDifficultyConfig, toSearchConfig, selectMove, type Difficulty } from '../difficulty';
 
 /** Configuration for a single self-play match. */
 export interface MatchConfig {
@@ -134,9 +129,7 @@ export function playSingleGame(
     }
 
     const difficulty =
-      currentState.activeColor === PieceColor.White
-        ? whiteDifficulty
-        : blackDifficulty;
+      currentState.activeColor === PieceColor.White ? whiteDifficulty : blackDifficulty;
 
     const config = getDifficultyConfig(difficulty);
     const searchConfig = toSearchConfig(config);
@@ -216,10 +209,7 @@ export function playSingleGame(
  * Aggregates individual game records into a MatchResult with statistics
  * and anomaly detection.
  */
-function aggregateResults(
-  games: GameRecord[],
-  config: MatchConfig,
-): MatchResult {
+function aggregateResults(games: GameRecord[], config: MatchConfig): MatchResult {
   const wins = { white: 0, black: 0, draw: 0 };
   let totalMoves = 0;
   let maxMoves = 0;

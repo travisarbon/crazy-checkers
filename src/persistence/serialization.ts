@@ -6,7 +6,14 @@
  */
 
 import type { BoardState, GameState, Move } from '../engine/types';
-import type { GameEndReason, GameResultType, GameStatus, PieceColor, PieceType, PlayerType } from '../engine/types';
+import type {
+  GameEndReason,
+  GameResultType,
+  GameStatus,
+  PieceColor,
+  PieceType,
+  PlayerType,
+} from '../engine/types';
 import { square } from '../engine/types';
 import { createAmericanRules } from '../engine/rules';
 
@@ -53,14 +60,10 @@ interface SerializedMove {
  */
 export function serializeGameState(state: GameState): SerializedGameState {
   return {
-    board: state.board.map((sq) =>
-      sq === null ? null : { color: sq.color, type: sq.type },
-    ),
+    board: state.board.map((sq) => (sq === null ? null : { color: sq.color, type: sq.type })),
     activeColor: state.activeColor,
     status: state.status,
-    result: state.result
-      ? { type: state.result.type, reason: state.result.reason }
-      : null,
+    result: state.result ? { type: state.result.type, reason: state.result.reason } : null,
     players: { white: state.players.white, black: state.players.black },
     moveHistory: state.moveHistory.map((m) => ({
       from: m.from as number,

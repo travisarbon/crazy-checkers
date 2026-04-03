@@ -45,15 +45,15 @@ function zobristValue(squareIndex: number, color: PieceColor, type: PieceType): 
  * Fixed seed ensures hashes are reproducible across sessions.
  */
 function initializeZobristTable(): void {
-  let state = 0x12345678ABCDEF01n; // fixed seed
+  let state = 0x12345678abcdef01n; // fixed seed
 
   function nextRandom(): bigint {
-    state += 0x9E3779B97F4A7C15n;
+    state += 0x9e3779b97f4a7c15n;
     let z = state;
-    z = (z ^ (z >> 30n)) * 0xBF58476D1CE4E5B9n;
-    z = (z ^ (z >> 27n)) * 0x94D049BB133111EBn;
+    z = (z ^ (z >> 30n)) * 0xbf58476d1ce4e5b9n;
+    z = (z ^ (z >> 27n)) * 0x94d049bb133111ebn;
     z = z ^ (z >> 31n);
-    return z & 0xFFFFFFFFFFFFFFFFn; // mask to 64 bits
+    return z & 0xffffffffffffffffn; // mask to 64 bits
   }
 
   for (let sq = 0; sq < BOARD_SIZE; sq++) {

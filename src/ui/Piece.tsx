@@ -111,7 +111,10 @@ export default function Piece({
     <g
       aria-label={describePiece(piece, sq)}
       data-testid="piece"
-      className={[className, hasAnimation ? styles.pieceAnimating : ''].filter(Boolean).join(' ') || undefined}
+      className={
+        [className, hasAnimation ? styles.pieceAnimating : ''].filter(Boolean).join(' ') ||
+        undefined
+      }
       transform={transform}
       style={style}
       filter={svgFilter}

@@ -92,9 +92,13 @@ function usePrefersReducedMotion(): boolean {
 
   useEffect(() => {
     const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const handler = (e: MediaQueryListEvent) => { setPrefers(e.matches); };
+    const handler = (e: MediaQueryListEvent) => {
+      setPrefers(e.matches);
+    };
     mql.addEventListener('change', handler);
-    return () => { mql.removeEventListener('change', handler); };
+    return () => {
+      mql.removeEventListener('change', handler);
+    };
   }, []);
 
   return prefers;
@@ -110,9 +114,13 @@ function useIsMobile(breakpoint = BREAKPOINT.PHABLET_MAX + 1): boolean {
 
   useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${String(breakpoint - 1)}px)`);
-    const handler = (e: MediaQueryListEvent) => { setIsMobile(e.matches); };
+    const handler = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches);
+    };
     mql.addEventListener('change', handler);
-    return () => { mql.removeEventListener('change', handler); };
+    return () => {
+      mql.removeEventListener('change', handler);
+    };
   }, [breakpoint]);
 
   return isMobile;
@@ -135,15 +143,13 @@ export default function GameScreen({
   onMainMenu,
 }: GameScreenProps) {
   // --- State ---
-  const [gameState, setGameState] = useState<GameState>(() =>
-    initialGameState ?? createNewGame(ruleSet, players),
+  const [gameState, setGameState] = useState<GameState>(
+    () => initialGameState ?? createNewGame(ruleSet, players),
   );
   const [gameStartedAt] = useState(() => gameStartedAtProp ?? Date.now());
   const pendingStateRef = useRef<GameState | null>(null);
   const [undoStack, setUndoStack] = useState<GameState[]>([]);
-  const [takebacksRemaining, setTakebacksRemaining] = useState(
-    computeInitialTakebacks(players),
-  );
+  const [takebacksRemaining, setTakebacksRemaining] = useState(computeInitialTakebacks(players));
   const [isAIThinking, setIsAIThinking] = useState(false);
   const aiThinkingRef = useRef(false);
   const gameStateRef = useRef(gameState);
@@ -227,14 +233,11 @@ export default function GameScreen({
     if (state.status !== GameStatus.InProgress) return;
 
     const activePlayer =
-      state.activeColor === PieceColor.White
-        ? state.players.white
-        : state.players.black;
+      state.activeColor === PieceColor.White ? state.players.white : state.players.black;
 
     if (activePlayer === PlayerType.Human) return;
 
-    const difficulty: Difficulty =
-      activePlayer === PlayerType.CpuEasy ? 'easy' : 'hard';
+    const difficulty: Difficulty = activePlayer === PlayerType.CpuEasy ? 'easy' : 'hard';
 
     aiThinkingRef.current = true;
     let cancelled = false;
@@ -268,10 +271,7 @@ export default function GameScreen({
       cancelled = true;
       aiThinkingRef.current = false;
     };
-  }, [
-    gameState,
-    animationQueue.isAnimating,
-  ]);
+  }, [gameState, animationQueue.isAnimating]);
 
   // --- Interaction hook ---
   const interaction = useGameInteraction({
@@ -303,8 +303,7 @@ export default function GameScreen({
   const handleUndo = useCallback(() => {
     if (animationQueue.isAnimating) return;
 
-    const isCpuGame =
-      players.white !== PlayerType.Human || players.black !== PlayerType.Human;
+    const isCpuGame = players.white !== PlayerType.Human || players.black !== PlayerType.Human;
 
     if (isCpuGame && undoStack.length >= 2) {
       const twoMovesBack = undoStack[undoStack.length - 2];
@@ -335,10 +334,11 @@ export default function GameScreen({
   // --- Derived state ---
   const displayBoard = animationQueue.animationBoard ?? interaction.displayBoard;
   const isGameOver = gameState.status === GameStatus.GameOver;
-  const { canUndo: undoAvailable, tooltip: undoTooltip, countLabel: undoCountLabel } = computeUndoState(
-    gameState,
-    takebacksRemaining,
-  );
+  const {
+    canUndo: undoAvailable,
+    tooltip: undoTooltip,
+    countLabel: undoCountLabel,
+  } = computeUndoState(gameState, takebacksRemaining);
   const currentMoveIndex = gameState.moveHistory.length - 1;
   const lastMoveSquares = useMemo(() => {
     const history = gameState.moveHistory;
@@ -357,29 +357,19 @@ export default function GameScreen({
       <GameAnnouncer gameState={gameState} isAnimating={animationQueue.isAnimating} />
       <div className={styles.boardArea}>
         {interaction.isMidMultiJump && !animationQueue.isAnimating && (
-          <div
-            className={styles.multiJumpBanner}
-            role="status"
-            aria-live="polite"
-          >
+          <div className={styles.multiJumpBanner} role="status" aria-live="polite">
             Multi-jump in progress — click next destination
           </div>
         )}
         <Board
           board={displayBoard}
           flipped={flipped}
-          selectedSquare={
-            animationQueue.isAnimating ? null : interaction.selectedSquare
-          }
+          selectedSquare={animationQueue.isAnimating ? null : interaction.selectedSquare}
           pendingConfirmSquare={
             animationQueue.isAnimating ? null : interaction.pendingConfirmSquare
           }
-          legalMoveSquares={
-            animationQueue.isAnimating ? undefined : interaction.legalDestinations
-          }
-          selectablePieces={
-            animationQueue.isAnimating ? undefined : interaction.selectablePieces
-          }
+          legalMoveSquares={animationQueue.isAnimating ? undefined : interaction.legalDestinations}
+          selectablePieces={animationQueue.isAnimating ? undefined : interaction.selectablePieces}
           lastMoveSquares={lastMoveSquares}
           onSquareClick={interaction.handleSquareClick}
           animatingPieces={animationQueue.animatingPieces}

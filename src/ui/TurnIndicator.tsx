@@ -46,9 +46,7 @@ export default function TurnIndicator({
 }: TurnIndicatorProps) {
   const isWhite = activeColor === PC.White;
   const fillVar = isWhite ? 'var(--piece-white)' : 'var(--piece-black)';
-  const strokeVar = isWhite
-    ? 'var(--piece-white-stroke)'
-    : 'var(--piece-black-stroke)';
+  const strokeVar = isWhite ? 'var(--piece-white-stroke)' : 'var(--piece-black-stroke)';
 
   let label: string;
   if (isGameOver && result) {

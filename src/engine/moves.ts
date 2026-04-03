@@ -142,12 +142,7 @@ export function getJumpsForPiece(board: BoardState, sq: Square): Move[] {
       const newCapturedSet = new Set(capturedSet);
       newCapturedSet.add(adjacent as number);
 
-      explore(
-        landing,
-        [...pathSoFar, landing],
-        [...capturedSoFar, adjacent],
-        newCapturedSet,
-      );
+      explore(landing, [...pathSoFar, landing], [...capturedSoFar, adjacent], newCapturedSet);
     }
 
     // No continuation found — record this chain if it has at least one jump
@@ -232,7 +227,5 @@ export function getLegalMovesForPiece(board: BoardState, sq: Square): Move[] {
  * Used by the UI to resolve a click on a highlighted destination.
  */
 export function getMovesToSquare(moves: Move[], target: Square): Move[] {
-  return moves.filter(
-    (m) => m.path.length > 0 && (m.path[0] as number) === (target as number),
-  );
+  return moves.filter((m) => m.path.length > 0 && (m.path[0] as number) === (target as number));
 }

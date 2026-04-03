@@ -18,12 +18,7 @@ import {
 import { createAmericanRules } from './rules';
 import { createNewGame, makeMove } from './game';
 import { getBoardSquare } from './board';
-import {
-  GameStatus,
-  PieceColor,
-  PlayerType,
-  square,
-} from './types';
+import { GameStatus, PieceColor, PlayerType, square } from './types';
 import type { BoardState, GameState, Move, PlayerSetup, RuleSet, Square } from './types';
 import { W, B, P, K, buildBoard } from './test-utils';
 
@@ -42,7 +37,11 @@ function createGame(ruleSet: RuleSet): GameState {
 }
 
 /** Creates a GameState with a custom board and the given ruleSet. */
-function createGameWithBoard(ruleSet: RuleSet, board: BoardState, activeColor: PieceColor): GameState {
+function createGameWithBoard(
+  ruleSet: RuleSet,
+  board: BoardState,
+  activeColor: PieceColor,
+): GameState {
   const base = createGame(ruleSet);
   return { ...base, board, activeColor };
 }
@@ -223,7 +222,7 @@ describe('KingForADayDecorator', () => {
       // Build the post-move board manually (piece at 18, not 14).
       const postMoveBoard = buildBoard([
         { sq: 18, color: W, type: K }, // was pawn, temporarily king
-        { sq: 5, color: B, type: K },  // was pawn, temporarily king
+        { sq: 5, color: B, type: K }, // was pawn, temporarily king
       ]);
 
       const theMove = move(14, [18]);
@@ -275,7 +274,7 @@ describe('KingForADayDecorator', () => {
       const postMoveBoard = buildBoard([
         { sq: 14, color: W, type: K }, // original king
         { sq: 22, color: W, type: K }, // was pawn
-        { sq: 5, color: B, type: K },  // was pawn
+        { sq: 5, color: B, type: K }, // was pawn
       ]);
 
       const theMove = move(18, [22]);
@@ -465,11 +464,11 @@ describe('LiveGrenadeDecorator', () => {
       // Adjacent: 5 (FL), 6 (FR), 13 (BL), 14 (BR).
       // Place pieces at all four neighbors.
       const board = buildBoard([
-        { sq: 9, color: W, type: K },   // landing piece
-        { sq: 5, color: B, type: P },   // adjacent — should be destroyed
-        { sq: 6, color: W, type: P },   // adjacent — should be destroyed (friendly fire)
-        { sq: 13, color: B, type: P },  // adjacent — should be destroyed
-        { sq: 14, color: W, type: P },  // adjacent — should be destroyed
+        { sq: 9, color: W, type: K }, // landing piece
+        { sq: 5, color: B, type: P }, // adjacent — should be destroyed
+        { sq: 6, color: W, type: P }, // adjacent — should be destroyed (friendly fire)
+        { sq: 13, color: B, type: P }, // adjacent — should be destroyed
+        { sq: 14, color: W, type: P }, // adjacent — should be destroyed
       ]);
 
       const result = lg.onCapture(board, square(9), [square(14)]);
@@ -500,7 +499,7 @@ describe('LiveGrenadeDecorator', () => {
       // White lands at 9, own piece at 6 should be destroyed
       const board = buildBoard([
         { sq: 9, color: W, type: K },
-        { sq: 6, color: W, type: P },   // friendly — should still be destroyed
+        { sq: 6, color: W, type: P }, // friendly — should still be destroyed
       ]);
 
       const result = lg.onCapture(board, square(9), [square(14)]);
@@ -511,9 +510,7 @@ describe('LiveGrenadeDecorator', () => {
       lg.arm();
 
       // Only landing piece, all neighbors empty
-      const board = buildBoard([
-        { sq: 9, color: W, type: K },
-      ]);
+      const board = buildBoard([{ sq: 9, color: W, type: K }]);
 
       // Should not throw
       const result = lg.onCapture(board, square(9), [square(14)]);
@@ -526,8 +523,8 @@ describe('LiveGrenadeDecorator', () => {
       // Piece at square 1 (far from landing at sq 9)
       const board = buildBoard([
         { sq: 9, color: W, type: K },
-        { sq: 1, color: B, type: P },   // non-adjacent — should survive
-        { sq: 5, color: B, type: P },   // adjacent — destroyed
+        { sq: 1, color: B, type: P }, // non-adjacent — should survive
+        { sq: 5, color: B, type: P }, // adjacent — destroyed
       ]);
 
       const result = lg.onCapture(board, square(9), [square(14)]);
@@ -547,7 +544,7 @@ describe('LiveGrenadeDecorator', () => {
       // White jumps from 18 over 14, landing at 9.
       // After applyMove: 18 empty, 14 empty, 9 has White piece.
       const postApplyBoard = buildBoard([
-        { sq: 9, color: W, type: P },  // landing
+        { sq: 9, color: W, type: P }, // landing
         // sq 14 is already null (captured piece removed by applyMove)
       ]);
 
@@ -631,7 +628,7 @@ describe('LiveGrenadeDecorator', () => {
       const board = buildBoard([
         { sq: 18, color: W, type: P },
         { sq: 14, color: B, type: P },
-        { sq: 5, color: B, type: P },  // adjacent to landing sq 9 — will explode
+        { sq: 5, color: B, type: P }, // adjacent to landing sq 9 — will explode
       ]);
 
       const state = createGameWithBoard(lg, board, PieceColor.White);
@@ -658,7 +655,11 @@ describe('LiveGrenadeDecorator', () => {
       let innerHookCalled = false;
 
       class MockDecorator extends EventRuleSetDecorator {
-        override onCapture(board: BoardState, landingSquare: Square, captured: Square[]): BoardState {
+        override onCapture(
+          board: BoardState,
+          landingSquare: Square,
+          captured: Square[],
+        ): BoardState {
           innerHookCalled = true;
           return super.onCapture(board, landingSquare, captured);
         }

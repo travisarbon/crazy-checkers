@@ -55,22 +55,27 @@ function describeSquare(sq: Square, piece: PieceData | null): string {
  * Given a square number, find the next playable square in a grid direction.
  * Arrow key navigation moves visually on the rendered board (respects flip).
  */
-function findNextSquare(
-  currentSq: Square,
-  key: string,
-  flipped: boolean,
-): Square | null {
+function findNextSquare(currentSq: Square, key: string, flipped: boolean): Square | null {
   const grid = squareToGrid(currentSq);
   let { row, col } = grid;
 
   // Map arrow keys to visual direction, then adjust for board flip
   const flipMul = flipped ? -1 : 1;
   switch (key) {
-    case 'ArrowUp':    row -= 1 * flipMul; break;
-    case 'ArrowDown':  row += 1 * flipMul; break;
-    case 'ArrowLeft':  col -= 1; break;
-    case 'ArrowRight': col += 1; break;
-    default: return null;
+    case 'ArrowUp':
+      row -= 1 * flipMul;
+      break;
+    case 'ArrowDown':
+      row += 1 * flipMul;
+      break;
+    case 'ArrowLeft':
+      col -= 1;
+      break;
+    case 'ArrowRight':
+      col += 1;
+      break;
+    default:
+      return null;
   }
 
   // Clamp and find the nearest dark square
@@ -120,15 +125,22 @@ function Board({
 
   const isClickable = (sq: Square): boolean => {
     if (isAnimating) return false;
-    return (selectablePieces?.has(sq as number) ?? false)
-      || (legalMoveSquares?.has(sq as number) ?? false);
+    return (
+      (selectablePieces?.has(sq as number) ?? false) ||
+      (legalMoveSquares?.has(sq as number) ?? false)
+    );
   };
 
   const handleBoardKeyDown = useCallback(
     (e: React.KeyboardEvent<SVGSVGElement>) => {
       const currentSq = focusedSquare;
 
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      if (
+        e.key === 'ArrowUp' ||
+        e.key === 'ArrowDown' ||
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowRight'
+      ) {
         e.preventDefault();
         const nextSq = findNextSquare(square(currentSq), e.key, flipped);
         if (nextSq !== null) {
@@ -213,15 +225,13 @@ function Board({
 
               const sq = gridToSquare(row, col);
               const piece = sq ? getBoardSquare(board, sq) : null;
-              const label = sq
-                ? describeSquare(sq, piece ?? null)
-                : 'Empty square';
+              const label = sq ? describeSquare(sq, piece ?? null) : 'Empty square';
 
               const isLastMoveSquare =
                 sq !== null &&
                 lastMoveSquares != null &&
                 ((sq as number) === (lastMoveSquares.from as number) ||
-                 (sq as number) === (lastMoveSquares.to as number));
+                  (sq as number) === (lastMoveSquares.to as number));
 
               const isSelected =
                 !isAnimating &&
@@ -237,12 +247,14 @@ function Board({
                 pendingConfirmSquare !== undefined &&
                 (sq as number) === (pendingConfirmSquare as number);
 
-              const isLegalDest = !isAnimating && sq !== null && (legalMoveSquares?.has(sq as number) ?? false);
+              const isLegalDest =
+                !isAnimating && sq !== null && (legalMoveSquares?.has(sq as number) ?? false);
               const clickable = sq !== null && isClickable(sq);
-              const isInteractive = !isAnimating && sq !== null && (
-                (selectablePieces?.has(sq as number) ?? false) ||
-                (legalMoveSquares?.has(sq as number) ?? false)
-              );
+              const isInteractive =
+                !isAnimating &&
+                sq !== null &&
+                ((selectablePieces?.has(sq as number) ?? false) ||
+                  (legalMoveSquares?.has(sq as number) ?? false));
 
               // Check if this piece is animating or fading — if so, render in floating layer
               const animOverride = sq !== null ? animatingPieces?.get(sq as number) : undefined;
@@ -276,7 +288,12 @@ function Board({
                   aria-label={label}
                   tabIndex={sq !== null && (sq as number) === focusedSquare ? 0 : -1}
                   data-square={sq !== null ? String(sq) : undefined}
-                  className={[styles.boardSquare, isInteractive ? styles.boardSquareInteractive : ''].filter(Boolean).join(' ')}
+                  className={[
+                    styles.boardSquare,
+                    isInteractive ? styles.boardSquareInteractive : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                 >
                   {/* Base square */}
                   <rect
@@ -431,7 +448,9 @@ function Board({
             animDurationMs={animOverride?.transitionDurationMs ?? 0}
             animEasing={animOverride?.easing}
             animOpacity={isFading ? 0 : undefined}
-            animOpacityDurationMs={isFading ? ANIM_DURATION.CAPTURE_FADE * animSpeedMultiplier : undefined}
+            animOpacityDurationMs={
+              isFading ? ANIM_DURATION.CAPTURE_FADE * animSpeedMultiplier : undefined
+            }
             animScale={animOverride?.scale ?? undefined}
           />
         ))}

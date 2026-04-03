@@ -12,14 +12,7 @@ import {
 import { createAmericanRules } from './rules';
 import { getBoardSquare } from './board';
 import { computeZobristHash } from './zobrist';
-import {
-  GameEndReason,
-  GameResultType,
-  GameStatus,
-  PieceColor,
-  PlayerType,
-  square,
-} from './types';
+import { GameEndReason, GameResultType, GameStatus, PieceColor, PlayerType, square } from './types';
 import type { BoardState, GameState, Move, PlayerSetup, RuleSet, Square } from './types';
 import { W, B, P, K, buildBoard } from './test-utils';
 
@@ -130,7 +123,7 @@ describe('createNewGame', () => {
 
 describe('makeMove', () => {
   describe('basic turn flow', () => {
-    it('after White\'s first move, activeColor is Black', () => {
+    it("after White's first move, activeColor is Black", () => {
       const state = newGame();
       const move = firstLegalMove(state);
       const next = makeMove(state, move);
@@ -291,7 +284,11 @@ describe('makeMove', () => {
   describe('validation', () => {
     it('throws Error if game is GameOver', () => {
       let state = newGame();
-      state = { ...state, status: GameStatus.GameOver, result: { type: GameResultType.Draw, reason: GameEndReason.Repetition } };
+      state = {
+        ...state,
+        status: GameStatus.GameOver,
+        result: { type: GameResultType.Draw, reason: GameEndReason.Repetition },
+      };
       expect(() => makeMove(state, firstLegalMove(newGame()))).toThrow('not in progress');
     });
 
@@ -550,7 +547,7 @@ describe('canUndo', () => {
 // ===========================================================================
 
 describe('query helpers', () => {
-  it('getCurrentLegalMoves returns 7 moves for White\'s opening turn', () => {
+  it("getCurrentLegalMoves returns 7 moves for White's opening turn", () => {
     const state = newGame();
     const moves = getCurrentLegalMoves(state);
     expect(moves).toHaveLength(7);
@@ -600,8 +597,16 @@ describe('movesAreEqual', () => {
   });
 
   it('returns true for multi-jump moves with same structure', () => {
-    const a: Move = { from: square(22), path: [square(15), square(8)], captured: [square(18), square(11)] };
-    const b: Move = { from: square(22), path: [square(15), square(8)], captured: [square(18), square(11)] };
+    const a: Move = {
+      from: square(22),
+      path: [square(15), square(8)],
+      captured: [square(18), square(11)],
+    };
+    const b: Move = {
+      from: square(22),
+      path: [square(15), square(8)],
+      captured: [square(18), square(11)],
+    };
     expect(movesAreEqual(a, b)).toBe(true);
   });
 });
@@ -776,9 +781,7 @@ describe('makeMove — defensive errors', () => {
     const move: Move = { from: square(22), path: [square(18)], captured: [] };
 
     // Corrupt: replace board with one missing the piece at sq 22
-    const corruptBoard = buildBoard([
-      { sq: 4, color: B, type: K },
-    ]);
+    const corruptBoard = buildBoard([{ sq: 4, color: B, type: K }]);
     // Manually build a state where getLegalMoves still returns the move
     // but the board doesn't have the piece
     const corruptState: GameState = {

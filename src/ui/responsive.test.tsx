@@ -16,7 +16,11 @@ const VIEWPORTS = [
 
 function setupViewport(width: number, height: number) {
   Object.defineProperty(window, 'innerWidth', { value: width, writable: true, configurable: true });
-  Object.defineProperty(window, 'innerHeight', { value: height, writable: true, configurable: true });
+  Object.defineProperty(window, 'innerHeight', {
+    value: height,
+    writable: true,
+    configurable: true,
+  });
   Object.defineProperty(window, 'matchMedia', {
     value: vi.fn().mockImplementation((query: string) => {
       let matches = false;
@@ -43,37 +47,23 @@ function setupViewport(width: number, height: number) {
   });
 }
 
-describe.each(VIEWPORTS)(
-  'Responsive layout at $name ($width×$height)',
-  ({ width, height }) => {
-    beforeEach(() => {
-      setupViewport(width, height);
-    });
+describe.each(VIEWPORTS)('Responsive layout at $name ($width×$height)', ({ width, height }) => {
+  beforeEach(() => {
+    setupViewport(width, height);
+  });
 
-    it('GameScreen renders without error', () => {
-      const ruleSet: RuleSet = createAmericanRules();
-      const players: PlayerSetup = {
-        white: PlayerType.Human,
-        black: PlayerType.Human,
-      };
-      render(
-        <GameScreen
-          ruleSet={ruleSet}
-          players={players}
-          onNewGame={vi.fn()}
-        />,
-      );
-      expect(screen.getByTestId('game-screen')).toBeTruthy();
-    });
+  it('GameScreen renders without error', () => {
+    const ruleSet: RuleSet = createAmericanRules();
+    const players: PlayerSetup = {
+      white: PlayerType.Human,
+      black: PlayerType.Human,
+    };
+    render(<GameScreen ruleSet={ruleSet} players={players} onNewGame={vi.fn()} />);
+    expect(screen.getByTestId('game-screen')).toBeTruthy();
+  });
 
-    it('MenuScreen renders without error', () => {
-      render(
-        <MenuScreen
-          onStartGame={vi.fn()}
-          onConfigure={vi.fn()}
-        />,
-      );
-      expect(screen.getByText('Crazy Checkers')).toBeTruthy();
-    });
-  },
-);
+  it('MenuScreen renders without error', () => {
+    render(<MenuScreen onStartGame={vi.fn()} onConfigure={vi.fn()} />);
+    expect(screen.getByText('Crazy Checkers')).toBeTruthy();
+  });
+});

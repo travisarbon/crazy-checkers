@@ -33,13 +33,49 @@ interface ModeEntry {
 }
 
 const MODES: readonly ModeEntry[] = [
-  { id: 'crazy',     label: 'Crazy',     enabled: false, hidden: false, description: 'Checkers with chaotic events' },
-  { id: 'classic',   label: 'Classic',   enabled: true,  hidden: false, description: 'Standard American Rules Checkers' },
-  { id: 'challenge', label: 'Challenge', enabled: false, hidden: false, description: 'Timed checkers puzzles' },
-  { id: 'code',      label: 'Code',      enabled: false, hidden: false, description: 'Enter unlock codes' },
-  { id: 'cogitate',  label: 'Cogitate',  enabled: false, hidden: false, description: 'Game review and analysis' },
-  { id: 'career',    label: 'Career',    enabled: false, hidden: false, description: 'Statistics and progression' },
-  { id: 'configure', label: 'Configure', enabled: true,  hidden: false, description: 'Settings and themes' },
+  {
+    id: 'crazy',
+    label: 'Crazy',
+    enabled: false,
+    hidden: false,
+    description: 'Checkers with chaotic events',
+  },
+  {
+    id: 'classic',
+    label: 'Classic',
+    enabled: true,
+    hidden: false,
+    description: 'Standard American Rules Checkers',
+  },
+  {
+    id: 'challenge',
+    label: 'Challenge',
+    enabled: false,
+    hidden: false,
+    description: 'Timed checkers puzzles',
+  },
+  { id: 'code', label: 'Code', enabled: false, hidden: false, description: 'Enter unlock codes' },
+  {
+    id: 'cogitate',
+    label: 'Cogitate',
+    enabled: false,
+    hidden: false,
+    description: 'Game review and analysis',
+  },
+  {
+    id: 'career',
+    label: 'Career',
+    enabled: false,
+    hidden: false,
+    description: 'Statistics and progression',
+  },
+  {
+    id: 'configure',
+    label: 'Configure',
+    enabled: true,
+    hidden: false,
+    description: 'Settings and themes',
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -77,11 +113,13 @@ export default function MenuScreen({ onStartGame, onConfigure }: MenuScreenProps
         {MODES.filter((m) => !m.hidden).map((mode) => (
           <button
             key={mode.id}
-            className={`${styles.modeButton ?? ''} ${!mode.enabled ? styles.disabled ?? '' : ''}`}
+            className={`${styles.modeButton ?? ''} ${!mode.enabled ? (styles.disabled ?? '') : ''}`}
             disabled={!mode.enabled}
             aria-label={mode.enabled ? mode.label : `${mode.label} — Coming Soon`}
             title={mode.description}
-            onClick={() => { handleModeClick(mode.id); }}
+            onClick={() => {
+              handleModeClick(mode.id);
+            }}
           >
             <span>{mode.label}</span>
             {!mode.enabled && <span className={styles.badge}>Coming Soon</span>}
@@ -90,10 +128,7 @@ export default function MenuScreen({ onStartGame, onConfigure }: MenuScreenProps
       </nav>
 
       {showSetupDialog && (
-        <GameSetupDialog
-          onConfirm={handleSetupConfirm}
-          onCancel={handleSetupCancel}
-        />
+        <GameSetupDialog onConfirm={handleSetupConfirm} onCancel={handleSetupCancel} />
       )}
     </div>
   );

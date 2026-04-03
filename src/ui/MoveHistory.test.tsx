@@ -67,9 +67,7 @@ describe('MoveHistory', () => {
 
   it('shows move count in collapsible summary', () => {
     const moves = [makeMoveObj(11, 15), makeMoveObj(23, 18)];
-    render(
-      <MoveHistory moveHistory={moves} currentMoveIndex={1} collapsible />,
-    );
+    render(<MoveHistory moveHistory={moves} currentMoveIndex={1} collapsible />);
     expect(screen.getByText('Move History (2 moves)')).toBeInTheDocument();
   });
 

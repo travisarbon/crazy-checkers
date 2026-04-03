@@ -32,12 +32,23 @@ export default function BoardPreview({ theme, size }: BoardPreviewProps) {
           />
         )),
       )}
-      <circle cx={1.5} cy={0.5} r={0.35} fill={theme.pieceWhite}
-              stroke={theme.pieceWhiteStroke} strokeWidth={0.06} />
-      <circle cx={2.5} cy={1.5} r={0.35} fill={theme.pieceBlack}
-              stroke={theme.pieceBlackStroke} strokeWidth={0.06} />
-      <rect x={1} y={2} width={1} height={1}
-            fill={theme.highlightLegal} opacity={0.5} />
+      <circle
+        cx={1.5}
+        cy={0.5}
+        r={0.35}
+        fill={theme.pieceWhite}
+        stroke={theme.pieceWhiteStroke}
+        strokeWidth={0.06}
+      />
+      <circle
+        cx={2.5}
+        cy={1.5}
+        r={0.35}
+        fill={theme.pieceBlack}
+        stroke={theme.pieceBlackStroke}
+        strokeWidth={0.06}
+      />
+      <rect x={1} y={2} width={1} height={1} fill={theme.highlightLegal} opacity={0.5} />
     </svg>
   );
 }

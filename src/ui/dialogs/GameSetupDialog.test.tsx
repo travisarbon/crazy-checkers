@@ -7,18 +7,18 @@ import { PlayerType } from '../../engine/types';
 // Helper
 // ---------------------------------------------------------------------------
 
-function renderDialog(overrides?: Partial<{
-  onConfirm: (...args: unknown[]) => void;
-  onCancel: () => void;
-}>) {
+function renderDialog(
+  overrides?: Partial<{
+    onConfirm: (...args: unknown[]) => void;
+    onCancel: () => void;
+  }>,
+) {
   const onConfirm = overrides?.onConfirm ?? vi.fn();
   const onCancel = overrides?.onCancel ?? vi.fn();
   return {
     onConfirm,
     onCancel,
-    ...render(
-      <GameSetupDialog onConfirm={onConfirm} onCancel={onCancel} />,
-    ),
+    ...render(<GameSetupDialog onConfirm={onConfirm} onCancel={onCancel} />),
   };
 }
 

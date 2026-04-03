@@ -6,7 +6,11 @@ import type { BoardState } from '../engine/types';
 import { PieceColor, PieceType, square } from '../engine/types';
 
 // Helper: create a board with a single piece
-function boardWithPiece(sq: number, color: PieceColor = PieceColor.White, type: PieceType = PieceType.Pawn): BoardState {
+function boardWithPiece(
+  sq: number,
+  color: PieceColor = PieceColor.White,
+  type: PieceType = PieceType.Pawn,
+): BoardState {
   const board = new Array(32).fill(null) as BoardState;
   const mutable = [...board];
   mutable[sq - 1] = { color, type };
@@ -17,12 +21,18 @@ describe('Board animation integration', () => {
   it('renders piece at override position when animatingPieces is provided', () => {
     const board = boardWithPiece(11);
     const animatingPieces = new Map<number, AnimatingPiece>([
-      [11, { overridePosition: { cx: 400, cy: 400 }, opacity: null, scale: null, transitionDurationMs: 0 }],
+      [
+        11,
+        {
+          overridePosition: { cx: 400, cy: 400 },
+          opacity: null,
+          scale: null,
+          transitionDurationMs: 0,
+        },
+      ],
     ]);
 
-    const { container } = render(
-      <Board board={board} animatingPieces={animatingPieces} />,
-    );
+    const { container } = render(<Board board={board} animatingPieces={animatingPieces} />);
 
     const pieceG = container.querySelector('[data-testid="piece"]');
     expect(pieceG).not.toBeNull();
@@ -36,7 +46,15 @@ describe('Board animation integration', () => {
   it('renders piece with transition style when animation duration > 0', () => {
     const board = boardWithPiece(11);
     const animatingPieces = new Map<number, AnimatingPiece>([
-      [11, { overridePosition: { cx: 400, cy: 400 }, opacity: null, scale: null, transitionDurationMs: 280 }],
+      [
+        11,
+        {
+          overridePosition: { cx: 400, cy: 400 },
+          opacity: null,
+          scale: null,
+          transitionDurationMs: 280,
+        },
+      ],
     ]);
 
     const { container } = render(
@@ -55,9 +73,7 @@ describe('Board animation integration', () => {
     const board = boardWithPiece(14, PieceColor.Black);
     const fadingSquares = new Set<number>([14]);
 
-    const { container } = render(
-      <Board board={board} fadingSquares={fadingSquares} />,
-    );
+    const { container } = render(<Board board={board} fadingSquares={fadingSquares} />);
 
     const pieceG = container.querySelector('[data-testid="piece"]');
     expect(pieceG).not.toBeNull();
@@ -93,11 +109,7 @@ describe('Board animation integration', () => {
     const board = boardWithPiece(11);
 
     const { container } = render(
-      <Board
-        board={board}
-        isAnimating={true}
-        legalMoveSquares={new Set([15, 16])}
-      />,
+      <Board board={board} isAnimating={true} legalMoveSquares={new Set([15, 16])} />,
     );
 
     const legalDots = container.querySelectorAll('[data-testid="legal-dot"]');
@@ -108,11 +120,7 @@ describe('Board animation integration', () => {
     const board = boardWithPiece(11);
 
     const { container } = render(
-      <Board
-        board={board}
-        isAnimating={true}
-        selectedSquare={square(11)}
-      />,
+      <Board board={board} isAnimating={true} selectedSquare={square(11)} />,
     );
 
     const highlights = container.querySelectorAll('[data-testid="highlight-selected"]');
@@ -139,12 +147,18 @@ describe('Board animation integration', () => {
   it('renders piece with scale override for king pulse', () => {
     const board = boardWithPiece(1, PieceColor.White, PieceType.King);
     const animatingPieces = new Map<number, AnimatingPiece>([
-      [1, { overridePosition: { cx: 150, cy: 50 }, opacity: null, scale: 1.15, transitionDurationMs: 150 }],
+      [
+        1,
+        {
+          overridePosition: { cx: 150, cy: 50 },
+          opacity: null,
+          scale: 1.15,
+          transitionDurationMs: 150,
+        },
+      ],
     ]);
 
-    const { container } = render(
-      <Board board={board} animatingPieces={animatingPieces} />,
-    );
+    const { container } = render(<Board board={board} animatingPieces={animatingPieces} />);
 
     const pieceG = container.querySelector('[data-testid="piece"]');
     expect(pieceG).not.toBeNull();

@@ -75,11 +75,15 @@ export default function App() {
     }
 
     window.addEventListener('popstate', handlePopState);
-    return () => { window.removeEventListener('popstate', handlePopState); };
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [screen.kind]);
 
   // Navigation callbacks
-  const navigateToMenu = useCallback(() => { setScreen({ kind: 'menu' }); }, []);
+  const navigateToMenu = useCallback(() => {
+    setScreen({ kind: 'menu' });
+  }, []);
 
   const navigateToGame = useCallback((players: PlayerSetup, flipped: boolean) => {
     setScreen({
@@ -93,7 +97,9 @@ export default function App() {
     setResumedGameState(null);
   }, []);
 
-  const navigateToConfig = useCallback(() => { setScreen({ kind: 'config' }); }, []);
+  const navigateToConfig = useCallback(() => {
+    setScreen({ kind: 'config' });
+  }, []);
 
   // Resume/discard handlers
   const handleResume = useCallback(() => {
@@ -164,11 +170,7 @@ export default function App() {
 
     case 'config':
       return (
-        <ConfigScreen
-          settings={settings}
-          onSettingsChange={setSettings}
-          onBack={navigateToMenu}
-        />
+        <ConfigScreen settings={settings} onSettingsChange={setSettings} onBack={navigateToMenu} />
       );
   }
 }

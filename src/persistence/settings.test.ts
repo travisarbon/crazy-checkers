@@ -22,10 +22,18 @@ function createMockStorage(): Storage {
   const store = new Map<string, string>();
   return {
     getItem: (key: string) => store.get(key) ?? null,
-    setItem: (key: string, value: string) => { store.set(key, value); },
-    removeItem: (key: string) => { store.delete(key); },
-    clear: () => { store.clear(); },
-    get length() { return store.size; },
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    clear: () => {
+      store.clear();
+    },
+    get length() {
+      return store.size;
+    },
     key: (index: number) => [...store.keys()][index] ?? null,
   };
 }
@@ -55,7 +63,9 @@ describe('saveSettings', () => {
     vi.spyOn(mockStorage, 'setItem').mockImplementation(() => {
       throw new DOMException('QuotaExceededError');
     });
-    expect(() => { saveSettings(DEFAULT_SETTINGS); }).not.toThrow();
+    expect(() => {
+      saveSettings(DEFAULT_SETTINGS);
+    }).not.toThrow();
   });
 });
 
@@ -97,7 +107,10 @@ describe('loadSettings', () => {
   it('rejects invalid themeId', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
-      JSON.stringify({ version: 1, data: { themeId: 'neon', animationSpeed: 1.0, moveConfirmation: false } }),
+      JSON.stringify({
+        version: 1,
+        data: { themeId: 'neon', animationSpeed: 1.0, moveConfirmation: false },
+      }),
     );
     expect(loadSettings().themeId).toBe(DEFAULT_SETTINGS.themeId);
   });
@@ -105,7 +118,10 @@ describe('loadSettings', () => {
   it('migrates legacy "modern" themeId to "current"', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
-      JSON.stringify({ version: 1, data: { themeId: 'modern', animationSpeed: 1.0, moveConfirmation: false } }),
+      JSON.stringify({
+        version: 1,
+        data: { themeId: 'modern', animationSpeed: 1.0, moveConfirmation: false },
+      }),
     );
     expect(loadSettings().themeId).toBe('current');
   });
@@ -113,7 +129,10 @@ describe('loadSettings', () => {
   it('migrates legacy "high-contrast" themeId to "contrast"', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
-      JSON.stringify({ version: 1, data: { themeId: 'high-contrast', animationSpeed: 1.0, moveConfirmation: false } }),
+      JSON.stringify({
+        version: 1,
+        data: { themeId: 'high-contrast', animationSpeed: 1.0, moveConfirmation: false },
+      }),
     );
     expect(loadSettings().themeId).toBe('contrast');
   });
@@ -121,7 +140,10 @@ describe('loadSettings', () => {
   it('rejects out-of-range animationSpeed', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
-      JSON.stringify({ version: 1, data: { themeId: 'crazy', animationSpeed: 5.0, moveConfirmation: false } }),
+      JSON.stringify({
+        version: 1,
+        data: { themeId: 'crazy', animationSpeed: 5.0, moveConfirmation: false },
+      }),
     );
     expect(loadSettings().animationSpeed).toBe(DEFAULT_SETTINGS.animationSpeed);
   });

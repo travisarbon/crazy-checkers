@@ -97,7 +97,7 @@ describe('preset configurations', () => {
   });
 
   it('Easy blunder rate is within design document range (10-15%)', () => {
-    expect(EASY_CONFIG.blunderRate).toBeGreaterThanOrEqual(0.10);
+    expect(EASY_CONFIG.blunderRate).toBeGreaterThanOrEqual(0.1);
     expect(EASY_CONFIG.blunderRate).toBeLessThanOrEqual(0.15);
   });
 });
@@ -152,12 +152,7 @@ describe('toSearchConfig', () => {
 
 describe('selectMove — trivial cases', () => {
   it('returns the only legal move when there is exactly one', () => {
-    const result = selectMove(
-      makeSearchResult(moveA, 100),
-      [],
-      [moveA],
-      EASY_CONFIG,
-    );
+    const result = selectMove(makeSearchResult(moveA, 100), [], [moveA], EASY_CONFIG);
     expect(result).toBe(moveA);
   });
 
@@ -209,7 +204,7 @@ describe('selectMove — blunder injection', () => {
       rootScores,
       moves,
       EASY_CONFIG,
-      deterministicRandom(0.50, 0.0),
+      deterministicRandom(0.5, 0.0),
     );
     // Should be from the score window, not a random blunder pick.
     // With score window 0.9, threshold = 90, candidates are moveA(100) and moveB(80 < 90 excluded)
@@ -270,8 +265,8 @@ describe('selectMove — score-window randomization', () => {
   it('selects among moves within the 90% window', () => {
     const rootScores = [
       { move: moveA, score: 100 },
-      { move: moveB, score: 95 },  // >= 90 threshold
-      { move: moveC, score: 50 },  // below threshold
+      { move: moveB, score: 95 }, // >= 90 threshold
+      { move: moveC, score: 50 }, // below threshold
     ];
     // No blunder (0.50 >= 0.12), then pick index 1 of candidates [A, B]
     const result = selectMove(
@@ -279,7 +274,7 @@ describe('selectMove — score-window randomization', () => {
       rootScores,
       [moveA, moveB, moveC],
       EASY_CONFIG,
-      deterministicRandom(0.50, 0.5),
+      deterministicRandom(0.5, 0.5),
     );
     expect(result).toBe(moveB);
   });
@@ -299,7 +294,7 @@ describe('selectMove — score-window randomization', () => {
         rootScores,
         [moveA, moveB, moveC],
         EASY_CONFIG,
-        deterministicRandom(0.50, pick),
+        deterministicRandom(0.5, pick),
       );
       selected.add(result);
     }
@@ -321,7 +316,7 @@ describe('selectMove — score-window randomization', () => {
         rootScores,
         [moveA, moveB, moveC],
         EASY_CONFIG,
-        deterministicRandom(0.50, pick),
+        deterministicRandom(0.5, pick),
       );
       selected.add(result);
     }
@@ -330,9 +325,9 @@ describe('selectMove — score-window randomization', () => {
 
   it('handles negative scores correctly', () => {
     const rootScores = [
-      { move: moveA, score: -50 },   // best (least bad)
-      { move: moveB, score: -55 },   // threshold = -50 - 5 = -55, so -55 >= -55 => included
-      { move: moveC, score: -100 },  // below threshold
+      { move: moveA, score: -50 }, // best (least bad)
+      { move: moveB, score: -55 }, // threshold = -50 - 5 = -55, so -55 >= -55 => included
+      { move: moveC, score: -100 }, // below threshold
     ];
     // No blunder, pick index 1 of candidates [A, B]
     const result = selectMove(
@@ -340,7 +335,7 @@ describe('selectMove — score-window randomization', () => {
       rootScores,
       [moveA, moveB, moveC],
       EASY_CONFIG,
-      deterministicRandom(0.50, 0.5),
+      deterministicRandom(0.5, 0.5),
     );
     expect(result).toBe(moveB);
 
@@ -350,7 +345,7 @@ describe('selectMove — score-window randomization', () => {
       rootScores,
       [moveA, moveB, moveC],
       EASY_CONFIG,
-      deterministicRandom(0.50, 0.99),
+      deterministicRandom(0.5, 0.99),
     );
     expect(result2).not.toBe(moveC);
   });
@@ -367,7 +362,7 @@ describe('selectMove — score-window randomization', () => {
       rootScores,
       [moveA, moveB, moveC],
       EASY_CONFIG,
-      deterministicRandom(0.50, 0.5),
+      deterministicRandom(0.5, 0.5),
     );
     expect(result).toBe(moveB);
   });
@@ -379,7 +374,7 @@ describe('selectMove — score-window randomization', () => {
       rootScores,
       [moveA],
       EASY_CONFIG,
-      deterministicRandom(0.50, 0.0),
+      deterministicRandom(0.5, 0.0),
     );
     expect(result).toBe(moveA);
   });
@@ -390,7 +385,7 @@ describe('selectMove — score-window randomization', () => {
       [],
       [moveA, moveB, moveC],
       EASY_CONFIG,
-      deterministicRandom(0.50, 0.0),
+      deterministicRandom(0.5, 0.0),
     );
     expect(result).toBe(moveA);
   });
@@ -402,12 +397,7 @@ describe('selectMove — score-window randomization', () => {
 
 describe('selectMove — edge cases', () => {
   it('handles searchResult.move being null (terminal position fallback)', () => {
-    const result = selectMove(
-      makeSearchResult(null, -10000),
-      [],
-      [moveA],
-      EASY_CONFIG,
-    );
+    const result = selectMove(makeSearchResult(null, -10000), [], [moveA], EASY_CONFIG);
     expect(result).toBe(moveA);
   });
 

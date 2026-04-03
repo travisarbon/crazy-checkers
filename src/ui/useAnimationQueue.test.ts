@@ -172,7 +172,9 @@ describe('buildAnimationSequence', () => {
     };
     const steps = buildAnimationSequence(move, board, boardAfter);
 
-    const slideSteps = steps.filter((s): s is Extract<typeof s, { type: 'slide' }> => s.type === 'slide');
+    const slideSteps = steps.filter(
+      (s): s is Extract<typeof s, { type: 'slide' }> => s.type === 'slide',
+    );
     for (const step of slideSteps) {
       expect(step.easing).toBe(ANIM_EASING.MULTI_JUMP_HOP);
     }
@@ -255,9 +257,7 @@ describe('useAnimationQueue', () => {
 
   it('completes a simple slide and calls onComplete', () => {
     const onComplete = vi.fn();
-    const { result } = renderHook(() =>
-      useAnimationQueue({ onComplete }),
-    );
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
 
     const steps: AnimationStep[] = [
       { type: 'slide', fromSquare: square(21), toSquare: square(17), durationMs: 280 },
@@ -280,9 +280,7 @@ describe('useAnimationQueue', () => {
 
   it('processes fadeOut step', () => {
     const onComplete = vi.fn();
-    const { result } = renderHook(() =>
-      useAnimationQueue({ onComplete }),
-    );
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
 
     const boardWithPiece = [...board] as SquareState[];
     boardWithPiece[17] = { color: PieceColor.Black, type: PieceType.Pawn }; // sq 18
@@ -315,13 +313,9 @@ describe('useAnimationQueue', () => {
 
   it('processes pause step', () => {
     const onComplete = vi.fn();
-    const { result } = renderHook(() =>
-      useAnimationQueue({ onComplete }),
-    );
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
 
-    const steps: AnimationStep[] = [
-      { type: 'pause', durationMs: 60 },
-    ];
+    const steps: AnimationStep[] = [{ type: 'pause', durationMs: 60 }];
 
     act(() => {
       result.current.enqueue(steps, board);
@@ -339,16 +333,12 @@ describe('useAnimationQueue', () => {
 
   it('processes kingPulse step', () => {
     const onComplete = vi.fn();
-    const { result } = renderHook(() =>
-      useAnimationQueue({ onComplete }),
-    );
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
 
     const boardWithPiece = [...board] as SquareState[];
     boardWithPiece[0] = { color: PieceColor.White, type: PieceType.King }; // sq 1
 
-    const steps: AnimationStep[] = [
-      { type: 'kingPulse', square: square(1), durationMs: 300 },
-    ];
+    const steps: AnimationStep[] = [{ type: 'kingPulse', square: square(1), durationMs: 300 }];
 
     act(() => {
       result.current.enqueue(steps, boardWithPiece);
@@ -377,9 +367,7 @@ describe('useAnimationQueue', () => {
 
   it('applies speed multiplier to durations', () => {
     const onComplete = vi.fn();
-    const { result } = renderHook(() =>
-      useAnimationQueue({ speedMultiplier: 2.0, onComplete }),
-    );
+    const { result } = renderHook(() => useAnimationQueue({ speedMultiplier: 2.0, onComplete }));
 
     const steps: AnimationStep[] = [
       { type: 'slide', fromSquare: square(21), toSquare: square(17), durationMs: 280 },
@@ -405,9 +393,7 @@ describe('useAnimationQueue', () => {
 
   it('skipAnimation completes immediately and calls onComplete', () => {
     const onComplete = vi.fn();
-    const { result } = renderHook(() =>
-      useAnimationQueue({ onComplete }),
-    );
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
 
     const steps: AnimationStep[] = [
       { type: 'slide', fromSquare: square(21), toSquare: square(17), durationMs: 280 },
@@ -432,16 +418,12 @@ describe('useAnimationQueue', () => {
 
   it('enqueue during animation replaces the current sequence', () => {
     const onComplete = vi.fn();
-    const { result } = renderHook(() =>
-      useAnimationQueue({ onComplete }),
-    );
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
 
     const steps1: AnimationStep[] = [
       { type: 'slide', fromSquare: square(21), toSquare: square(17), durationMs: 500 },
     ];
-    const steps2: AnimationStep[] = [
-      { type: 'pause', durationMs: 100 },
-    ];
+    const steps2: AnimationStep[] = [{ type: 'pause', durationMs: 100 }];
 
     act(() => {
       result.current.enqueue(steps1, board);
@@ -466,9 +448,7 @@ describe('useAnimationQueue', () => {
 
   it('processes a multi-step sequence in order', () => {
     const onComplete = vi.fn();
-    const { result } = renderHook(() =>
-      useAnimationQueue({ onComplete }),
-    );
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
 
     const boardWithPieces = [...board] as SquareState[];
     boardWithPieces[8] = { color: PieceColor.White, type: PieceType.Pawn }; // sq 9

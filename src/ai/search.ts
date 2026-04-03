@@ -97,10 +97,7 @@ function checkTime(ctx: SearchContext): boolean {
  * 2. Captures, sorted by number of pieces captured (multi-jumps first).
  * 3. Simple moves, sorted by a lightweight center-seeking heuristic.
  */
-function orderMoves(
-  moves: Move[],
-  previousBestMove: Move | null,
-): Move[] {
+function orderMoves(moves: Move[], previousBestMove: Move | null): Move[] {
   const scored: Array<{ move: Move; sortKey: number }> = moves.map((move) => {
     let sortKey = 0;
 
@@ -174,9 +171,7 @@ function quiescenceSearch(
   }
 
   // Order by capture count (multi-jumps first)
-  const orderedCaptures = [...captures].sort(
-    (a, b) => b.captured.length - a.captured.length,
-  );
+  const orderedCaptures = [...captures].sort((a, b) => b.captured.length - a.captured.length);
 
   let bestScore = standPat;
 
@@ -258,15 +253,7 @@ function negamax(
 
   for (const move of orderedMoves) {
     const newBoard = ctx.ruleSet.applyMove(board, move);
-    const score = -negamax(
-      newBoard,
-      opponentColor(color),
-      depth - 1,
-      -beta,
-      -alpha,
-      ctx,
-      null,
-    );
+    const score = -negamax(newBoard, opponentColor(color), depth - 1, -beta, -alpha, ctx, null);
 
     if (ctx.timeExpired) return 0;
 
@@ -294,10 +281,7 @@ function negamax(
  * Performs iterative-deepening search with alpha-beta pruning.
  * Returns the best move found within the depth and time constraints.
  */
-export function iterativeSearch(
-  state: GameState,
-  config: SearchConfig,
-): SearchResult {
+export function iterativeSearch(state: GameState, config: SearchConfig): SearchResult {
   const { board, activeColor, ruleSet } = state;
   const ctx: SearchContext = {
     ruleSet,

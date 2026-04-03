@@ -27,12 +27,8 @@ describe('Board', () => {
     render(<Board board={createInitialBoard()} />);
     const pieces = screen.getAllByTestId('piece');
 
-    const blackPieces = pieces.filter((p) =>
-      p.getAttribute('aria-label')?.startsWith('Black'),
-    );
-    const whitePieces = pieces.filter((p) =>
-      p.getAttribute('aria-label')?.startsWith('White'),
-    );
+    const blackPieces = pieces.filter((p) => p.getAttribute('aria-label')?.startsWith('Black'));
+    const whitePieces = pieces.filter((p) => p.getAttribute('aria-label')?.startsWith('White'));
 
     expect(blackPieces).toHaveLength(12);
     expect(whitePieces).toHaveLength(12);
@@ -63,12 +59,8 @@ describe('Board', () => {
     mutableBoard[0] = { color: PieceColor.Black, type: PieceType.Pawn };
     const testBoard = mutableBoard as unknown as BoardState;
 
-    const { container: normalContainer } = render(
-      <Board board={testBoard} />,
-    );
-    const { container: flippedContainer } = render(
-      <Board board={testBoard} flipped />,
-    );
+    const { container: normalContainer } = render(<Board board={testBoard} />);
+    const { container: flippedContainer } = render(<Board board={testBoard} flipped />);
 
     // Pieces now use origin-based rendering with <g transform="translate(cx, cy) scale(1)">
     const normalPiece = normalContainer.querySelector('[data-testid="piece"]');
@@ -106,9 +98,7 @@ describe('Board', () => {
     const gridcells = screen.getAllByRole('gridcell');
     expect(gridcells).toHaveLength(32);
 
-    const sq1Cell = gridcells.find((cell) =>
-      cell.getAttribute('aria-label')?.includes('Square 1'),
-    );
+    const sq1Cell = gridcells.find((cell) => cell.getAttribute('aria-label')?.includes('Square 1'));
     expect(sq1Cell).toBeDefined();
     expect(sq1Cell).toHaveAttribute('aria-label', 'Square 1, black pawn');
   });
@@ -150,9 +140,7 @@ describe('Board', () => {
     expect(crown).toBeInTheDocument();
 
     const piece = screen.getByTestId('piece');
-    expect(piece.getAttribute('aria-label')).toBe(
-      'Black king on square 1',
-    );
+    expect(piece.getAttribute('aria-label')).toBe('Black king on square 1');
   });
 
   it('correctly maps engine squares to SVG positions', () => {
@@ -188,10 +176,7 @@ describe('Board', () => {
 
   it('renders last-move highlights for from and to squares', () => {
     render(
-      <Board
-        board={createInitialBoard()}
-        lastMoveSquares={{ from: square(22), to: square(18) }}
-      />,
+      <Board board={createInitialBoard()} lastMoveSquares={{ from: square(22), to: square(18) }} />,
     );
     const highlights = screen.getAllByTestId('highlight-last-move');
     expect(highlights).toHaveLength(2);
@@ -209,10 +194,7 @@ describe('Board', () => {
 
   it('last-move highlight uses correct CSS variable', () => {
     render(
-      <Board
-        board={createInitialBoard()}
-        lastMoveSquares={{ from: square(22), to: square(18) }}
-      />,
+      <Board board={createInitialBoard()} lastMoveSquares={{ from: square(22), to: square(18) }} />,
     );
     const highlights = screen.getAllByTestId('highlight-last-move');
     for (const rect of highlights) {
@@ -273,10 +255,7 @@ describe('Board', () => {
 
   it('last-move highlight on from square has correct position', () => {
     render(
-      <Board
-        board={createInitialBoard()}
-        lastMoveSquares={{ from: square(22), to: square(18) }}
-      />,
+      <Board board={createInitialBoard()} lastMoveSquares={{ from: square(22), to: square(18) }} />,
     );
     const highlights = screen.getAllByTestId('highlight-last-move');
     const { x, y } = expectedPosition(22);
@@ -288,10 +267,7 @@ describe('Board', () => {
 
   it('last-move highlight on to square has correct position', () => {
     render(
-      <Board
-        board={createInitialBoard()}
-        lastMoveSquares={{ from: square(22), to: square(18) }}
-      />,
+      <Board board={createInitialBoard()} lastMoveSquares={{ from: square(22), to: square(18) }} />,
     );
     const highlights = screen.getAllByTestId('highlight-last-move');
     const { x, y } = expectedPosition(18);
@@ -303,12 +279,11 @@ describe('Board', () => {
 
   it('last-move highlights respect board flip', () => {
     const { container: normalContainer } = render(
-      <Board
-        board={createInitialBoard()}
-        lastMoveSquares={{ from: square(22), to: square(18) }}
-      />,
+      <Board board={createInitialBoard()} lastMoveSquares={{ from: square(22), to: square(18) }} />,
     );
-    const normalHighlights = normalContainer.querySelectorAll('[data-testid="highlight-last-move"]');
+    const normalHighlights = normalContainer.querySelectorAll(
+      '[data-testid="highlight-last-move"]',
+    );
 
     const { container: flippedContainer } = render(
       <Board
@@ -317,22 +292,25 @@ describe('Board', () => {
         flipped
       />,
     );
-    const flippedHighlights = flippedContainer.querySelectorAll('[data-testid="highlight-last-move"]');
+    const flippedHighlights = flippedContainer.querySelectorAll(
+      '[data-testid="highlight-last-move"]',
+    );
 
     expect(normalHighlights).toHaveLength(2);
     expect(flippedHighlights).toHaveLength(2);
 
-    const normalYs = Array.from(normalHighlights).map((r) => Number(r.getAttribute('y'))).sort();
-    const flippedYs = Array.from(flippedHighlights).map((r) => Number(r.getAttribute('y'))).sort();
+    const normalYs = Array.from(normalHighlights)
+      .map((r) => Number(r.getAttribute('y')))
+      .sort();
+    const flippedYs = Array.from(flippedHighlights)
+      .map((r) => Number(r.getAttribute('y')))
+      .sort();
     expect(normalYs).not.toEqual(flippedYs);
   });
 
   it('last-move highlights do not appear on light squares', () => {
     render(
-      <Board
-        board={createInitialBoard()}
-        lastMoveSquares={{ from: square(22), to: square(18) }}
-      />,
+      <Board board={createInitialBoard()} lastMoveSquares={{ from: square(22), to: square(18) }} />,
     );
     const highlights = screen.getAllByTestId('highlight-last-move');
     for (const hl of highlights) {

@@ -74,7 +74,9 @@ describe('workerClient main-thread fallback', () => {
     const { terminateWorker } = await import('./workerClient');
 
     // Should not throw
-    expect(() => { terminateWorker(); }).not.toThrow();
+    expect(() => {
+      terminateWorker();
+    }).not.toThrow();
   });
 
   it('falls back on all subsequent calls after initial Worker failure', async () => {

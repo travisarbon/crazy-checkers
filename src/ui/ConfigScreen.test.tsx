@@ -10,11 +10,13 @@ import { THEMES } from '../themes/theme';
 // Helper
 // ---------------------------------------------------------------------------
 
-function renderConfig(overrides?: Partial<{
-  settings: Settings;
-  onSettingsChange: (s: Settings) => void;
-  onBack: () => void;
-}>) {
+function renderConfig(
+  overrides?: Partial<{
+    settings: Settings;
+    onSettingsChange: (s: Settings) => void;
+    onBack: () => void;
+  }>,
+) {
   const settings = overrides?.settings ?? { ...DEFAULT_SETTINGS };
   const onSettingsChange = overrides?.onSettingsChange ?? vi.fn();
   const onBack = overrides?.onBack ?? vi.fn();
@@ -23,11 +25,7 @@ function renderConfig(overrides?: Partial<{
     onSettingsChange,
     onBack,
     ...render(
-      <ConfigScreen
-        settings={settings}
-        onSettingsChange={onSettingsChange}
-        onBack={onBack}
-      />,
+      <ConfigScreen settings={settings} onSettingsChange={onSettingsChange} onBack={onBack} />,
     ),
   };
 }
@@ -133,9 +131,7 @@ describe('ConfigScreen', () => {
     renderConfig({ onSettingsChange });
     const slider = screen.getByRole('slider', { name: 'Animation speed' });
     fireEvent.change(slider, { target: { value: '2.0' } });
-    expect(onSettingsChange).toHaveBeenCalledWith(
-      expect.objectContaining({ animationSpeed: 0.5 }),
-    );
+    expect(onSettingsChange).toHaveBeenCalledWith(expect.objectContaining({ animationSpeed: 0.5 }));
   });
 
   // ── Move confirmation tests ─────────────────────────────────────────
