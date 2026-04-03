@@ -16,6 +16,14 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**/*.ts', 'src/**/*.tsx'],
       exclude: ['src/test/**', 'src/vite-env.d.ts', 'src/main.tsx'],
+      thresholds: {
+        'src/engine/board.ts': { lines: 95 },
+        'src/engine/moves.ts': { lines: 95 },
+        'src/engine/rules.ts': { lines: 95 },
+        'src/engine/game.ts': { lines: 95 },
+        'src/engine/zobrist.ts': { lines: 95 },
+        'src/ai/evaluator.ts': { lines: 95 },
+      },
     },
   },
 });

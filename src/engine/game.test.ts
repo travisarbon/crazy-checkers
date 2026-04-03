@@ -20,7 +20,7 @@ import {
   PlayerType,
   square,
 } from './types';
-import type { BoardState, GameState, Move, PlayerSetup } from './types';
+import type { BoardState, GameState, Move, PlayerSetup, RuleSet, Square } from './types';
 import { W, B, P, K, buildBoard } from './test-utils';
 
 // ---------------------------------------------------------------------------
@@ -603,6 +603,272 @@ describe('movesAreEqual', () => {
     const a: Move = { from: square(22), path: [square(15), square(8)], captured: [square(18), square(11)] };
     const b: Move = { from: square(22), path: [square(15), square(8)], captured: [square(18), square(11)] };
     expect(movesAreEqual(a, b)).toBe(true);
+  });
+});
+
+// ===========================================================================
+// makeMove — hook integration
+// ===========================================================================
+
+describe('makeMove — hook integration', () => {
+  /**
+   * Creates a RuleSet that delegates core behavior to AmericanRules
+   * but defines optional hooks for testing the hook execution paths.
+   */
+  function rulesWithHooks(hooks: {
+    onTurnStart?: RuleSet['onTurnStart'];
+    onTurnEnd?: RuleSet['onTurnEnd'];
+    onCapture?: RuleSet['onCapture'];
+    onCheckGameOver?: RuleSet['onCheckGameOver'];
+  }): RuleSet {
+    const base = createAmericanRules();
+    return {
+      getLegalMoves: base.getLegalMoves.bind(base),
+      applyMove: base.applyMove.bind(base),
+      checkGameOver: base.checkGameOver.bind(base),
+      shouldPromote: base.shouldPromote.bind(base),
+      ...hooks,
+    };
+  }
+
+  function stateWithHooks(
+    board: BoardState,
+    hooks: Parameters<typeof rulesWithHooks>[0],
+    activeColor: PieceColor = PieceColor.White,
+    overrides: Partial<GameState> = {},
+  ): GameState {
+    const ruleSet = rulesWithHooks(hooks);
+    return {
+      board,
+      activeColor,
+      status: GameStatus.InProgress,
+      result: null,
+      ruleSet,
+      players: HUMAN_VS_HUMAN,
+      moveHistory: [],
+      positionHashes: [computeZobristHash(board, activeColor)],
+      halfMoveClock: 0,
+      plyCount: 0,
+      ...overrides,
+    };
+  }
+
+  it('calls onTurnStart before applyMove with current board and active color', () => {
+    const board = buildBoard([
+      { sq: 22, color: W, type: P },
+      { sq: 4, color: B, type: K },
+    ]);
+    const startCalls: PieceColor[] = [];
+    const state = stateWithHooks(board, {
+      onTurnStart: (b, color) => {
+        startCalls.push(color);
+        return b; // pass-through
+      },
+    });
+    const move: Move = { from: square(22), path: [square(18)], captured: [] };
+    makeMove(state, move);
+    expect(startCalls).toHaveLength(1);
+    expect(startCalls[0]).toBe(PieceColor.White);
+  });
+
+  it('calls onCapture after a capture with landing square and captured squares', () => {
+    const board = buildBoard([
+      { sq: 22, color: W, type: P },
+      { sq: 18, color: B, type: P },
+    ]);
+    const captureCalls: Array<{ landing: Square; captured: Square[] }> = [];
+    const state = stateWithHooks(board, {
+      onCapture: (b, landing, captured) => {
+        captureCalls.push({ landing, captured });
+        return b;
+      },
+    });
+    const move: Move = { from: square(22), path: [square(15)], captured: [square(18)] };
+    makeMove(state, move);
+    expect(captureCalls).toHaveLength(1);
+    expect(captureCalls[0]?.landing).toBe(square(15));
+    expect(captureCalls[0]?.captured).toEqual([square(18)]);
+  });
+
+  it('calls onTurnEnd after move with active color and move object', () => {
+    const board = buildBoard([
+      { sq: 22, color: W, type: P },
+      { sq: 4, color: B, type: K },
+    ]);
+    const endCalls: Array<{ activeColor: PieceColor; move: Move }> = [];
+    const state = stateWithHooks(board, {
+      onTurnEnd: (b, color, m) => {
+        endCalls.push({ activeColor: color, move: m });
+        return b;
+      },
+    });
+    const move: Move = { from: square(22), path: [square(18)], captured: [] };
+    makeMove(state, move);
+    expect(endCalls).toHaveLength(1);
+    expect(endCalls[0]?.activeColor).toBe(PieceColor.White);
+    expect(movesAreEqual(endCalls[0]?.move ?? move, move)).toBe(true);
+  });
+
+  it('onCheckGameOver can convert a non-game-over into a game-over', () => {
+    // Board where the game is NOT over after the move
+    const board = buildBoard([
+      { sq: 22, color: W, type: P },
+      { sq: 4, color: B, type: K },
+    ]);
+    const state = stateWithHooks(board, {
+      onCheckGameOver: () => {
+        // Force game over regardless of base result
+        return { type: GameResultType.Draw, reason: GameEndReason.Repetition };
+      },
+    });
+    const move: Move = { from: square(22), path: [square(18)], captured: [] };
+    const next = makeMove(state, move);
+    expect(next.status).toBe(GameStatus.GameOver);
+    expect(next.result?.type).toBe(GameResultType.Draw);
+  });
+
+  it('onCheckGameOver can convert a game-over into continuation (returns null)', () => {
+    // Board where capturing the last black piece would end the game
+    const board = buildBoard([
+      { sq: 22, color: W, type: K },
+      { sq: 18, color: B, type: P },
+    ]);
+    const state = stateWithHooks(board, {
+      onCheckGameOver: () => null,
+    });
+    const move: Move = { from: square(22), path: [square(15)], captured: [square(18)] };
+    const next = makeMove(state, move);
+    // The hook suppressed the game-over
+    expect(next.status).toBe(GameStatus.InProgress);
+    expect(next.result).toBeNull();
+  });
+
+  it('Zobrist uses full recomputation when any hook is present', () => {
+    const board = buildBoard([
+      { sq: 22, color: W, type: P },
+      { sq: 4, color: B, type: K },
+    ]);
+    const state = stateWithHooks(board, {
+      onTurnStart: (b) => b, // no-op hook, but still triggers full recomputation
+    });
+    const move: Move = { from: square(22), path: [square(18)], captured: [] };
+    const next = makeMove(state, move);
+
+    // Verify hash matches full recomputation (correctness check)
+    const lastHash = next.positionHashes[next.positionHashes.length - 1] ?? 0n;
+    const recomputed = computeZobristHash(next.board, next.activeColor);
+    expect(lastHash).toBe(recomputed);
+  });
+});
+
+// ===========================================================================
+// makeMove — defensive errors
+// ===========================================================================
+
+describe('makeMove — defensive errors', () => {
+  it('throws descriptive error when origin square is empty (corrupted state)', () => {
+    // Build a state with a valid legal-moves list but corrupt the board
+    const board = buildBoard([
+      { sq: 22, color: W, type: P },
+      { sq: 4, color: B, type: K },
+    ]);
+    const state = stateWithBoard(board);
+    const move: Move = { from: square(22), path: [square(18)], captured: [] };
+
+    // Corrupt: replace board with one missing the piece at sq 22
+    const corruptBoard = buildBoard([
+      { sq: 4, color: B, type: K },
+    ]);
+    // Manually build a state where getLegalMoves still returns the move
+    // but the board doesn't have the piece
+    const corruptState: GameState = {
+      ...state,
+      board: corruptBoard,
+      ruleSet: {
+        ...state.ruleSet,
+        getLegalMoves: () => [move], // pretend the move is legal
+      },
+    };
+    expect(() => makeMove(corruptState, move)).toThrow('No piece at move origin square');
+  });
+
+  it('throws descriptive error when move path is empty', () => {
+    const board = buildBoard([
+      { sq: 22, color: W, type: P },
+      { sq: 4, color: B, type: K },
+    ]);
+    const emptyPathMove: Move = { from: square(22), path: [], captured: [] };
+    const state: GameState = {
+      ...stateWithBoard(board),
+      ruleSet: {
+        ...stateWithBoard(board).ruleSet,
+        getLegalMoves: () => [emptyPathMove],
+        applyMove: (b) => b, // no-op since path is empty
+      },
+    };
+    expect(() => makeMove(state, emptyPathMove)).toThrow('move has empty path');
+  });
+});
+
+// ===========================================================================
+// Engine output for accessibility
+// ===========================================================================
+
+describe('engine output for accessibility', () => {
+  it('move history entries have fully populated from, path, and captured fields', () => {
+    // Play a capture move and verify move history completeness
+    const board = buildBoard([
+      { sq: 22, color: W, type: P },
+      { sq: 18, color: B, type: P },
+    ]);
+    const state = stateWithBoard(board);
+    const move: Move = { from: square(22), path: [square(15)], captured: [square(18)] };
+    const next = makeMove(state, move);
+    const recorded = next.moveHistory[0];
+    expect(recorded).toBeDefined();
+    expect(recorded?.from).toBe(square(22));
+    expect(recorded?.path).toEqual([square(15)]);
+    expect(recorded?.captured).toEqual([square(18)]);
+  });
+
+  it('game-over result includes reason for all ending conditions', () => {
+    // NoPiecesLeft
+    const board1 = buildBoard([
+      { sq: 22, color: W, type: K },
+      { sq: 18, color: B, type: P },
+    ]);
+    const s1 = stateWithBoard(board1);
+    const m1: Move = { from: square(22), path: [square(15)], captured: [square(18)] };
+    const r1 = makeMove(s1, m1);
+    expect(r1.result?.reason).toBe(GameEndReason.NoPiecesLeft);
+
+    // Resignation
+    const s2 = newGame();
+    const r2 = resign(s2, PieceColor.White);
+    expect(r2.result?.reason).toBe(GameEndReason.Resignation);
+
+    // FortyMoveRule
+    const board3 = buildBoard([
+      { sq: 14, color: W, type: K },
+      { sq: 4, color: B, type: K },
+    ]);
+    const s3 = stateWithBoard(board3, PieceColor.White, { halfMoveClock: 79 });
+    const moves3 = getCurrentLegalMoves(s3);
+    const kingMove = moves3.find((m) => m.captured.length === 0);
+    if (kingMove === undefined) throw new Error('expected king move');
+    const r3 = makeMove(s3, kingMove);
+    expect(r3.result?.reason).toBe(GameEndReason.FortyMoveRule);
+  });
+
+  it('getCurrentLegalMoves returns complete move objects suitable for UI annotation', () => {
+    const state = newGame();
+    const moves = getCurrentLegalMoves(state);
+    for (const move of moves) {
+      expect(move.from).toBeDefined();
+      expect(Array.isArray(move.path)).toBe(true);
+      expect(move.path.length).toBeGreaterThan(0);
+      expect(Array.isArray(move.captured)).toBe(true);
+    }
   });
 });
 

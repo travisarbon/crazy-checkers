@@ -139,6 +139,18 @@ describe('updateZobristHash', () => {
   });
 });
 
+describe('updateZobristHash — edge cases', () => {
+  it('throws descriptive error when move has empty path', () => {
+    const movingPiece: Piece = { color: PieceColor.White, type: PieceType.Pawn };
+    const landingPiece: Piece = { color: PieceColor.White, type: PieceType.Pawn };
+    const emptyPathMove: Move = { from: square(22), path: [], captured: [] };
+
+    expect(() =>
+      updateZobristHash(0n, emptyPathMove, movingPiece, landingPiece, []),
+    ).toThrow('move has empty path');
+  });
+});
+
 // ===========================================================================
 // isRepetition
 // ===========================================================================
