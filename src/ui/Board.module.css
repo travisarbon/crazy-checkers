@@ -36,9 +36,16 @@
   outline: none;
 }
 
-.boardSquare:focus-visible {
-  outline: 3px solid var(--ui-accent);
-  outline-offset: -3px;
+/* SVG <g> elements don't reliably render CSS outline in Firefox.
+   Instead we use a child SVG rect (.focusRing) that becomes visible
+   via :focus-visible on the parent group. */
+.focusRing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.boardSquare:focus-visible .focusRing {
+  opacity: 1;
 }
 
 .pieceSelectable:hover circle {

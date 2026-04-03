@@ -217,6 +217,12 @@ export interface AnimatingPiece {
   transitionDurationMs: number;
   /** CSS easing function override. */
   easing?: string;
+  /**
+   * Stable key for React reconciliation. During multi-jump animations, the
+   * piece's map key changes as the animation board updates, but this value
+   * stays constant (the original fromSquare) so React preserves the DOM node.
+   */
+  stableKey?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -288,6 +294,8 @@ export function useAnimationQueue({
   const activeTimersRef = useRef(new Set<ReturnType<typeof setTimeout>>());
   const isAnimatingRef = useRef(false);
   const processNextStepRef = useRef<() => void>(() => {});
+  /** Stable key for the moving piece — set to the first slide's fromSquare. */
+  const movingPieceKeyRef = useRef<number | null>(null);
 
   // Keep refs in sync via effects (refs must not be written during render)
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
@@ -317,6 +325,7 @@ export function useAnimationQueue({
     stepIndexRef.current = 0;
     boardRef.current = null;
     isAnimatingRef.current = false;
+    movingPieceKeyRef.current = null;
 
     setIsAnimating(false);
     setAnimatingPieces(new Map());
@@ -358,12 +367,19 @@ export function useAnimationQueue({
         const toCoords = squareCenterCoords(step.toSquare, fl);
         const slideEasing = step.easing;
 
+        // On the first slide in a sequence, lock the stable key so the
+        // floating layer uses a consistent React key across all hops.
+        if (movingPieceKeyRef.current === null) {
+          movingPieceKeyRef.current = step.fromSquare as number;
+        }
+        const stableKey = movingPieceKeyRef.current;
+
         // Set piece at start position with no transition, then animate to target
         setAnimatingPieces(
           new Map([
             [
               step.fromSquare as number,
-              { overridePosition: fromCoords, opacity: null, scale: null, transitionDurationMs: 0 },
+              { overridePosition: fromCoords, opacity: null, scale: null, transitionDurationMs: 0, stableKey },
             ],
           ]),
         );
@@ -375,7 +391,7 @@ export function useAnimationQueue({
             new Map([
               [
                 step.fromSquare as number,
-                { overridePosition: toCoords, opacity: null, scale: null, transitionDurationMs: duration, easing: slideEasing },
+                { overridePosition: toCoords, opacity: null, scale: null, transitionDurationMs: duration, easing: slideEasing, stableKey },
               ],
             ]),
           );
@@ -405,7 +421,7 @@ export function useAnimationQueue({
             new Map([
               [
                 step.toSquare as number,
-                { overridePosition: destCoords, opacity: null, scale: null, transitionDurationMs: 0 },
+                { overridePosition: destCoords, opacity: null, scale: null, transitionDurationMs: 0, stableKey },
               ],
             ]),
           );
@@ -507,6 +523,7 @@ export function useAnimationQueue({
       boardRef.current = [...boardBeforeMove];
       capturingColorRef.current = capturingColor;
       isAnimatingRef.current = true;
+      movingPieceKeyRef.current = null;
 
       setIsAnimating(true);
       setAnimatingPieces(new Map());

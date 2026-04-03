@@ -166,6 +166,7 @@ function Board({
     cy: number;
     animOverride?: AnimatingPiece;
     isFading: boolean;
+    reactKey: number;
   }> = [];
 
   return (
@@ -256,6 +257,7 @@ function Board({
                   cy: y + SQUARE_SIZE / 2,
                   animOverride,
                   isFading,
+                  reactKey: animOverride?.stableKey ?? (sq as number),
                 });
               }
 
@@ -283,6 +285,19 @@ function Board({
                     width={SQUARE_SIZE}
                     height={SQUARE_SIZE}
                     fill="var(--board-dark)"
+                  />
+
+                  {/* Keyboard focus ring — SVG rect instead of CSS outline
+                      for cross-browser compatibility (Firefox SVG <g> issue) */}
+                  <rect
+                    x={x + 3}
+                    y={y + 3}
+                    width={SQUARE_SIZE - 6}
+                    height={SQUARE_SIZE - 6}
+                    fill="none"
+                    stroke="var(--ui-accent)"
+                    strokeWidth={3}
+                    className={styles.focusRing}
                   />
 
                   {/* Last-move highlight (lowest visual priority) */}
@@ -402,9 +417,9 @@ function Board({
 
         {/* Floating animation layer — rendered above all squares so animating
             pieces don't clip underneath other board squares during slides */}
-        {floatingPieces.map(({ piece, sq, cx, cy, animOverride, isFading }) => (
+        {floatingPieces.map(({ piece, sq, cx, cy, animOverride, isFading, reactKey }) => (
           <PieceComponent
-            key={sq as number}
+            key={reactKey}
             piece={piece}
             sq={sq}
             cx={cx}
