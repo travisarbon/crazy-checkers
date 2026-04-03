@@ -43,6 +43,9 @@ import type { ActiveEvent, BoardState, GameResult, Move, Piece, PieceColor, Rule
 import type { CrazyEvent } from './types';
 import { EventDecorator, EVENT_DECORATOR_REGISTRY } from './events';
 
+// Ensure all event decorators are registered before createCompositeRuleSet is called.
+import './events/index';
+
 /**
  * A RuleSet that composes AmericanRules with zero or more active event
  * decorators. Used for Crazy mode and Choice mode games.
@@ -110,7 +113,9 @@ export class CompositeEventRuleSet implements RuleSet {
 
     let chain: RuleSet = this.base;
     for (const decorator of activeDecorators) {
-      chain = decorator.withInner(chain);
+      const linked = decorator.withInner(chain);
+      linked.setActiveEventsContext(this.currentActiveEvents);
+      chain = linked;
     }
     this.cachedChain = chain;
     return chain;

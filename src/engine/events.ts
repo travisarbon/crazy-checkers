@@ -99,6 +99,21 @@ export abstract class EventDecorator implements RuleSet {
   abstract withInner(inner: RuleSet): EventDecorator;
 
   /**
+   * The active events context, set by CompositeEventRuleSet when building
+   * the decorator chain. Allows decorators to read metadata from their
+   * ActiveEvent entries without instance state.
+   */
+  protected activeEventsContext: readonly ActiveEvent[] = [];
+
+  /**
+   * Sets the active events context for this decorator instance.
+   * Called by CompositeEventRuleSet after building the chain via withInner().
+   */
+  setActiveEventsContext(events: readonly ActiveEvent[]): void {
+    this.activeEventsContext = events;
+  }
+
+  /**
    * Checks whether this event type is currently active.
    * Searches the provided active events list for a matching type.
    */

@@ -7,6 +7,7 @@
 
 import type { ActiveEvent, GameResult, GameState, Move, Piece, PlayerSetup, RuleSet, Square } from './types';
 import {
+  CrazyEvent,
   GameEndReason,
   GameMode,
   GameResultType,
@@ -247,10 +248,24 @@ export function makeMove(state: GameState, move: Move): GameState {
   if (state.mode === GameMode.Crazy) {
     const triggeredEvent = checkEventTrigger(move, state.mode);
     if (triggeredEvent !== null) {
+      // Build event-specific metadata
+      let metadata: Record<string, unknown> | undefined;
+      if (triggeredEvent === CrazyEvent.KingForADay) {
+        const originalKingSquares: number[] = [];
+        for (let i = 0; i < board.length; i++) {
+          const p = board[i];
+          if (p != null && p.type === PieceType.King) {
+            originalKingSquares.push(i + 1); // 1-based square numbers
+          }
+        }
+        metadata = { originalKingSquares };
+      }
+
       const newEvent = createActiveEvent(
         triggeredEvent,
         state.activeColor,
         state.plyCount + 1,
+        metadata,
       );
       updatedEvents = [...updatedEvents, newEvent];
     }
