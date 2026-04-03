@@ -224,7 +224,7 @@ export default function ConfigScreen({
   };
 
   return (
-    <div className={styles.configScreen} data-testid="config-screen">
+    <div className={styles.configScreen} data-testid="config-screen" role="main">
       <header className={styles.header}>
         <button
           className={styles.backButton}

@@ -20,6 +20,7 @@ import TurnIndicator from './TurnIndicator';
 import CapturedPieces from './CapturedPieces';
 import MoveHistory from './MoveHistory';
 import GameControls from './GameControls';
+import GameAnnouncer from './GameAnnouncer';
 import GameOverDialog from './dialogs/GameOverDialog';
 import { useGameInteraction } from './useGameInteraction';
 import { useAnimationQueue, buildAnimationSequence } from './useAnimationQueue';
@@ -75,6 +76,24 @@ function computeUndoState(
 // useIsMobile hook
 // ---------------------------------------------------------------------------
 
+function getPrefersReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function usePrefersReducedMotion(): boolean {
+  const [prefers, setPrefers] = useState(getPrefersReducedMotion);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handler = (e: MediaQueryListEvent) => { setPrefers(e.matches); };
+    mql.addEventListener('change', handler);
+    return () => { mql.removeEventListener('change', handler); };
+  }, []);
+
+  return prefers;
+}
+
 function getIsMobile(breakpoint: number): boolean {
   if (typeof window === 'undefined') return false;
   return window.matchMedia(`(max-width: ${String(breakpoint - 1)}px)`).matches;
@@ -120,10 +139,12 @@ export default function GameScreen({
   );
   const [isAIThinking, setIsAIThinking] = useState(false);
   const aiThinkingRef = useRef(false);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   // --- Animation queue ---
+  const effectiveAnimSpeed = prefersReducedMotion ? 0.01 : animationSpeedMultiplier;
   const animationQueue = useAnimationQueue({
-    speedMultiplier: animationSpeedMultiplier,
+    speedMultiplier: effectiveAnimSpeed,
     flipped,
     onComplete: () => {
       if (pendingStateRef.current) {
@@ -300,7 +321,8 @@ export default function GameScreen({
 
   // --- Render ---
   return (
-    <div className={styles.gameScreen} data-testid="game-screen">
+    <div className={styles.gameScreen} data-testid="game-screen" role="main">
+      <GameAnnouncer gameState={gameState} isAnimating={animationQueue.isAnimating} />
       <div className={styles.boardArea}>
         {interaction.isMidMultiJump && !animationQueue.isAnimating && (
           <div
@@ -331,7 +353,7 @@ export default function GameScreen({
           animatingPieces={animationQueue.animatingPieces}
           fadingSquares={animationQueue.fadingSquares}
           isAnimating={animationQueue.isAnimating}
-          animSpeedMultiplier={animationSpeedMultiplier}
+          animSpeedMultiplier={effectiveAnimSpeed}
         />
       </div>
 

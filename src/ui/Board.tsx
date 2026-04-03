@@ -7,9 +7,10 @@
  * so they don't clip underneath other squares during slide transitions.
  */
 
+import { useState, useRef, useCallback } from 'react';
 import type { BoardState, Piece as PieceData, Square } from '../engine/types';
-import { getBoardSquare, gridToSquare } from '../engine/board';
-import { PieceColor, PieceType } from '../engine/types';
+import { getBoardSquare, gridToSquare, squareToGrid } from '../engine/board';
+import { PieceColor, PieceType, square } from '../engine/types';
 import type { AnimatingPiece } from './useAnimationQueue';
 import { ANIM_DURATION } from './useAnimationQueue';
 import PieceComponent from './Piece';
@@ -48,6 +49,51 @@ function describeSquare(sq: Square, piece: PieceData | null): string {
   return `Square ${String(sq)}, ${color} ${type}`;
 }
 
+/**
+ * Given a square number, find the next playable square in a grid direction.
+ * Arrow key navigation moves visually on the rendered board (respects flip).
+ */
+function findNextSquare(
+  currentSq: Square,
+  key: string,
+  flipped: boolean,
+): Square | null {
+  const grid = squareToGrid(currentSq);
+  let { row, col } = grid;
+
+  // Map arrow keys to visual direction, then adjust for board flip
+  const flipMul = flipped ? -1 : 1;
+  switch (key) {
+    case 'ArrowUp':    row -= 1 * flipMul; break;
+    case 'ArrowDown':  row += 1 * flipMul; break;
+    case 'ArrowLeft':  col -= 1; break;
+    case 'ArrowRight': col += 1; break;
+    default: return null;
+  }
+
+  // Clamp and find the nearest dark square
+  if (row < 0 || row > 7 || col < 0 || col > 7) return null;
+
+  // If the target cell is a dark (playable) square, use it directly
+  const direct = gridToSquare(row, col);
+  if (direct !== null) return direct;
+
+  // Otherwise, shift col by 1 in the movement direction to land on a dark square
+  const colShift = key === 'ArrowLeft' ? -1 : key === 'ArrowRight' ? 1 : 0;
+  if (colShift !== 0) {
+    const shifted = gridToSquare(row, col + colShift);
+    if (shifted !== null) return shifted;
+  }
+
+  // For up/down landing on a light square, try both adjacent columns
+  const left = gridToSquare(row, col - 1);
+  if (left !== null) return left;
+  const right = gridToSquare(row, col + 1);
+  if (right !== null) return right;
+
+  return null;
+}
+
 export default function Board({
   board,
   flipped = false,
@@ -65,11 +111,47 @@ export default function Board({
   const rows = Array.from({ length: 8 }, (_, i) => i);
   const cols = Array.from({ length: 8 }, (_, i) => i);
 
+  // Roving tabindex: track which square currently holds tab focus
+  const [focusedSquare, setFocusedSquare] = useState(1);
+  const svgRef = useRef<SVGSVGElement>(null);
+
   const isClickable = (sq: Square): boolean => {
     if (isAnimating) return false;
     return (selectablePieces?.has(sq as number) ?? false)
       || (legalMoveSquares?.has(sq as number) ?? false);
   };
+
+  const handleBoardKeyDown = useCallback(
+    (e: React.KeyboardEvent<SVGSVGElement>) => {
+      const currentSq = focusedSquare;
+
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const nextSq = findNextSquare(square(currentSq), e.key, flipped);
+        if (nextSq !== null) {
+          setFocusedSquare(nextSq as number);
+          // Focus the DOM element for the new square
+          const el = svgRef.current?.querySelector<SVGElement>(`[data-square="${String(nextSq)}"]`);
+          el?.focus();
+        }
+        return;
+      }
+
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (!isAnimating) {
+          onSquareClick?.(square(currentSq));
+        }
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        // Escape is handled by GameScreen's global handler
+        return;
+      }
+    },
+    [focusedSquare, flipped, isAnimating, onSquareClick],
+  );
 
   // Collect pieces that need to be rendered in the floating animation layer
   // (animating or fading pieces are excluded from their normal square and
@@ -86,10 +168,12 @@ export default function Board({
   return (
     <div className={styles.boardContainer}>
       <svg
+        ref={svgRef}
         viewBox="-4 -4 808 808"
         role="grid"
         aria-label="Checkers board"
         data-testid="board"
+        onKeyDown={handleBoardKeyDown}
       >
         {/* Board border/frame */}
         <rect x="-4" y="-4" width="808" height="808" fill="var(--board-border)" rx="4" />
@@ -168,10 +252,15 @@ export default function Board({
                     if (isAnimating) return;
                     if (sq) onSquareClick?.(sq);
                   }}
+                  onFocus={() => {
+                    if (sq) setFocusedSquare(sq as number);
+                  }}
                   style={{ cursor: clickable ? 'pointer' : 'default' }}
                   role="gridcell"
                   aria-label={label}
-                  tabIndex={0}
+                  tabIndex={sq !== null && (sq as number) === focusedSquare ? 0 : -1}
+                  data-square={sq !== null ? String(sq) : undefined}
+                  className={styles.boardSquare}
                 >
                   {/* Base square */}
                   <rect

@@ -67,7 +67,7 @@ export default function MenuScreen({ onStartGame, onConfigure }: MenuScreenProps
   }
 
   return (
-    <div className={styles.menuScreen} data-testid="menu-screen">
+    <div className={styles.menuScreen} data-testid="menu-screen" role="main">
       <header>
         <h1 className={styles.gameTitle}>Crazy Checkers</h1>
         <p className={styles.gameSubtitle}>A chaotic twist on a timeless classic</p>

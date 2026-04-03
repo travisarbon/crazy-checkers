@@ -17,6 +17,17 @@
   height: 100%;
 }
 
+/* ── Focus ring for keyboard navigation ──────────────────── */
+
+.boardSquare:focus {
+  outline: none;
+}
+
+.boardSquare:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: -3px;
+}
+
 .pieceSelectable:hover circle {
   filter: brightness(1.15);
 }
@@ -48,4 +59,17 @@
 
 .pendingConfirm {
   animation: pendingPulse 1s ease-in-out infinite;
+}
+
+/* ── Reduced motion preference ───────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .pendingConfirm {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  .pieceAnimating {
+    transition: none !important;
+  }
 }
