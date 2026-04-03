@@ -61,7 +61,7 @@ function computeInitialTakebacks(players: PlayerSetup): number {
 function computeUndoState(
   gameState: GameState,
   takebacksRemaining: number,
-): { canUndo: boolean; tooltip: string } {
+): { canUndo: boolean; tooltip: string; countLabel?: string } {
   if (!engineCanUndo(gameState)) {
     return { canUndo: false, tooltip: 'No moves to undo' };
   }
@@ -69,7 +69,11 @@ function computeUndoState(
     return { canUndo: true, tooltip: 'Undo last move' };
   }
   if (takebacksRemaining > 0) {
-    return { canUndo: true, tooltip: `Undo (${String(takebacksRemaining)} remaining)` };
+    return {
+      canUndo: true,
+      tooltip: `Undo (${String(takebacksRemaining)} remaining)`,
+      countLabel: `(${String(takebacksRemaining)})`,
+    };
   }
   return { canUndo: false, tooltip: 'Undo not available in this mode' };
 }
@@ -314,7 +318,7 @@ export default function GameScreen({
   // --- Derived state ---
   const displayBoard = animationQueue.animationBoard ?? interaction.displayBoard;
   const isGameOver = gameState.status === GameStatus.GameOver;
-  const { canUndo: undoAvailable, tooltip: undoTooltip } = computeUndoState(
+  const { canUndo: undoAvailable, tooltip: undoTooltip, countLabel: undoCountLabel } = computeUndoState(
     gameState,
     takebacksRemaining,
   );
@@ -385,6 +389,7 @@ export default function GameScreen({
         <GameControls
           canUndo={undoAvailable && !animationQueue.isAnimating && !isAIThinking}
           undoTooltip={undoTooltip}
+          undoCountLabel={undoCountLabel}
           isGameInProgress={!isGameOver}
           onNewGame={onNewGame}
           onUndo={handleUndo}

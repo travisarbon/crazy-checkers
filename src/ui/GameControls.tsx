@@ -13,6 +13,8 @@ import styles from './GameControls.module.css';
 interface GameControlsProps {
   canUndo: boolean;
   undoTooltip: string;
+  /** Optional short label showing remaining undo count, e.g. "(1)". */
+  undoCountLabel?: string;
   isGameInProgress: boolean;
   onNewGame: () => void;
   onUndo: () => void;
@@ -25,6 +27,7 @@ type PendingAction = 'resign' | 'newGame' | 'mainMenu' | null;
 export default function GameControls({
   canUndo,
   undoTooltip,
+  undoCountLabel,
   isGameInProgress,
   onNewGame,
   onUndo,
@@ -102,7 +105,7 @@ export default function GameControls({
           aria-label={undoTooltip}
           title={undoTooltip}
         >
-          Undo
+          Undo{undoCountLabel ? ` ${undoCountLabel}` : ''}
         </button>
         <button
           className={styles.controlButton}
