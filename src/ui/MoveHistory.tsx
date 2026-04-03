@@ -116,7 +116,7 @@ export default function MoveHistory({
   }
 
   return (
-    <div data-testid="move-history">
+    <div data-testid="move-history" style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className={styles.heading}>Move History</div>
       {content}
     </div>

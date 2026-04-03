@@ -1,6 +1,7 @@
 .boardContainer {
   width: 100%;
   max-width: min(90vw, 90vh - 2rem, 600px);
+  min-width: 280px;
   aspect-ratio: 1;
   margin: 0 auto;
 }
@@ -8,6 +9,18 @@
 @media (max-width: 767px) {
   .boardContainer {
     max-width: min(100vw - 1rem, 600px);
+  }
+}
+
+@media (max-width: 767px) and (orientation: landscape) {
+  .boardContainer {
+    max-width: min(85vh - 2rem, 50vw, 600px);
+  }
+}
+
+@media (min-width: 1440px) {
+  .boardContainer {
+    max-width: min(90vw, 90vh - 2rem, 720px);
   }
 }
 

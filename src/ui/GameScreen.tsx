@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { BREAKPOINT } from './breakpoints';
 import type { GameState, PlayerSetup, RuleSet } from '../engine/types';
 import { GameStatus, PieceColor, PlayerType } from '../engine/types';
 import { createNewGame, makeMove, canUndo as engineCanUndo, resign } from '../engine/game';
@@ -100,7 +101,7 @@ function getIsMobile(breakpoint: number): boolean {
   return window.matchMedia(`(max-width: ${String(breakpoint - 1)}px)`).matches;
 }
 
-function useIsMobile(breakpoint = 768): boolean {
+function useIsMobile(breakpoint = BREAKPOINT.PHABLET_MAX + 1): boolean {
   const [isMobile, setIsMobile] = useState(() => getIsMobile(breakpoint));
 
   useEffect(() => {

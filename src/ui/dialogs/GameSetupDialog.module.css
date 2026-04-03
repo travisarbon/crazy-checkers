@@ -130,9 +130,36 @@
 
 /* ── Mobile adjustments ───────────────────────────────────── */
 
+.dialogCard {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
 @media (max-width: 767px) {
   .dialogCard {
     padding: 1.5rem 1.25rem;
     max-width: 95%;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    min-height: 48px;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 479px) {
+  .dialogCard {
+    padding: 1.25rem 1rem;
+  }
+
+  .dialogFooter {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .dialogFooter > button {
+    width: 100%;
   }
 }

@@ -24,7 +24,9 @@
   border: 2px solid var(--ui-accent);
   border-radius: 6px;
   color: var(--ui-text);
-  padding: 0.4rem 0.8rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
   cursor: pointer;
   font-size: 0.9rem;
   transition: background-color 0.15s;
@@ -130,26 +132,26 @@
 
 .slider {
   flex: 1;
-  height: 6px;
+  height: 8px;
   -webkit-appearance: none;
   appearance: none;
   background: color-mix(in srgb, var(--ui-accent) 30%, transparent);
-  border-radius: 3px;
+  border-radius: 4px;
   outline: none;
 }
 
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--ui-accent);
   cursor: pointer;
 }
 
 .slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--ui-accent);
   cursor: pointer;
@@ -174,6 +176,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  min-height: 44px;
 }
 
 .toggleLabel {
@@ -183,9 +186,9 @@
 
 .toggleSwitch {
   position: relative;
-  width: 52px;
-  height: 28px;
-  border-radius: 14px;
+  width: 56px;
+  height: 44px;
+  border-radius: 22px;
   border: 2px solid var(--ui-accent);
   background: transparent;
   cursor: pointer;
@@ -200,17 +203,17 @@
 
 .toggleKnob {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
+  top: 6px;
+  left: 6px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--ui-text);
   transition: transform 0.2s;
 }
 
 .toggleOn .toggleKnob {
-  transform: translateX(24px);
+  transform: translateX(20px);
 }
 
 /* Data section */
@@ -235,4 +238,28 @@
 .dangerButton {
   border-color: var(--ui-danger);
   color: var(--ui-danger);
+}
+
+/* ── Small phone (360px) ────────────────────────────────────── */
+
+@media (max-width: 479px) {
+  .configScreen {
+    padding: 1rem 0.5rem;
+  }
+
+  .section {
+    padding: 1rem;
+  }
+}
+
+/* ── Wide desktop (1440px+) ─────────────────────────────────── */
+
+@media (min-width: 1440px) {
+  .sections {
+    max-width: 700px;
+  }
+
+  .header {
+    max-width: 700px;
+  }
 }

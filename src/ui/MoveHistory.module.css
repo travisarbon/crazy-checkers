@@ -11,6 +11,8 @@
 .scrollable {
   max-height: 200px;
   overflow-y: auto;
+  overflow-x: hidden;
+  word-break: break-all;
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.875rem;
   color: var(--ui-text);
@@ -66,8 +68,82 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   opacity: 0.7;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
 .summary:hover {
   opacity: 1;
+}
+
+/* ── Mobile summary visual treatment ────────────────────────── */
+
+@media (max-width: 767px) {
+  .summary {
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .summary::after {
+    content: '▾';
+    font-size: 0.75rem;
+    transition: transform 200ms ease;
+  }
+
+  .collapsible[open] .summary::after {
+    transform: rotate(180deg);
+  }
+
+  .scrollable {
+    max-height: 30vh;
+  }
+}
+
+@media (max-width: 479px) {
+  .scrollable {
+    max-height: 25vh;
+  }
+}
+
+/* ── Expand/collapse animation ──────────────────────────────── */
+
+.collapsible[open] .scrollable {
+  animation: slideDown 200ms ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 30vh;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapsible[open] .scrollable {
+    animation: none;
+  }
+
+  .summary::after {
+    transition: none;
+  }
+}
+
+/* ── Desktop adaptive height ────────────────────────────────── */
+
+@media (min-width: 768px) {
+  .scrollable {
+    max-height: none;
+    flex: 1;
+    min-height: 60px;
+  }
 }
