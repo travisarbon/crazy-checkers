@@ -10,7 +10,7 @@ export const classicTheme: Theme = {
   pieceWhiteStroke: '#BDBDBD',
   pieceBlack: '#C62828',
   pieceBlackStroke: '#7F1D1D',
-  highlightLegal: 'rgba(76, 175, 80, 0.5)',
+  highlightLegal: 'rgba(33, 150, 243, 0.55)',
   highlightSelected: 'rgba(255, 235, 59, 0.55)',
   highlightLastMove: 'rgba(33, 150, 243, 0.35)',
   highlightHover: 'rgba(200, 230, 200, 0.15)',
