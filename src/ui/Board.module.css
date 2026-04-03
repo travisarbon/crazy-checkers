@@ -36,6 +36,35 @@
   cursor: pointer;
 }
 
+/* ── Hover effects on interactive squares ─────────────────── */
+
+@media (hover: hover) {
+  .boardSquareInteractive:hover > rect:first-child {
+    filter: brightness(1.08);
+  }
+
+  .boardSquareInteractive:hover .hoverOverlay {
+    opacity: 1;
+  }
+}
+
+.hoverOverlay {
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+  pointer-events: none;
+}
+
+/* ── Legal move dot entrance animation ───────────────────── */
+
+.legalDot {
+  animation: dotAppear 150ms ease-out;
+}
+
+@keyframes dotAppear {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
 /* ── Animation transition classes ──────────────────────────── */
 
 .pieceAnimating {
@@ -71,5 +100,13 @@
 
   .pieceAnimating {
     transition: none !important;
+  }
+
+  .hoverOverlay {
+    transition: none;
+  }
+
+  .legalDot {
+    animation: none;
   }
 }

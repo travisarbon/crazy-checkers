@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { BoardState, Move, Square } from '../engine/types';
-import { PieceType } from '../engine/types';
+import { PieceColor, PieceType } from '../engine/types';
 import { getBoardSquare, squareToGrid } from '../engine/board';
 
 // ---------------------------------------------------------------------------
@@ -20,6 +20,7 @@ export interface SlideStep {
   readonly fromSquare: Square;
   readonly toSquare: Square;
   readonly durationMs: number;
+  readonly easing?: string;
 }
 
 /** Fade out a captured piece (opacity 1 → 0). */
@@ -27,6 +28,7 @@ export interface FadeOutStep {
   readonly type: 'fadeOut';
   readonly square: Square;
   readonly durationMs: number;
+  readonly easing?: string;
 }
 
 /** Scale-up pulse + crown appearance for a newly kinged piece. */
@@ -34,6 +36,8 @@ export interface KingPulseStep {
   readonly type: 'kingPulse';
   readonly square: Square;
   readonly durationMs: number;
+  readonly easingUp?: string;
+  readonly easingDown?: string;
 }
 
 /** A brief pause between sequential animation steps. */
@@ -56,6 +60,24 @@ export const ANIM_DURATION = {
   CAPTURE_FADE: 200,
   KING_PULSE: 300,
   CAPTURE_FADE_OVERLAP: 80,
+} as const;
+
+// ---------------------------------------------------------------------------
+// Easing constants
+// ---------------------------------------------------------------------------
+
+/** Named easing curves for each animation step type. */
+export const ANIM_EASING = {
+  /** Simple moves and single jumps: gentle deceleration into destination. */
+  SLIDE: 'cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+  /** Multi-jump hops: quicker attack, more percussive feel. */
+  MULTI_JUMP_HOP: 'cubic-bezier(0.33, 0, 0.25, 1.0)',
+  /** Capture fade-out: linear for consistent opacity decay. */
+  CAPTURE_FADE: 'ease-out',
+  /** King pulse scale-up: ease-out for an expanding feel. */
+  KING_PULSE_UP: 'ease-out',
+  /** King pulse scale-down: ease-in for a settling feel. */
+  KING_PULSE_DOWN: 'ease-in',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -106,6 +128,7 @@ export function buildAnimationSequence(
       fromSquare: move.from,
       toSquare: firstDest,
       durationMs: ANIM_DURATION.SIMPLE_MOVE,
+      easing: ANIM_EASING.SLIDE,
     });
   } else if (!isMultiJump) {
     // Single jump
@@ -114,12 +137,14 @@ export function buildAnimationSequence(
       fromSquare: move.from,
       toSquare: firstDest,
       durationMs: ANIM_DURATION.SIMPLE_MOVE,
+      easing: ANIM_EASING.SLIDE,
     });
     if (firstCaptured) {
       steps.push({
         type: 'fadeOut',
         square: firstCaptured,
         durationMs: ANIM_DURATION.CAPTURE_FADE,
+        easing: ANIM_EASING.CAPTURE_FADE,
       });
     }
   } else {
@@ -134,12 +159,14 @@ export function buildAnimationSequence(
         fromSquare: currentFrom,
         toSquare: dest,
         durationMs: ANIM_DURATION.MULTI_JUMP_HOP,
+        easing: ANIM_EASING.MULTI_JUMP_HOP,
       });
       if (captured) {
         steps.push({
           type: 'fadeOut',
           square: captured,
           durationMs: ANIM_DURATION.CAPTURE_FADE,
+          easing: ANIM_EASING.CAPTURE_FADE,
         });
       }
       if (i < move.path.length - 1) {
@@ -167,6 +194,8 @@ export function buildAnimationSequence(
       type: 'kingPulse',
       square: finalSquare,
       durationMs: ANIM_DURATION.KING_PULSE,
+      easingUp: ANIM_EASING.KING_PULSE_UP,
+      easingDown: ANIM_EASING.KING_PULSE_DOWN,
     });
   }
 
@@ -186,6 +215,8 @@ export interface AnimatingPiece {
   scale: number | null;
   /** CSS transition duration for position/scale changes (ms). 0 = instant. */
   transitionDurationMs: number;
+  /** CSS easing function override. */
+  easing?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -197,6 +228,8 @@ interface UseAnimationQueueOptions {
   speedMultiplier?: number;
   /** Called when the full animation sequence completes. */
   onComplete?: () => void;
+  /** Called when a capture fade-out animation completes, with the capturing player's color. */
+  onCaptureAnimated?: (capturedByColor: PieceColor) => void;
   /** Whether the board is flipped (for coordinate calculation). */
   flipped?: boolean;
 }
@@ -215,7 +248,7 @@ export interface UseAnimationQueueResult {
    * Enqueue an animation sequence. Replaces any currently playing animation.
    * The `boardBeforeMove` is rendered while the animation plays.
    */
-  enqueue: (steps: AnimationStep[], boardBeforeMove: BoardState) => void;
+  enqueue: (steps: AnimationStep[], boardBeforeMove: BoardState, capturingColor?: PieceColor) => void;
 
   /**
    * The board to display during animation. Null when idle.
@@ -233,6 +266,7 @@ export interface UseAnimationQueueResult {
 export function useAnimationQueue({
   speedMultiplier = 1.0,
   onComplete,
+  onCaptureAnimated,
   flipped = false,
 }: UseAnimationQueueOptions = {}): UseAnimationQueueResult {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -246,15 +280,18 @@ export function useAnimationQueue({
   const stepsRef = useRef<AnimationStep[]>([]);
   const stepIndexRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
+  const onCaptureAnimatedRef = useRef(onCaptureAnimated);
   const speedRef = useRef(speedMultiplier);
   const flippedRef = useRef(flipped);
   const boardRef = useRef<BoardState | null>(null);
+  const capturingColorRef = useRef<PieceColor | undefined>(undefined);
   const activeTimersRef = useRef(new Set<ReturnType<typeof setTimeout>>());
   const isAnimatingRef = useRef(false);
   const processNextStepRef = useRef<() => void>(() => {});
 
   // Keep refs in sync via effects (refs must not be written during render)
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+  useEffect(() => { onCaptureAnimatedRef.current = onCaptureAnimated; }, [onCaptureAnimated]);
   useEffect(() => { speedRef.current = speedMultiplier; }, [speedMultiplier]);
   useEffect(() => { flippedRef.current = flipped; }, [flipped]);
 
@@ -319,6 +356,7 @@ export function useAnimationQueue({
       case 'slide': {
         const fromCoords = squareCenterCoords(step.fromSquare, fl);
         const toCoords = squareCenterCoords(step.toSquare, fl);
+        const slideEasing = step.easing;
 
         // Set piece at start position with no transition, then animate to target
         setAnimatingPieces(
@@ -337,7 +375,7 @@ export function useAnimationQueue({
             new Map([
               [
                 step.fromSquare as number,
-                { overridePosition: toCoords, opacity: null, scale: null, transitionDurationMs: duration },
+                { overridePosition: toCoords, opacity: null, scale: null, transitionDurationMs: duration, easing: slideEasing },
               ],
             ]),
           );
@@ -392,6 +430,11 @@ export function useAnimationQueue({
             setAnimationBoard(board);
           }
 
+          // Notify that a capture animation completed
+          if (capturingColorRef.current !== undefined) {
+            onCaptureAnimatedRef.current?.(capturingColorRef.current);
+          }
+
           setFadingSquares(new Set());
           advance();
         }, duration);
@@ -407,7 +450,7 @@ export function useAnimationQueue({
           new Map([
             [
               step.square as number,
-              { overridePosition: coords, opacity: null, scale: 1.15, transitionDurationMs: halfDuration },
+              { overridePosition: coords, opacity: null, scale: 1.15, transitionDurationMs: halfDuration, easing: step.easingUp },
             ],
           ]),
         );
@@ -420,7 +463,7 @@ export function useAnimationQueue({
             new Map([
               [
                 step.square as number,
-                { overridePosition: coords, opacity: null, scale: 1.0, transitionDurationMs: halfDuration },
+                { overridePosition: coords, opacity: null, scale: 1.0, transitionDurationMs: halfDuration, easing: step.easingDown },
               ],
             ]),
           );
@@ -452,7 +495,7 @@ export function useAnimationQueue({
   }, [finishAnimation]);
 
   const enqueue = useCallback(
-    (steps: AnimationStep[], boardBeforeMove: BoardState) => {
+    (steps: AnimationStep[], boardBeforeMove: BoardState, capturingColor?: PieceColor) => {
       // Cancel any in-progress animation (without calling onComplete)
       for (const timer of activeTimersRef.current) {
         clearTimeout(timer);
@@ -462,6 +505,7 @@ export function useAnimationQueue({
       stepsRef.current = steps;
       stepIndexRef.current = 0;
       boardRef.current = [...boardBeforeMove];
+      capturingColorRef.current = capturingColor;
       isAnimatingRef.current = true;
 
       setIsAnimating(true);

@@ -25,12 +25,16 @@ export interface Theme {
   readonly highlightLegal: string;
   readonly highlightSelected: string;
   readonly highlightLastMove: string;
+  readonly highlightHover: string;
 
   // UI chrome (sidebar, menus — used in Task 2.4+)
   readonly uiBg: string;
   readonly uiText: string;
   readonly uiAccent: string;
   readonly uiDanger: string;
+
+  // Visual polish
+  readonly pieceShadow: boolean;
 }
 
 /**
@@ -48,6 +52,8 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty('--highlight-legal', theme.highlightLegal);
   root.style.setProperty('--highlight-selected', theme.highlightSelected);
   root.style.setProperty('--highlight-last-move', theme.highlightLastMove);
+  root.style.setProperty('--highlight-hover', theme.highlightHover);
+  root.style.setProperty('--piece-shadow', theme.pieceShadow ? 'url(#piece-shadow)' : 'none');
   root.style.setProperty('--ui-bg', theme.uiBg);
   root.style.setProperty('--ui-text', theme.uiText);
   root.style.setProperty('--ui-accent', theme.uiAccent);

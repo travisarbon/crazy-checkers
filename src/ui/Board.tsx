@@ -7,7 +7,7 @@
  * so they don't clip underneath other squares during slide transitions.
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, memo } from 'react';
 import type { BoardState, Piece as PieceData, Square } from '../engine/types';
 import { getBoardSquare, gridToSquare, squareToGrid } from '../engine/board';
 import { PieceColor, PieceType, square } from '../engine/types';
@@ -40,6 +40,8 @@ interface BoardProps {
   isAnimating?: boolean;
   /** Speed multiplier for animation durations. */
   animSpeedMultiplier?: number;
+  /** Whether to apply drop shadow to pieces (theme-dependent). */
+  pieceShadow?: boolean;
 }
 
 function describeSquare(sq: Square, piece: PieceData | null): string {
@@ -94,7 +96,7 @@ function findNextSquare(
   return null;
 }
 
-export default function Board({
+function Board({
   board,
   flipped = false,
   pendingConfirmSquare,
@@ -107,6 +109,7 @@ export default function Board({
   fadingSquares,
   isAnimating = false,
   animSpeedMultiplier = 1.0,
+  pieceShadow = false,
 }: BoardProps) {
   const rows = Array.from({ length: 8 }, (_, i) => i);
   const cols = Array.from({ length: 8 }, (_, i) => i);
@@ -175,8 +178,15 @@ export default function Board({
         data-testid="board"
         onKeyDown={handleBoardKeyDown}
       >
+        {/* SVG filter definitions */}
+        <defs>
+          <filter id="piece-shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="1" dy="2" stdDeviation="2" floodOpacity="0.15" />
+          </filter>
+        </defs>
+
         {/* Board border/frame */}
-        <rect x="-4" y="-4" width="808" height="808" fill="var(--board-border)" rx="4" />
+        <rect x="-4" y="-4" width="808" height="808" fill="var(--board-border)" rx="6" />
 
         {rows.map((row) => (
           <g key={row} role="row">
@@ -228,6 +238,10 @@ export default function Board({
 
               const isLegalDest = !isAnimating && sq !== null && (legalMoveSquares?.has(sq as number) ?? false);
               const clickable = sq !== null && isClickable(sq);
+              const isInteractive = !isAnimating && sq !== null && (
+                (selectablePieces?.has(sq as number) ?? false) ||
+                (legalMoveSquares?.has(sq as number) ?? false)
+              );
 
               // Check if this piece is animating or fading — if so, render in floating layer
               const animOverride = sq !== null ? animatingPieces?.get(sq as number) : undefined;
@@ -260,7 +274,7 @@ export default function Board({
                   aria-label={label}
                   tabIndex={sq !== null && (sq as number) === focusedSquare ? 0 : -1}
                   data-square={sq !== null ? String(sq) : undefined}
-                  className={styles.boardSquare}
+                  className={[styles.boardSquare, isInteractive ? styles.boardSquareInteractive : ''].filter(Boolean).join(' ')}
                 >
                   {/* Base square */}
                   <rect
@@ -320,6 +334,18 @@ export default function Board({
                     />
                   )}
 
+                  {/* Hover overlay for interactive squares */}
+                  {isInteractive && (
+                    <rect
+                      x={x}
+                      y={y}
+                      width={SQUARE_SIZE}
+                      height={SQUARE_SIZE}
+                      fill="var(--highlight-hover)"
+                      className={styles.hoverOverlay}
+                    />
+                  )}
+
                   {/* Piece — only rendered here if NOT floating (animating/fading) */}
                   {piece && sq && !isFloating && (
                     <PieceComponent
@@ -329,6 +355,7 @@ export default function Board({
                       cy={y + SQUARE_SIZE / 2}
                       isSelectable={!isAnimating && (selectablePieces?.has(sq as number) ?? false)}
                       isSelected={isSelected}
+                      svgFilter={pieceShadow ? 'url(#piece-shadow)' : undefined}
                     />
                   )}
 
@@ -340,6 +367,7 @@ export default function Board({
                       r={LEGAL_DOT_RADIUS}
                       fill="var(--highlight-legal)"
                       data-testid="legal-dot"
+                      className={styles.legalDot}
                     />
                   )}
 
@@ -353,6 +381,7 @@ export default function Board({
                       stroke="var(--highlight-legal)"
                       strokeWidth={CAPTURE_RING_STROKE}
                       data-testid="legal-capture-ring"
+                      className={styles.legalDot}
                     />
                   )}
 
@@ -385,6 +414,7 @@ export default function Board({
             animTargetCx={animOverride?.overridePosition?.cx}
             animTargetCy={animOverride?.overridePosition?.cy}
             animDurationMs={animOverride?.transitionDurationMs ?? 0}
+            animEasing={animOverride?.easing}
             animOpacity={isFading ? 0 : undefined}
             animOpacityDurationMs={isFading ? ANIM_DURATION.CAPTURE_FADE * animSpeedMultiplier : undefined}
             animScale={animOverride?.scale ?? undefined}
@@ -394,3 +424,5 @@ export default function Board({
     </div>
   );
 }
+
+export default memo(Board);

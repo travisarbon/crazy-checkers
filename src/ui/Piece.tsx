@@ -39,6 +39,8 @@ interface PieceProps {
   animOpacityDurationMs?: number;
   /** Called when the slide transition completes. */
   onTransitionEnd?: () => void;
+  /** SVG filter URL for drop shadow (e.g., 'url(#piece-shadow)'). */
+  svgFilter?: string;
 }
 
 function getPieceColors(piece: PieceData) {
@@ -70,6 +72,7 @@ export default function Piece({
   animScale,
   animOpacityDurationMs,
   onTransitionEnd,
+  svgFilter,
 }: PieceProps) {
   const { fill, stroke } = getPieceColors(piece);
   const isKing = piece.type === PieceType.King;
@@ -81,13 +84,17 @@ export default function Piece({
   const renderCy = animTargetCy ?? cy;
 
   // Build the transform: translate to center, then scale if needed
-  const scale = animScale ?? 1;
+  const hasAnimOverride = animTargetCx != null || animScale != null;
+  const scale = animScale ?? (isSelected && !hasAnimOverride ? 1.05 : 1);
   const transform = `translate(${String(renderCx)}, ${String(renderCy)}) scale(${String(scale)})`;
 
   // Build transition string
   const transitions: string[] = [];
   if (animDurationMs > 0) {
     transitions.push(`transform ${String(animDurationMs)}ms ${animEasing}`);
+  } else if (isSelected && !hasAnimOverride) {
+    // Smooth lift effect on selection
+    transitions.push('transform 120ms ease-out');
   }
   if (animOpacityDurationMs != null && animOpacityDurationMs > 0) {
     transitions.push(`opacity ${String(animOpacityDurationMs)}ms ease-out`);
@@ -107,6 +114,7 @@ export default function Piece({
       className={[className, hasAnimation ? styles.pieceAnimating : ''].filter(Boolean).join(' ') || undefined}
       transform={transform}
       style={style}
+      filter={svgFilter}
       onTransitionEnd={onTransitionEnd}
     >
       {/* Circle centered at origin (0,0) — the <g> transform positions it */}

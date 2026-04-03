@@ -5,7 +5,7 @@
 
 import type { PieceColor, GameResult } from '../engine/types';
 import { PieceColor as PC, GameResultType, GameEndReason } from '../engine/types';
-import styles from './TurnIndicator.module.css';
+import ThinkingIndicator from './ThinkingIndicator';
 
 interface TurnIndicatorProps {
   activeColor: PieceColor;
@@ -66,6 +66,7 @@ export default function TurnIndicator({
         alignItems: 'center',
         gap: '0.5rem',
         padding: '0.5rem 0',
+        minHeight: '2.25rem',
       }}
       aria-live="polite"
       role="status"
@@ -75,7 +76,6 @@ export default function TurnIndicator({
         <circle cx={10} cy={10} r={8} fill={fillVar} stroke={strokeVar} strokeWidth={2} />
       </svg>
       <span
-        className={isThinking && !isGameOver ? styles.thinkingText : undefined}
         style={{
           fontSize: '1rem',
           fontWeight: 600,
@@ -84,6 +84,7 @@ export default function TurnIndicator({
       >
         {label}
       </span>
+      {isThinking && !isGameOver && <ThinkingIndicator isThinking={true} />}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   buildAnimationSequence,
   squareCenterCoords,
   ANIM_DURATION,
+  ANIM_EASING,
 } from './useAnimationQueue';
 import type { AnimationStep } from './useAnimationQueue';
 import { createInitialBoard } from '../engine/board';
@@ -137,6 +138,75 @@ describe('buildAnimationSequence', () => {
 
     expect(steps).toHaveLength(1);
     expect(steps[0]?.type).toBe('slide');
+  });
+
+  it('assigns SLIDE easing to simple moves', () => {
+    const boardBefore = createInitialBoard();
+    const boardAfter = [...boardBefore] as SquareState[];
+    boardAfter[20] = null;
+    boardAfter[16] = { color: PieceColor.White, type: PieceType.Pawn };
+
+    const move: Move = { from: square(21), path: [square(17)], captured: [] };
+    const steps = buildAnimationSequence(move, boardBefore, boardAfter);
+
+    const step0 = steps[0];
+    expect(step0?.type).toBe('slide');
+    if (step0?.type === 'slide') {
+      expect(step0.easing).toBe(ANIM_EASING.SLIDE);
+    }
+  });
+
+  it('assigns MULTI_JUMP_HOP easing to multi-jump slides', () => {
+    const board = emptyBoard();
+    board[8] = { color: PieceColor.White, type: PieceType.Pawn };
+    board[13] = { color: PieceColor.Black, type: PieceType.Pawn };
+    board[21] = { color: PieceColor.Black, type: PieceType.Pawn };
+
+    const boardAfter = emptyBoard();
+    boardAfter[24] = { color: PieceColor.White, type: PieceType.Pawn };
+
+    const move: Move = {
+      from: square(9),
+      path: [square(18), square(25)],
+      captured: [square(14), square(22)],
+    };
+    const steps = buildAnimationSequence(move, board, boardAfter);
+
+    const slideSteps = steps.filter((s): s is Extract<typeof s, { type: 'slide' }> => s.type === 'slide');
+    for (const step of slideSteps) {
+      expect(step.easing).toBe(ANIM_EASING.MULTI_JUMP_HOP);
+    }
+  });
+
+  it('assigns king pulse easing to kinging steps', () => {
+    const board = emptyBoard();
+    board[4] = { color: PieceColor.White, type: PieceType.Pawn };
+
+    const boardAfter = emptyBoard();
+    boardAfter[0] = { color: PieceColor.White, type: PieceType.King };
+
+    const move: Move = { from: square(5), path: [square(1)], captured: [] };
+    const steps = buildAnimationSequence(move, board, boardAfter);
+
+    const kingStep = steps.find((s) => s.type === 'kingPulse');
+    expect(kingStep).toBeDefined();
+    if (kingStep?.type === 'kingPulse') {
+      expect(kingStep.easingUp).toBe(ANIM_EASING.KING_PULSE_UP);
+      expect(kingStep.easingDown).toBe(ANIM_EASING.KING_PULSE_DOWN);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ANIM_EASING validation tests
+// ---------------------------------------------------------------------------
+
+describe('ANIM_EASING', () => {
+  it('contains valid CSS timing function strings', () => {
+    const cssTimingPattern = /^(ease|ease-in|ease-out|ease-in-out|linear|cubic-bezier\([^)]+\))$/;
+    for (const [, value] of Object.entries(ANIM_EASING)) {
+      expect(value).toMatch(cssTimingPattern);
+    }
   });
 });
 

@@ -13,8 +13,10 @@ export const classicTheme: Theme = {
   highlightLegal: 'rgba(106, 176, 76, 0.5)',
   highlightSelected: 'rgba(255, 215, 0, 0.55)',
   highlightLastMove: 'rgba(66, 135, 245, 0.35)',
+  highlightHover: 'rgba(255, 215, 100, 0.15)',
   uiBg: '#2C1810',
   uiText: '#F0D9B5',
   uiAccent: '#D4A843',
   uiDanger: '#E53E3E',
+  pieceShadow: true,
 };

@@ -82,7 +82,7 @@ describe('TurnIndicator', () => {
     expect(indicator).toHaveAttribute('aria-live', 'polite');
   });
 
-  it('applies pulse animation style when thinking', () => {
+  it('renders thinking dots indicator when thinking', () => {
     render(
       <TurnIndicator
         activeColor={PieceColor.Black}
@@ -91,8 +91,8 @@ describe('TurnIndicator', () => {
         isThinking={true}
       />,
     );
-    const thinkingText = screen.getByText('Thinking\u2026');
-    expect(thinkingText.className).toContain('thinkingText');
+    expect(screen.getByText('Thinking\u2026')).toBeInTheDocument();
+    expect(screen.getByTestId('thinking-dots')).toBeInTheDocument();
   });
 
   it('displays game result when game is over', () => {

@@ -36,6 +36,7 @@ interface GameScreenProps {
   flipped?: boolean;
   animationSpeedMultiplier?: number;
   moveConfirmation?: boolean;
+  pieceShadow?: boolean;
   initialGameState?: GameState;
   gameStartedAt?: number;
   onNewGame: () => void;
@@ -122,6 +123,7 @@ export default function GameScreen({
   flipped = false,
   animationSpeedMultiplier = 1.0,
   moveConfirmation = false,
+  pieceShadow = false,
   initialGameState,
   gameStartedAt: gameStartedAtProp,
   onNewGame,
@@ -139,6 +141,7 @@ export default function GameScreen({
   );
   const [isAIThinking, setIsAIThinking] = useState(false);
   const aiThinkingRef = useRef(false);
+  const [pendingCaptures, setPendingCaptures] = useState({ white: 0, black: 0 });
   const prefersReducedMotion = usePrefersReducedMotion();
 
   // --- Animation queue ---
@@ -151,6 +154,13 @@ export default function GameScreen({
         setGameState(pendingStateRef.current);
         pendingStateRef.current = null;
       }
+      setPendingCaptures({ white: 0, black: 0 });
+    },
+    onCaptureAnimated: (capturedByColor) => {
+      setPendingCaptures((prev) => ({
+        white: capturedByColor === PieceColor.White ? prev.white + 1 : prev.white,
+        black: capturedByColor === PieceColor.Black ? prev.black + 1 : prev.black,
+      }));
     },
   });
 
@@ -180,7 +190,7 @@ export default function GameScreen({
       }
       const steps = buildAnimationSequence(move, gameState.board, newState.board);
       pendingStateRef.current = newState;
-      animationQueue.enqueue(steps, gameState.board);
+      animationQueue.enqueue(steps, gameState.board, gameState.activeColor);
     },
     [gameState, animationQueue],
   );
@@ -354,6 +364,7 @@ export default function GameScreen({
           fadingSquares={animationQueue.fadingSquares}
           isAnimating={animationQueue.isAnimating}
           animSpeedMultiplier={effectiveAnimSpeed}
+          pieceShadow={pieceShadow}
         />
       </div>
 
@@ -364,7 +375,7 @@ export default function GameScreen({
           result={gameState.result}
           isThinking={isAIThinking}
         />
-        <CapturedPieces moveHistory={gameState.moveHistory} />
+        <CapturedPieces moveHistory={gameState.moveHistory} pendingCaptures={pendingCaptures} />
         <MoveHistory
           moveHistory={gameState.moveHistory}
           currentMoveIndex={currentMoveIndex}

@@ -148,6 +148,7 @@ export default function App() {
           flipped={screen.flipped}
           animationSpeedMultiplier={settings.animationSpeed}
           moveConfirmation={settings.moveConfirmation}
+          pieceShadow={THEMES[settings.themeId]?.pieceShadow ?? false}
           initialGameState={resumedGameState ?? undefined}
           gameStartedAt={gameStartedAt}
           onNewGame={() => {
