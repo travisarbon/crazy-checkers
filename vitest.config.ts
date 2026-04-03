@@ -11,6 +11,8 @@ export default defineConfig({
     exclude: [
       'src/ai/validation/**',        // Self-play: too slow for routine runs
       'src/engine/*.stresstest.*',    // Stress tests: also heavyweight
+      'src/utils/perfBenchmark.*',    // Performance benchmarks: run via test:perf
+      'src/ui/renderPerf.*',          // Render profiling: run via test:perf
     ],
     coverage: {
       provider: 'v8',
