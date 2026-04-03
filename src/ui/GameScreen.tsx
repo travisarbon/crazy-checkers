@@ -146,6 +146,7 @@ export default function GameScreen({
   );
   const [isAIThinking, setIsAIThinking] = useState(false);
   const aiThinkingRef = useRef(false);
+  const gameStateRef = useRef(gameState);
   const [pendingCaptures, setPendingCaptures] = useState({ white: 0, black: 0 });
   const prefersReducedMotion = usePrefersReducedMotion();
 
@@ -200,16 +201,35 @@ export default function GameScreen({
     [gameState, animationQueue],
   );
 
-  // --- AI turn effect ---
+  // --- Keep gameStateRef in sync (ref must not be written during render) ---
   useEffect(() => {
-    if (gameState.status !== GameStatus.InProgress) return;
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  // Ref for handleMove so the AI effect doesn't depend on it directly,
+  // which would cause re-runs whenever gameState changes (since handleMove
+  // closes over gameState).
+  const handleMoveRef = useRef(handleMove);
+  useEffect(() => {
+    handleMoveRef.current = handleMove;
+  }, [handleMove]);
+
+  // --- AI turn effect ---
+  // Dependencies are intentionally limited to avoid circular re-triggers.
+  // The effect only fires when animation stops or gameState changes identity.
+  // It reads the latest gameState and handleMove from refs to avoid stale
+  // closures while keeping the dependency array stable.
+  useEffect(() => {
     if (animationQueue.isAnimating) return;
     if (aiThinkingRef.current) return;
 
+    const state = gameStateRef.current;
+    if (state.status !== GameStatus.InProgress) return;
+
     const activePlayer =
-      gameState.activeColor === PieceColor.White
-        ? gameState.players.white
-        : gameState.players.black;
+      state.activeColor === PieceColor.White
+        ? state.players.white
+        : state.players.black;
 
     if (activePlayer === PlayerType.Human) return;
 
@@ -219,13 +239,11 @@ export default function GameScreen({
     aiThinkingRef.current = true;
     let cancelled = false;
 
-    // Kick off the AI request, then set thinking state from the callback
-    // to avoid synchronous setState in the effect body.
-    requestAIMove(gameState, difficulty)
+    requestAIMove(state, difficulty)
       .then((move) => {
         if (cancelled) return;
-        const newState = makeMove(gameState, move);
-        handleMove(newState);
+        const newState = makeMove(state, move);
+        handleMoveRef.current(newState);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -253,7 +271,6 @@ export default function GameScreen({
   }, [
     gameState,
     animationQueue.isAnimating,
-    handleMove,
   ]);
 
   // --- Interaction hook ---

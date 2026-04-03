@@ -384,17 +384,23 @@ export function useAnimationQueue({
           ]),
         );
 
-        // Use rAF to ensure the initial position renders before setting target
+        // Use a double-RAF to ensure the initial position is committed to the
+        // DOM before we set the transition target. A single RAF is not enough
+        // because React may batch the state update and not paint before the
+        // callback fires — especially on Firefox where microtask scheduling
+        // differs from Chromium.
         requestAnimationFrame(() => {
-          if (!isAnimatingRef.current) return;
-          setAnimatingPieces(
-            new Map([
-              [
-                step.fromSquare as number,
-                { overridePosition: toCoords, opacity: null, scale: null, transitionDurationMs: duration, easing: slideEasing, stableKey },
-              ],
-            ]),
-          );
+          requestAnimationFrame(() => {
+            if (!isAnimatingRef.current) return;
+            setAnimatingPieces(
+              new Map([
+                [
+                  step.fromSquare as number,
+                  { overridePosition: toCoords, opacity: null, scale: null, transitionDurationMs: duration, easing: slideEasing, stableKey },
+                ],
+              ]),
+            );
+          });
         });
 
         // After slide completes, update the animation board and advance
@@ -530,11 +536,14 @@ export function useAnimationQueue({
       setFadingSquares(new Set());
       setAnimationBoard([...boardBeforeMove]);
 
-      // Start processing on next frame to ensure state is set
+      // Start processing after two frames to ensure React has committed
+      // the initial state to the DOM (double-RAF for Firefox reliability).
       requestAnimationFrame(() => {
-        if (isAnimatingRef.current) {
-          processNextStepRef.current();
-        }
+        requestAnimationFrame(() => {
+          if (isAnimatingRef.current) {
+            processNextStepRef.current();
+          }
+        });
       });
     },
     [],
