@@ -257,15 +257,14 @@ export interface GameState {
    */
   readonly plyCount: number;
 
-  /** The game mode. Classic games have no events. @todo Task 7.3: make required. */
-  readonly mode?: GameMode;
+  /** The game mode. Classic games have no events. */
+  readonly mode: GameMode;
 
   /**
    * Ordered list of currently active events (oldest first).
    * Empty array for Classic mode and for Crazy mode before any event triggers.
-   * @todo Task 7.3: make required.
    */
-  readonly activeEvents?: readonly ActiveEvent[];
+  readonly activeEvents: readonly ActiveEvent[];
 }
 
 /** Diagonal directions for adjacency lookups. */

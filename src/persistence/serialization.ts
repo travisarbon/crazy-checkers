@@ -5,8 +5,9 @@
  * so we convert to/from a plain JSON-safe representation.
  */
 
-import type { BoardState, GameState, Move } from '../engine/types';
+import type { ActiveEvent, BoardState, GameState, Move } from '../engine/types';
 import type {
+  CrazyEvent,
   GameEndReason,
   GameResultType,
   GameStatus,
@@ -14,8 +15,9 @@ import type {
   PieceType,
   PlayerType,
 } from '../engine/types';
-import { square } from '../engine/types';
+import { GameMode, square } from '../engine/types';
 import { createAmericanRules } from '../engine/rules';
+import { createCompositeRuleSet } from '../engine/compositeRuleSet';
 
 // ---------------------------------------------------------------------------
 // Serializable types
@@ -36,6 +38,16 @@ export interface SerializedGameState {
   positionHashes: string[];
   halfMoveClock: number;
   plyCount: number;
+  mode?: string;
+  activeEvents?: SerializedActiveEvent[];
+}
+
+interface SerializedActiveEvent {
+  type: string;
+  remainingPlies: number;
+  triggeredBy: string;
+  triggeredAtPly: number;
+  metadata?: Record<string, unknown>;
 }
 
 interface SerializedPiece {
@@ -73,6 +85,14 @@ export function serializeGameState(state: GameState): SerializedGameState {
     positionHashes: state.positionHashes.map((h) => h.toString(16)),
     halfMoveClock: state.halfMoveClock,
     plyCount: state.plyCount,
+    mode: state.mode,
+    activeEvents: state.activeEvents.map((e) => ({
+      type: e.type,
+      remainingPlies: e.remainingPlies,
+      triggeredBy: e.triggeredBy,
+      triggeredAtPly: e.triggeredAtPly,
+      ...(e.metadata !== undefined ? { metadata: { ...e.metadata } } : {}),
+    })),
   };
 }
 
@@ -98,6 +118,22 @@ export function deserializeGameState(data: SerializedGameState): GameState {
 
   const positionHashes: bigint[] = data.positionHashes.map((h) => BigInt('0x' + h));
 
+  const mode = (data.mode ?? GameMode.Classic) as GameMode;
+  const activeEvents: ActiveEvent[] = (data.activeEvents ?? []).map((e) => ({
+    type: e.type as CrazyEvent,
+    remainingPlies: e.remainingPlies,
+    triggeredBy: e.triggeredBy as PieceColor,
+    triggeredAtPly: e.triggeredAtPly,
+    ...(e.metadata !== undefined
+      ? { metadata: e.metadata as Readonly<Record<string, unknown>> }
+      : {}),
+  }));
+
+  const ruleSet =
+    mode === GameMode.Crazy
+      ? createCompositeRuleSet(createAmericanRules())
+      : createAmericanRules();
+
   return {
     board,
     activeColor: data.activeColor as PieceColor,
@@ -105,7 +141,7 @@ export function deserializeGameState(data: SerializedGameState): GameState {
     result: data.result
       ? { type: data.result.type as GameResultType, reason: data.result.reason as GameEndReason }
       : null,
-    ruleSet: createAmericanRules(),
+    ruleSet,
     players: {
       white: data.players.white as PlayerType,
       black: data.players.black as PlayerType,
@@ -114,6 +150,8 @@ export function deserializeGameState(data: SerializedGameState): GameState {
     positionHashes,
     halfMoveClock: data.halfMoveClock,
     plyCount: data.plyCount,
+    mode,
+    activeEvents,
   };
 }
 

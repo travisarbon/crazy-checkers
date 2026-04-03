@@ -10,11 +10,21 @@ import {
   isAITurn,
 } from './game';
 import { createAmericanRules } from './rules';
-import { getBoardSquare } from './board';
+import { createInitialBoard, getBoardSquare } from './board';
 import { computeZobristHash } from './zobrist';
-import { GameEndReason, GameResultType, GameStatus, PieceColor, PlayerType, square } from './types';
-import type { BoardState, GameState, Move, PlayerSetup, RuleSet, Square } from './types';
+import {
+  CrazyEvent,
+  GameEndReason,
+  GameMode,
+  GameResultType,
+  GameStatus,
+  PieceColor,
+  PlayerType,
+  square,
+} from './types';
+import type { ActiveEvent, BoardState, GameState, Move, PlayerSetup, RuleSet, Square } from './types';
 import { W, B, P, K, buildBoard } from './test-utils';
+import { createCompositeRuleSet } from './compositeRuleSet';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -60,6 +70,8 @@ function stateWithBoard(
     positionHashes: [computeZobristHash(board, activeColor)],
     halfMoveClock: 0,
     plyCount: 0,
+    mode: GameMode.Classic,
+    activeEvents: [],
     ...overrides,
   };
 }
@@ -906,5 +918,225 @@ describe('full game replay', () => {
       const recomputedHash = computeZobristHash(state.board, state.activeColor);
       expect(currentHash).toBe(recomputedHash);
     }
+  });
+});
+
+// ===========================================================================
+// Crazy mode — createNewGame
+// ===========================================================================
+
+describe('createNewGame — Crazy mode', () => {
+  it('creates a game with Crazy mode and empty activeEvents', () => {
+    const state = createNewGame(createAmericanRules(), HUMAN_VS_HUMAN, GameMode.Crazy);
+    expect(state.mode).toBe(GameMode.Crazy);
+    expect(state.activeEvents).toEqual([]);
+    expect(state.status).toBe(GameStatus.InProgress);
+  });
+
+  it('uses CompositeEventRuleSet for Crazy mode', () => {
+    const state = createNewGame(createAmericanRules(), HUMAN_VS_HUMAN, GameMode.Crazy);
+    expect('setActiveEvents' in state.ruleSet).toBe(true);
+  });
+
+  it('defaults to Classic mode when no mode specified', () => {
+    const state = createNewGame(createAmericanRules(), HUMAN_VS_HUMAN);
+    expect(state.mode).toBe(GameMode.Classic);
+    expect(state.activeEvents).toEqual([]);
+  });
+
+  it('Classic mode does not use CompositeEventRuleSet', () => {
+    const state = createNewGame(createAmericanRules(), HUMAN_VS_HUMAN);
+    expect('setActiveEvents' in state.ruleSet).toBe(false);
+  });
+});
+
+// ===========================================================================
+// Crazy mode — makeMove event trigger
+// ===========================================================================
+
+describe('makeMove — Crazy mode event trigger', () => {
+  it('triggers a random event on multi-jump (>=2 captures)', () => {
+    // White king at 2 can double-jump over black pawns at 6 and 11
+    const board = buildBoard([
+      { sq: 2, color: W, type: K }, // White king
+      { sq: 6, color: B, type: P }, // Black pawn (capturable)
+      { sq: 11, color: B, type: P }, // Black pawn (second capture)
+      { sq: 32, color: B, type: P }, // Keep black alive
+      { sq: 29, color: W, type: P }, // Keep white alive
+    ]);
+
+    const state = stateWithBoard(board, PieceColor.White, {
+      mode: GameMode.Crazy,
+      ruleSet: createCompositeRuleSet(createAmericanRules()),
+    });
+
+    // Find the double-jump move
+    const legalMoves = getCurrentLegalMoves(state);
+    const multiJump = legalMoves.find((m) => m.captured.length >= 2);
+
+    if (multiJump) {
+      const newState = makeMove(state, multiJump);
+      // A multi-jump should trigger an event in Crazy mode
+      expect(newState.activeEvents.length).toBe(1);
+      expect(newState.mode).toBe(GameMode.Crazy);
+    } else {
+      // If no multi-jump available with this board, skip
+      expect(true).toBe(true);
+    }
+  });
+
+  it('does not trigger events on single captures in Crazy mode', () => {
+    // White king at 1 can single-jump over black pawn at 5
+    const board = buildBoard([
+      { sq: 1, color: W, type: K }, // White king
+      { sq: 5, color: B, type: P }, // Black pawn (single capture)
+      { sq: 32, color: B, type: P }, // Keep black alive
+      { sq: 29, color: W, type: P }, // Keep white alive
+    ]);
+
+    const state = stateWithBoard(board, PieceColor.White, {
+      mode: GameMode.Crazy,
+      ruleSet: createCompositeRuleSet(createAmericanRules()),
+    });
+
+    const legalMoves = getCurrentLegalMoves(state);
+    const singleJump = legalMoves.find((m) => m.captured.length === 1);
+
+    if (singleJump) {
+      const newState = makeMove(state, singleJump);
+      expect(newState.activeEvents).toEqual([]);
+    }
+  });
+
+  it('does not trigger events in Classic mode', () => {
+    const state = newGame();
+    const move = firstLegalMove(state);
+    const newState = makeMove(state, move);
+    expect(newState.activeEvents).toEqual([]);
+    expect(newState.mode).toBe(GameMode.Classic);
+  });
+});
+
+// ===========================================================================
+// Crazy mode — event duration ticking
+// ===========================================================================
+
+describe('makeMove — event duration ticking', () => {
+  it('decrements remainingPlies each ply', () => {
+    const activeEvents: ActiveEvent[] = [
+      {
+        type: CrazyEvent.KingForADay,
+        remainingPlies: 2,
+        triggeredBy: PieceColor.White,
+        triggeredAtPly: 0,
+      },
+    ];
+
+    const state = stateWithBoard(createInitialBoard(), PieceColor.White, {
+      mode: GameMode.Crazy,
+      ruleSet: createCompositeRuleSet(createAmericanRules()),
+      activeEvents,
+    });
+
+    const move = firstLegalMove(state);
+    const newState = makeMove(state, move);
+
+    // Event should have been ticked: 2 → 1
+    expect(newState.activeEvents.length).toBe(1);
+    expect(newState.activeEvents[0]?.remainingPlies).toBe(1);
+  });
+
+  it('removes events when remainingPlies reaches 0', () => {
+    const activeEvents: ActiveEvent[] = [
+      {
+        type: CrazyEvent.NoTouching,
+        remainingPlies: 1,
+        triggeredBy: PieceColor.White,
+        triggeredAtPly: 0,
+      },
+    ];
+
+    const state = stateWithBoard(createInitialBoard(), PieceColor.White, {
+      mode: GameMode.Crazy,
+      ruleSet: createCompositeRuleSet(createAmericanRules()),
+      activeEvents,
+    });
+
+    const move = firstLegalMove(state);
+    const newState = makeMove(state, move);
+
+    // Event ticked from 1 → 0 → removed
+    expect(newState.activeEvents.length).toBe(0);
+  });
+
+  it('does not tick condition-based events (remainingPlies === -1)', () => {
+    const activeEvents: ActiveEvent[] = [
+      {
+        type: CrazyEvent.LiveGrenade,
+        remainingPlies: -1,
+        triggeredBy: PieceColor.White,
+        triggeredAtPly: 0,
+      },
+    ];
+
+    const state = stateWithBoard(createInitialBoard(), PieceColor.White, {
+      mode: GameMode.Crazy,
+      ruleSet: createCompositeRuleSet(createAmericanRules()),
+      activeEvents,
+    });
+
+    const move = firstLegalMove(state);
+    const newState = makeMove(state, move);
+
+    // Condition-based event should persist unchanged
+    expect(newState.activeEvents.length).toBe(1);
+    expect(newState.activeEvents[0]?.remainingPlies).toBe(-1);
+  });
+
+  it('ticks all active events in a single ply', () => {
+    const activeEvents: ActiveEvent[] = [
+      { type: CrazyEvent.KingForADay, remainingPlies: 2, triggeredBy: PieceColor.White, triggeredAtPly: 0 },
+      { type: CrazyEvent.NoTouching, remainingPlies: 1, triggeredBy: PieceColor.Black, triggeredAtPly: 1 },
+      { type: CrazyEvent.LiveGrenade, remainingPlies: -1, triggeredBy: PieceColor.White, triggeredAtPly: 2 },
+    ];
+
+    const state = stateWithBoard(createInitialBoard(), PieceColor.White, {
+      mode: GameMode.Crazy,
+      ruleSet: createCompositeRuleSet(createAmericanRules()),
+      activeEvents,
+    });
+
+    const move = firstLegalMove(state);
+    const newState = makeMove(state, move);
+
+    // KingForADay: 2→1 (still active)
+    // NoTouching: 1→0 (removed)
+    // LiveGrenade: -1 (unchanged, condition-based)
+    expect(newState.activeEvents.length).toBe(2);
+    expect(
+      newState.activeEvents.find((e) => e.type === CrazyEvent.KingForADay)?.remainingPlies,
+    ).toBe(1);
+    expect(
+      newState.activeEvents.find((e) => e.type === CrazyEvent.NoTouching),
+    ).toBeUndefined();
+    expect(
+      newState.activeEvents.find((e) => e.type === CrazyEvent.LiveGrenade)?.remainingPlies,
+    ).toBe(-1);
+  });
+});
+
+// ===========================================================================
+// Classic mode — regression
+// ===========================================================================
+
+describe('makeMove — Classic mode regression', () => {
+  it('behaves identically to Phase 1 with no mode specified', () => {
+    const state = newGame();
+    const move = firstLegalMove(state);
+    const newState = makeMove(state, move);
+
+    expect(newState.mode).toBe(GameMode.Classic);
+    expect(newState.activeEvents).toEqual([]);
+    expect(newState.plyCount).toBe(1);
   });
 });

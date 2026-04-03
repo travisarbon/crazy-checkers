@@ -23,7 +23,18 @@ import type { WorkerApi, SerializableGameState } from './worker';
 function serializeGameState(state: GameState): SerializableGameState {
   const { ruleSet: _, ...rest } = state;
   void _;
-  return { ...rest, ruleSetId: 'american' };
+  return {
+    ...rest,
+    ruleSetId: 'american',
+    mode: state.mode,
+    activeEvents: state.activeEvents.map((e) => ({
+      type: e.type,
+      remainingPlies: e.remainingPlies,
+      triggeredBy: e.triggeredBy,
+      triggeredAtPly: e.triggeredAtPly,
+      ...(e.metadata !== undefined ? { metadata: { ...e.metadata } } : {}),
+    })),
+  };
 }
 
 // ---------------------------------------------------------------------------

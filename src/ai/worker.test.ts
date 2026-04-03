@@ -8,7 +8,7 @@ import { getAIMove, deserializeGameState } from './worker';
 import type { SerializableGameState } from './worker';
 import { createNewGame } from '../engine/game';
 import { createAmericanRules } from '../engine/rules';
-import { PlayerType } from '../engine/types';
+import { CrazyEvent, GameMode, PlayerType } from '../engine/types';
 import type { GameState, BoardState, SquareState, Piece, Move } from '../engine/types';
 import { PieceColor, PieceType } from '../engine/types';
 
@@ -26,7 +26,18 @@ function createTestGameState(): GameState {
 function serializeForTest(state: GameState): SerializableGameState {
   const { ruleSet: _, ...rest } = state;
   void _;
-  return { ...rest, ruleSetId: 'american' };
+  return {
+    ...rest,
+    ruleSetId: 'american',
+    mode: state.mode,
+    activeEvents: state.activeEvents.map((e) => ({
+      type: e.type,
+      remainingPlies: e.remainingPlies,
+      triggeredBy: e.triggeredBy,
+      triggeredAtPly: e.triggeredAtPly,
+      ...(e.metadata !== undefined ? { metadata: { ...e.metadata } } : {}),
+    })),
+  };
 }
 
 function isLegalMove(state: GameState, move: Move): boolean {
@@ -153,5 +164,42 @@ describe('getAIMove (worker function, tested directly without Worker)', () => {
       const move = getAIMove(serialized, 'easy');
       expect(move.captured.length).toBeGreaterThan(0);
     }
+  });
+});
+
+// ===========================================================================
+// Crazy mode deserialization
+// ===========================================================================
+
+describe('deserializeGameState — Crazy mode', () => {
+  it('deserializes Crazy mode state with CompositeEventRuleSet', () => {
+    const state = createTestGameState();
+    const serialized: SerializableGameState = {
+      ...serializeForTest(state),
+      mode: 'CRAZY',
+      activeEvents: [
+        {
+          type: 'KING_FOR_A_DAY',
+          remainingPlies: 2,
+          triggeredBy: 'WHITE',
+          triggeredAtPly: 5,
+        },
+      ],
+    };
+
+    const deserialized = deserializeGameState(serialized);
+    expect(deserialized.mode).toBe(GameMode.Crazy);
+    expect(deserialized.activeEvents.length).toBe(1);
+    expect(deserialized.activeEvents[0]?.type).toBe(CrazyEvent.KingForADay);
+    expect('setActiveEvents' in deserialized.ruleSet).toBe(true);
+  });
+
+  it('defaults to Classic mode when mode is missing', () => {
+    const state = createTestGameState();
+    const serialized = serializeForTest(state);
+
+    const deserialized = deserializeGameState(serialized);
+    expect(deserialized.mode).toBe(GameMode.Classic);
+    expect(deserialized.activeEvents).toEqual([]);
   });
 });

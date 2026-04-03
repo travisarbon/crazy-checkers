@@ -5,9 +5,10 @@
  * The UI (Zustand store) and AI (Web Worker) consume these functions.
  */
 
-import type { GameResult, GameState, Move, Piece, PlayerSetup, RuleSet, Square } from './types';
+import type { ActiveEvent, GameResult, GameState, Move, Piece, PlayerSetup, RuleSet, Square } from './types';
 import {
   GameEndReason,
+  GameMode,
   GameResultType,
   GameStatus,
   opponentColor,
@@ -17,6 +18,9 @@ import {
 } from './types';
 import { createInitialBoard, getBoardSquare } from './board';
 import { computeZobristHash, isRepetition, updateZobristHash } from './zobrist';
+import { checkEventTrigger, createActiveEvent, resolveConflicts, tickAllEvents } from './events';
+import type { CompositeEventRuleSet } from './compositeRuleSet';
+import { createCompositeRuleSet } from './compositeRuleSet';
 
 /** Half-move clock threshold for the 40-move draw rule (40 moves x 2 sides). */
 const FORTY_MOVE_THRESHOLD = 80;
@@ -27,23 +31,35 @@ const FORTY_MOVE_THRESHOLD = 80;
 
 /**
  * Creates a new game in the InProgress state with the standard starting position.
+ *
+ * For Crazy mode, the provided ruleSet is wrapped in a CompositeEventRuleSet
+ * internally. Callers continue to pass the base RuleSet (e.g., AmericanRules).
  */
-export function createNewGame(ruleSet: RuleSet, players: PlayerSetup): GameState {
+export function createNewGame(
+  ruleSet: RuleSet,
+  players: PlayerSetup,
+  mode: GameMode = GameMode.Classic,
+): GameState {
   const board = createInitialBoard();
   const activeColor = PieceColor.White;
   const initialHash = computeZobristHash(board, activeColor);
+
+  const effectiveRuleSet =
+    mode === GameMode.Crazy ? createCompositeRuleSet(ruleSet) : ruleSet;
 
   return {
     board,
     activeColor,
     status: GameStatus.InProgress,
     result: null,
-    ruleSet,
+    ruleSet: effectiveRuleSet,
     players,
     moveHistory: [],
     positionHashes: [initialHash],
     halfMoveClock: 0,
     plyCount: 0,
+    mode,
+    activeEvents: [],
   };
 }
 
@@ -68,6 +84,21 @@ export function movesAreEqual(a: Move, b: Move): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Type guard
+// ---------------------------------------------------------------------------
+
+/**
+ * Type guard: checks if a RuleSet is a CompositeEventRuleSet.
+ * Uses duck-typing to keep game.ts loosely coupled to the composite implementation.
+ */
+function isCompositeRuleSet(ruleSet: RuleSet): ruleSet is CompositeEventRuleSet {
+  return (
+    'setActiveEvents' in ruleSet &&
+    typeof (ruleSet as CompositeEventRuleSet).setActiveEvents === 'function'
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Core turn-advance function
 // ---------------------------------------------------------------------------
 
@@ -88,6 +119,12 @@ export function makeMove(state: GameState, move: Move): GameState {
   // ── Validation ──────────────────────────────────────────────────────
   if (state.status !== GameStatus.InProgress) {
     throw new Error('Cannot make a move: game is not in progress.');
+  }
+
+  // ── Sync event context ─────────────────────────────────────────────
+  const activeEvents = state.activeEvents;
+  if (isCompositeRuleSet(state.ruleSet)) {
+    state.ruleSet.setActiveEvents(activeEvents);
   }
 
   const legalMoves = state.ruleSet.getLegalMoves(state.board, state.activeColor);
@@ -199,6 +236,26 @@ export function makeMove(state: GameState, move: Move): GameState {
     result = { type: GameResultType.Draw, reason: GameEndReason.FortyMoveRule };
   }
 
+  // ── Tick existing event durations (Crazy mode only) ─────────────────
+  let updatedEvents: readonly ActiveEvent[] = activeEvents;
+  if (state.mode === GameMode.Crazy && updatedEvents.length > 0) {
+    updatedEvents = tickAllEvents(updatedEvents);
+    updatedEvents = resolveConflicts(updatedEvents);
+  }
+
+  // ── Event trigger on multi-jump (Crazy mode only) ──────────────────
+  if (state.mode === GameMode.Crazy) {
+    const triggeredEvent = checkEventTrigger(move, state.mode);
+    if (triggeredEvent !== null) {
+      const newEvent = createActiveEvent(
+        triggeredEvent,
+        state.activeColor,
+        state.plyCount + 1,
+      );
+      updatedEvents = [...updatedEvents, newEvent];
+    }
+  }
+
   // ── Return new state ────────────────────────────────────────────────
   return {
     board,
@@ -211,6 +268,8 @@ export function makeMove(state: GameState, move: Move): GameState {
     positionHashes: newPositionHashes,
     halfMoveClock,
     plyCount: state.plyCount + 1,
+    mode: state.mode,
+    activeEvents: updatedEvents,
   };
 }
 
@@ -258,6 +317,12 @@ export function resign(state: GameState, resigningColor: PieceColor): GameState 
 /** Returns the legal moves for the active player in the current state. */
 export function getCurrentLegalMoves(state: GameState): Move[] {
   if (state.status !== GameStatus.InProgress) return [];
+
+  // Sync active events for CompositeEventRuleSet
+  if (isCompositeRuleSet(state.ruleSet)) {
+    state.ruleSet.setActiveEvents(state.activeEvents);
+  }
+
   return state.ruleSet.getLegalMoves(state.board, state.activeColor);
 }
 

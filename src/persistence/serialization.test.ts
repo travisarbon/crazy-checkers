@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { createNewGame, makeMove } from '../engine/game';
 import { createAmericanRules } from '../engine/rules';
 import { createInitialBoard } from '../engine/board';
-import { PlayerType, GameStatus, square } from '../engine/types';
-import type { GameState, BoardState, Piece } from '../engine/types';
+import { CrazyEvent, GameMode, PlayerType, GameStatus, PieceColor, square } from '../engine/types';
+import type { ActiveEvent, GameState, BoardState, Piece } from '../engine/types';
 import { serializeGameState, deserializeGameState, serializeBoard } from './serialization';
 
 // ---------------------------------------------------------------------------
@@ -135,5 +135,85 @@ describe('serializeBoard', () => {
     expect(encoded[0]).toBe('W');
     expect(encoded[5]).toBe('B');
     expect(encoded[1]).toBe('.');
+  });
+});
+
+// ===========================================================================
+// Crazy mode serialization
+// ===========================================================================
+
+describe('Crazy mode serialization', () => {
+  it('round-trips a Crazy mode game with active events', () => {
+    const state = createNewGame(
+      createAmericanRules(),
+      { white: PlayerType.Human, black: PlayerType.Human },
+      GameMode.Crazy,
+    );
+    const stateWithEvent: GameState = {
+      ...state,
+      activeEvents: [
+        {
+          type: CrazyEvent.KingForADay,
+          remainingPlies: 2,
+          triggeredBy: PieceColor.White,
+          triggeredAtPly: 5,
+        },
+      ],
+    };
+
+    const serialized = serializeGameState(stateWithEvent);
+    const restored = deserializeGameState(serialized);
+
+    expect(restored.mode).toBe(GameMode.Crazy);
+    expect(restored.activeEvents.length).toBe(1);
+    expect(restored.activeEvents[0]?.type).toBe(CrazyEvent.KingForADay);
+    expect(restored.activeEvents[0]?.remainingPlies).toBe(2);
+    expect('setActiveEvents' in restored.ruleSet).toBe(true);
+  });
+
+  it('deserializes Phase 1 saves with missing mode/activeEvents', () => {
+    // Simulate a Phase 1 serialized state (no mode or activeEvents)
+    const state = createTestGame();
+    const serialized = serializeGameState(state);
+    // Remove mode and activeEvents to simulate Phase 1 save
+    const phase1Data = { ...serialized };
+    delete phase1Data.mode;
+    delete phase1Data.activeEvents;
+
+    const restored = deserializeGameState(phase1Data);
+    expect(restored.mode).toBe(GameMode.Classic);
+    expect(restored.activeEvents).toEqual([]);
+  });
+
+  it('preserves event metadata through serialization', () => {
+    const event: ActiveEvent = {
+      type: CrazyEvent.KingForADay,
+      remainingPlies: 2,
+      triggeredBy: PieceColor.White,
+      triggeredAtPly: 3,
+      metadata: { originalKingSquares: [1, 3, 5] },
+    };
+
+    const state = createNewGame(
+      createAmericanRules(),
+      { white: PlayerType.Human, black: PlayerType.Human },
+      GameMode.Crazy,
+    );
+    const stateWithEvent: GameState = { ...state, activeEvents: [event] };
+
+    const serialized = serializeGameState(stateWithEvent);
+    const restored = deserializeGameState(serialized);
+
+    expect(restored.activeEvents[0]?.metadata).toEqual({ originalKingSquares: [1, 3, 5] });
+  });
+
+  it('Classic mode round-trip includes mode and activeEvents', () => {
+    const state = createTestGame();
+    const serialized = serializeGameState(state);
+    const restored = deserializeGameState(serialized);
+
+    expect(restored.mode).toBe(GameMode.Classic);
+    expect(restored.activeEvents).toEqual([]);
+    expect('setActiveEvents' in restored.ruleSet).toBe(false);
   });
 });
