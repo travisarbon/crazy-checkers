@@ -61,7 +61,7 @@ describe('saveSettings', () => {
 
 describe('loadSettings', () => {
   it('returns saved settings', () => {
-    const custom: Settings = { themeId: 'modern', animationSpeed: 1.5, moveConfirmation: true };
+    const custom: Settings = { themeId: 'current', animationSpeed: 1.5, moveConfirmation: true };
     saveSettings(custom);
     expect(loadSettings()).toEqual(custom);
   });
@@ -86,10 +86,10 @@ describe('loadSettings', () => {
   it('handles missing fields gracefully', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
-      JSON.stringify({ version: 1, data: { themeId: 'modern' } }),
+      JSON.stringify({ version: 1, data: { themeId: 'current' } }),
     );
     const result = loadSettings();
-    expect(result.themeId).toBe('modern');
+    expect(result.themeId).toBe('current');
     expect(result.animationSpeed).toBe(DEFAULT_SETTINGS.animationSpeed);
     expect(result.moveConfirmation).toBe(DEFAULT_SETTINGS.moveConfirmation);
   });
@@ -102,10 +102,26 @@ describe('loadSettings', () => {
     expect(loadSettings().themeId).toBe(DEFAULT_SETTINGS.themeId);
   });
 
+  it('migrates legacy "modern" themeId to "current"', () => {
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({ version: 1, data: { themeId: 'modern', animationSpeed: 1.0, moveConfirmation: false } }),
+    );
+    expect(loadSettings().themeId).toBe('current');
+  });
+
+  it('migrates legacy "high-contrast" themeId to "contrast"', () => {
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({ version: 1, data: { themeId: 'high-contrast', animationSpeed: 1.0, moveConfirmation: false } }),
+    );
+    expect(loadSettings().themeId).toBe('contrast');
+  });
+
   it('rejects out-of-range animationSpeed', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
-      JSON.stringify({ version: 1, data: { themeId: 'classic', animationSpeed: 5.0, moveConfirmation: false } }),
+      JSON.stringify({ version: 1, data: { themeId: 'crazy', animationSpeed: 5.0, moveConfirmation: false } }),
     );
     expect(loadSettings().animationSpeed).toBe(DEFAULT_SETTINGS.animationSpeed);
   });

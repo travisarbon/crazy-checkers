@@ -7,7 +7,7 @@
 import { DEFAULT_THEME_ID } from '../themes/theme';
 
 export interface Settings {
-  readonly themeId: 'classic' | 'modern' | 'high-contrast';
+  readonly themeId: 'crazy' | 'cork' | 'current' | 'classic' | 'contrast';
   /**
    * Animation duration multiplier. 1.0 is default.
    * Lower = faster (0.5 = 2× speed), higher = slower (2.0 = half speed).

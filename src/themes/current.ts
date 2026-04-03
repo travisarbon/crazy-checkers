@@ -1,8 +1,8 @@
 import type { Theme } from './theme';
 
-export const modernTheme: Theme = {
-  name: 'Modern',
-  id: 'modern',
+export const currentTheme: Theme = {
+  name: 'Current',
+  id: 'current',
   boardLight: '#EEEEEE',
   boardDark: '#424242',
   boardBorder: '#212121',
@@ -16,7 +16,7 @@ export const modernTheme: Theme = {
   highlightHover: 'rgba(100, 180, 255, 0.12)',
   uiBg: '#121212',
   uiText: '#EEEEEE',
-  uiAccent: '#BB86FC',
+  uiAccent: '#64B5F6',
   uiDanger: '#CF6679',
   pieceShadow: true,
 };

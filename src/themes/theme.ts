@@ -64,14 +64,18 @@ export function applyTheme(theme: Theme): void {
   document.body.style.margin = '0';
 }
 
+import { crazyTheme } from './crazy';
+import { corkTheme } from './cork';
+import { currentTheme } from './current';
 import { classicTheme } from './classic';
-import { modernTheme } from './modern';
-import { highContrastTheme } from './highContrast';
+import { contrastTheme } from './contrast';
 
 export const THEMES: Record<string, Theme> = {
+  crazy: crazyTheme,
+  cork: corkTheme,
+  current: currentTheme,
   classic: classicTheme,
-  modern: modernTheme,
-  'high-contrast': highContrastTheme,
+  contrast: contrastTheme,
 };
 
-export const DEFAULT_THEME_ID = 'classic';
+export const DEFAULT_THEME_ID = 'crazy';

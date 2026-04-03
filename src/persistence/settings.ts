@@ -86,7 +86,7 @@ function isValidEnvelope(value: unknown): value is PersistedSettingsEnvelope {
 function mergeWithDefaults(data: unknown): Settings {
   const obj = data as Record<string, unknown>;
 
-  const themeId = isValidThemeId(obj.themeId) ? obj.themeId : DEFAULT_SETTINGS.themeId;
+  const themeId = migrateThemeId(obj.themeId) ?? DEFAULT_SETTINGS.themeId;
   const animationSpeed = isValidAnimationSpeed(obj.animationSpeed)
     ? obj.animationSpeed
     : DEFAULT_SETTINGS.animationSpeed;
@@ -97,8 +97,22 @@ function mergeWithDefaults(data: unknown): Settings {
   return { themeId, animationSpeed, moveConfirmation };
 }
 
+/** Maps legacy theme IDs from before the rename to their new IDs. */
+const LEGACY_THEME_MAP: Record<string, Settings['themeId']> = {
+  modern: 'current',
+  'high-contrast': 'contrast',
+};
+
+function migrateThemeId(value: unknown): Settings['themeId'] | null {
+  if (typeof value !== 'string') return null;
+  const legacy = LEGACY_THEME_MAP[value];
+  if (legacy) return legacy;
+  if (isValidThemeId(value)) return value;
+  return null;
+}
+
 function isValidThemeId(value: unknown): value is Settings['themeId'] {
-  return value === 'classic' || value === 'modern' || value === 'high-contrast';
+  return value === 'crazy' || value === 'cork' || value === 'current' || value === 'classic' || value === 'contrast';
 }
 
 function isValidAnimationSpeed(value: unknown): value is number {

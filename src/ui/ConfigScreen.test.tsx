@@ -47,10 +47,10 @@ describe('ConfigScreen', () => {
     expect(screen.getByRole('button', { name: 'Back to main menu' })).toBeInTheDocument();
   });
 
-  it('renders three theme cards', () => {
+  it('renders five theme cards', () => {
     renderConfig();
     const radios = screen.getAllByRole('radio');
-    expect(radios).toHaveLength(3);
+    expect(radios).toHaveLength(5);
   });
 
   it('renders animation speed slider', () => {
@@ -73,38 +73,38 @@ describe('ConfigScreen', () => {
 
   // ── Theme switching tests ───────────────────────────────────────────
 
-  it('default theme (classic) is selected', () => {
+  it('default theme (crazy) is selected', () => {
     renderConfig();
-    const classicCard = screen.getByRole('radio', { name: 'Classic' });
-    expect(classicCard).toHaveAttribute('aria-checked', 'true');
+    const crazyCard = screen.getByRole('radio', { name: 'Crazy' });
+    expect(crazyCard).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('clicking Modern theme calls onSettingsChange', () => {
+  it('clicking Cork theme calls onSettingsChange', () => {
     const onSettingsChange = vi.fn();
     renderConfig({ onSettingsChange });
-    fireEvent.click(screen.getByRole('radio', { name: 'Modern' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Cork' }));
     expect(onSettingsChange).toHaveBeenCalledWith({
       ...DEFAULT_SETTINGS,
-      themeId: 'modern',
+      themeId: 'cork',
     });
   });
 
-  it('clicking High Contrast theme calls onSettingsChange', () => {
+  it('clicking Contrast theme calls onSettingsChange', () => {
     const onSettingsChange = vi.fn();
     renderConfig({ onSettingsChange });
-    fireEvent.click(screen.getByRole('radio', { name: 'High Contrast' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Contrast' }));
     expect(onSettingsChange).toHaveBeenCalledWith({
       ...DEFAULT_SETTINGS,
-      themeId: 'high-contrast',
+      themeId: 'contrast',
     });
   });
 
   it('selected theme has visual highlight (aria-checked)', () => {
-    renderConfig({ settings: { ...DEFAULT_SETTINGS, themeId: 'modern' } });
-    const modernCard = screen.getByRole('radio', { name: 'Modern' });
-    expect(modernCard).toHaveAttribute('aria-checked', 'true');
-    const classicCard = screen.getByRole('radio', { name: 'Classic' });
-    expect(classicCard).toHaveAttribute('aria-checked', 'false');
+    renderConfig({ settings: { ...DEFAULT_SETTINGS, themeId: 'current' } });
+    const currentCard = screen.getByRole('radio', { name: 'Current' });
+    expect(currentCard).toHaveAttribute('aria-checked', 'true');
+    const crazyCard = screen.getByRole('radio', { name: 'Crazy' });
+    expect(crazyCard).toHaveAttribute('aria-checked', 'false');
   });
 
   // ── Animation speed tests ───────────────────────────────────────────
@@ -175,13 +175,13 @@ describe('ConfigScreen', () => {
 // ---------------------------------------------------------------------------
 
 describe('BoardPreview', () => {
-  const classicTheme = THEMES['classic'];
-  const modernTheme = THEMES['modern'];
+  const crazyTheme = THEMES['crazy'];
+  const currentTheme = THEMES['current'];
 
   it('renders SVG with correct dimensions', () => {
-    expect(classicTheme).toBeDefined();
-    if (!classicTheme) return;
-    const { container } = render(<BoardPreview theme={classicTheme} size={80} />);
+    expect(crazyTheme).toBeDefined();
+    if (!crazyTheme) return;
+    const { container } = render(<BoardPreview theme={crazyTheme} size={80} />);
     const svg = container.querySelector('svg');
     expect(svg).not.toBeNull();
     expect(svg?.getAttribute('width')).toBe('80');
@@ -189,12 +189,12 @@ describe('BoardPreview', () => {
   });
 
   it('uses provided theme colors for board squares', () => {
-    expect(modernTheme).toBeDefined();
-    if (!modernTheme) return;
-    const { container } = render(<BoardPreview theme={modernTheme} size={80} />);
+    expect(currentTheme).toBeDefined();
+    if (!currentTheme) return;
+    const { container } = render(<BoardPreview theme={currentTheme} size={80} />);
     const rects = container.querySelectorAll('rect');
     const fills = Array.from(rects).map((r) => r.getAttribute('fill'));
-    expect(fills).toContain(modernTheme.boardLight);
-    expect(fills).toContain(modernTheme.boardDark);
+    expect(fills).toContain(currentTheme.boardLight);
+    expect(fills).toContain(currentTheme.boardDark);
   });
 });

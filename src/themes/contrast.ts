@@ -1,8 +1,8 @@
 import type { Theme } from './theme';
 
-export const highContrastTheme: Theme = {
-  name: 'High Contrast',
-  id: 'high-contrast',
+export const contrastTheme: Theme = {
+  name: 'Contrast',
+  id: 'contrast',
   boardLight: '#FFFFFF',
   boardDark: '#000000',
   boardBorder: '#FFD700',
