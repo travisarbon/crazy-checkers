@@ -34,8 +34,8 @@ function makeSerializable(
   };
 }
 
-function makeSerializableEvent(type: CrazyEvent, triggeredBy: PieceColor): SerializableGameState['activeEvents'][number] {
-  return { type, remainingPlies: 2, triggeredBy, triggeredAtPly: 0 };
+function makeSerializableEvent(type: CrazyEvent, triggeredBy: PieceColor, remainingPlies = 16): SerializableGameState['activeEvents'][number] {
+  return { type, remainingPlies, triggeredBy, triggeredAtPly: 0 };
 }
 
 // ---------------------------------------------------------------------------

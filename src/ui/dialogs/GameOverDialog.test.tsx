@@ -206,7 +206,7 @@ describe('GameOverDialog', () => {
     const result: GameResult = { type: GameResultType.BlackWin, reason: GameEndReason.NoLegalMoves };
     const events: ActiveEvent[] = [
       { type: CrazyEvent.KingForADay, remainingPlies: 1, triggeredBy: PieceColor.White, triggeredAtPly: 5 },
-      { type: CrazyEvent.OppositeDay, remainingPlies: 2, triggeredBy: PieceColor.Black, triggeredAtPly: 8 },
+      { type: CrazyEvent.OppositeDay, remainingPlies: 14, triggeredBy: PieceColor.Black, triggeredAtPly: 8 },
     ];
     render(
       <GameOverDialog

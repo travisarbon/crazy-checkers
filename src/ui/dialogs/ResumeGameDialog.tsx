@@ -128,7 +128,7 @@ export default function ResumeGameDialog({
           Resume Game?
         </h2>
         <p className={styles.description}>
-          You have an unfinished {savedGame.mode} game from {formatTimestamp(savedGame.timestamp)}.
+          You have an unfinished {savedGame.mode.toLowerCase()} game from {formatTimestamp(savedGame.timestamp)}.
         </p>
         <div className={styles.details}>
           <dt className={styles.detailLabel}>Players</dt>

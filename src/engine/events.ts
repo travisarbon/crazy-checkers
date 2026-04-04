@@ -38,7 +38,7 @@ export const EVENT_DURATIONS: Readonly<Record<CrazyEvent, number>> = {
   [CrazyEvent.LiveGrenade]: -1, // Until next capture
   [CrazyEvent.HotPotato]: 2, // Design Decision: Playbook says 1 ply, but 2 plies needed to survive opponent's turn (see Task 8.4 §3.3)
   [CrazyEvent.ChecksMix]: 0, // Instant
-  [CrazyEvent.OppositeDay]: 2, // 1 round = 2 plies
+  [CrazyEvent.OppositeDay]: 16, // 8 rounds = 16 plies
   [CrazyEvent.UpInTheAir]: 2, // 1 round = 2 plies
   [CrazyEvent.NoTouching]: 2, // 1 round = 2 plies
   // Phases 3–4 (Events 8–40)

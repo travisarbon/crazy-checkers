@@ -287,10 +287,10 @@ describe('EventDecorator', () => {
 
     it('tickDuration does not affect other event types', () => {
       const decorator = new TestDecorator(rules); // handles KingForADay
-      const events = [makeEvent(CrazyEvent.OppositeDay, 2)];
+      const events = [makeEvent(CrazyEvent.OppositeDay, 16)];
       const result = decorator.tickDuration(events);
       expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({ remainingPlies: 2 }); // unchanged
+      expect(result[0]).toMatchObject({ remainingPlies: 16 }); // unchanged
     });
   });
 

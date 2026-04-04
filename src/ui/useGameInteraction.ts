@@ -10,7 +10,7 @@ import { useState, useCallback, useMemo } from 'react';
 import type { BoardState, GameState, Move, Square, SquareState } from '../engine/types';
 import { GameStatus } from '../engine/types';
 import { getBoardSquare } from '../engine/board';
-import { getLegalMovesForPiece, getMovesToSquare, getJumpsForPiece } from '../engine/moves';
+import { getMovesToSquare, getJumpsForPiece } from '../engine/moves';
 import { makeMove, getCurrentLegalMoves } from '../engine/game';
 
 // ---------------------------------------------------------------------------
@@ -150,13 +150,15 @@ export function useGameInteraction({
     if (selectedSquare === null) return [];
 
     if (intermediateBoard !== null) {
-      // Mid-multi-jump: only continuation jumps from the current landing
+      // Mid-multi-jump: continuation jumps from the current landing
+      // TODO: route through ruleSet for event-aware jump generation if needed
       return getJumpsForPiece(intermediateBoard, selectedSquare);
     }
 
-    // Normal selection: all legal moves for this piece (respects mandatory capture)
-    return getLegalMovesForPiece(gameState.board, selectedSquare);
-  }, [selectedSquare, intermediateBoard, gameState.board]);
+    // Use getCurrentLegalMoves (routes through CompositeEventRuleSet) and filter
+    const allMoves = getCurrentLegalMoves(gameState);
+    return allMoves.filter((m) => m.from === selectedSquare);
+  }, [selectedSquare, intermediateBoard, gameState]);
 
   // ── Derived state: destination squares ───────────────────────────────
   const legalDestinations = useMemo(() => {

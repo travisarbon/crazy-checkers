@@ -311,21 +311,40 @@ describe('OppositeDayDecorator', () => {
   // =========================================================================
 
   describe('event lifecycle', () => {
-    it('event lasts exactly 2 plies', () => {
+    it('event lasts exactly 16 plies', () => {
       const event = createOppositeDayEvent();
-      expect(event.remainingPlies).toBe(2);
+      expect(event.remainingPlies).toBe(16);
 
       // Tick 1
       const afterTick1 = tickAllEvents([event]);
       expect(afterTick1.length).toBe(1);
-      expect(afterTick1[0]?.remainingPlies).toBe(1);
+      expect(afterTick1[0]?.remainingPlies).toBe(15);
 
-      // Tick 2 — event removed
-      const afterTick2 = tickAllEvents(afterTick1);
-      expect(afterTick2.length).toBe(0);
+      // Tick through remaining plies
+      let events = afterTick1;
+      for (let i = 2; i <= 15; i++) {
+        events = tickAllEvents(events);
+        expect(events.length).toBe(1);
+        expect(events[0]?.remainingPlies).toBe(16 - i);
+      }
+
+      // Tick 16 — event removed
+      const afterTick16 = tickAllEvents(events);
+      expect(afterTick16.length).toBe(0);
     });
 
-    it('event expires after 1 round (2 half-turns)', () => {
+    it('event ticks down correctly over multiple rounds', () => {
+      const event = createOppositeDayEvent();
+      // After 4 plies (2 rounds), remainingPlies should be 12
+      let events = [event];
+      for (let i = 0; i < 4; i++) {
+        events = tickAllEvents(events) as typeof events;
+      }
+      expect(events.length).toBe(1);
+      expect(events[0]?.remainingPlies).toBe(12);
+    });
+
+    it('event expires after 8 rounds (16 half-turns)', () => {
       // White pawn far from Black pawn — no captures possible
       const board = buildBoard([
         { sq: 29, color: W, type: P },
@@ -334,14 +353,14 @@ describe('OppositeDayDecorator', () => {
       const event = createOppositeDayEvent();
       let state = crazyStateWithBoard(board, W, [event]);
 
-      // Ply 1: White moves
-      state = makeMove(state, firstMove(state));
-      expect(state.activeEvents.some((e) => e.type === CrazyEvent.OppositeDay)).toBe(true);
+      // Play 15 plies — event should still be active after ply 15
+      for (let i = 0; i < 15; i++) {
+        state = makeMove(state, firstMove(state));
+        expect(state.activeEvents.some((e) => e.type === CrazyEvent.OppositeDay)).toBe(true);
+      }
 
-      // Ply 2: Black moves
+      // Ply 16: event should expire
       state = makeMove(state, firstMove(state));
-
-      // Event should be expired
       expect(state.activeEvents.some((e) => e.type === CrazyEvent.OppositeDay)).toBe(false);
     });
 
@@ -353,9 +372,10 @@ describe('OppositeDayDecorator', () => {
       const event = createOppositeDayEvent();
       let state = crazyStateWithBoard(board, W, [event]);
 
-      // Play 2 plies to expire the event
-      state = makeMove(state, firstMove(state));
-      state = makeMove(state, firstMove(state));
+      // Play 16 plies to expire the event
+      for (let i = 0; i < 16; i++) {
+        state = makeMove(state, firstMove(state));
+      }
       expect(state.activeEvents.some((e) => e.type === CrazyEvent.OppositeDay)).toBe(false);
 
       // Sync the composite's active events (now empty after expiration)

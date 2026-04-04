@@ -3,10 +3,14 @@ import { describe, it, expect, vi } from 'vitest';
 import { useGameInteraction } from './useGameInteraction';
 import { createNewGame, getCurrentLegalMoves } from '../engine/game';
 import { createAmericanRules } from '../engine/rules';
-import { getLegalMovesForPiece, getJumpsForPiece } from '../engine/moves';
+import { getJumpsForPiece } from '../engine/moves';
 import { setBoardSquare } from '../engine/board';
 import type { BoardState, GameState, Square } from '../engine/types';
-import { PieceColor, PieceType, PlayerType, GameStatus, square } from '../engine/types';
+import { PieceColor, PieceType, PlayerType, GameStatus, GameMode, square } from '../engine/types';
+import { createActiveEvent } from '../engine/events';
+import { CrazyEvent } from '../engine/types';
+import { createCompositeRuleSet } from '../engine/compositeRuleSet';
+import { computeZobristHash } from '../engine/zobrist';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -109,8 +113,10 @@ describe('useGameInteraction', () => {
       result.current.handleSquareClick(square(21));
     });
 
-    const engineMoves = getLegalMovesForPiece(gs.board, square(21));
-    const engineDests = new Set(engineMoves.map((m) => m.path[0] as number));
+    const allMoves = getCurrentLegalMoves(gs);
+    const engineDests = new Set(
+      allMoves.filter((m) => m.from === square(21)).map((m) => m.path[0] as number),
+    );
 
     expect(result.current.legalDestinations).toEqual(engineDests);
   });
@@ -444,5 +450,93 @@ describe('useGameInteraction', () => {
     const { result } = renderHook(() => useGameInteraction({ gameState: gs, onMove }));
 
     expect(result.current.displayBoard).toBe(gs.board);
+  });
+
+  // ── Event-aware legal moves tests ─────────────────────────────────────
+
+  describe('event-aware legal moves', () => {
+    function crazyGameWithBoard(
+      board: BoardState,
+      activeColor: PieceColor,
+      activeEvents: ReturnType<typeof createActiveEvent>[],
+    ): GameState {
+      const base = createAmericanRules();
+      const ruleSet = createCompositeRuleSet(base);
+      ruleSet.setActiveEvents(activeEvents);
+      return {
+        board,
+        activeColor,
+        status: GameStatus.InProgress,
+        result: null,
+        ruleSet,
+        players: { white: PlayerType.Human, black: PlayerType.Human },
+        moveHistory: [],
+        positionHashes: [computeZobristHash(board, activeColor)],
+        halfMoveClock: 0,
+        plyCount: 0,
+        mode: GameMode.Crazy,
+        activeEvents,
+      };
+    }
+
+    it('King for a Day: pawn shows backward destinations', () => {
+      // Black pawn on 16 with King for a Day active should be able to move backward
+      // In standard checkers, Black pawns move toward higher squares (forward = row+1).
+      // With King for a Day, they also get backward moves.
+      let board = emptyBoard();
+      // Place a black pawn in the middle of the board
+      board = placePiece(board, 16, PieceColor.Black);
+      // Place a white pawn far away to prevent game-over
+      board = placePiece(board, 29, PieceColor.White);
+
+      // Track original king squares for King for a Day metadata
+      const originalKingSquares = { white: [] as number[], black: [] as number[] };
+      const kfadEvent = createActiveEvent(CrazyEvent.KingForADay, PieceColor.White, 0, {
+        originalKingSquares,
+      });
+      const gs = crazyGameWithBoard(board, PieceColor.Black, [kfadEvent]);
+      const onMove = vi.fn();
+
+      const { result } = renderHook(() => useGameInteraction({ gameState: gs, onMove }));
+
+      act(() => {
+        result.current.handleSquareClick(square(16));
+      });
+
+      // With King for a Day, the pawn should have backward movement options
+      // Square 16 black pawn normally moves to 20 or 21 (forward for black).
+      // With KfaD, it also gets backward moves (11, 12).
+      expect(result.current.legalDestinations.size).toBeGreaterThan(0);
+      // Check that backward squares are included (squares 11 or 12 for sq 16)
+      const hasBackwardMove =
+        result.current.legalDestinations.has(11) || result.current.legalDestinations.has(12);
+      expect(hasBackwardMove).toBe(true);
+    });
+
+    it('No Touching: restricted adjacent moves are excluded', () => {
+      // Set up a scenario where No Touching restricts moves
+      // No Touching prevents pawns from capturing kings
+      let board = emptyBoard();
+      // White pawn that could jump a black king
+      board = placePiece(board, 22, PieceColor.White);
+      board = placePiece(board, 18, PieceColor.Black, PieceType.King);
+      // Also give white a simple move piece to avoid stalemate
+      board = placePiece(board, 24, PieceColor.White);
+
+      const ntEvent = createActiveEvent(CrazyEvent.NoTouching, PieceColor.White, 0);
+      const gs = crazyGameWithBoard(board, PieceColor.White, [ntEvent]);
+      const onMove = vi.fn();
+
+      const { result } = renderHook(() => useGameInteraction({ gameState: gs, onMove }));
+
+      // Select the pawn on 22 which would normally be forced to jump the king on 18
+      act(() => {
+        result.current.handleSquareClick(square(22));
+      });
+
+      // With No Touching active, the pawn on 22 should NOT be able to capture
+      // the king on 18 (landing on 15). The jump destination should be excluded.
+      expect(result.current.legalDestinations.has(15)).toBe(false);
+    });
   });
 });

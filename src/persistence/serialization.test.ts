@@ -235,7 +235,7 @@ describe('Crazy mode serialization', () => {
     );
     const serialized = serializeGameState(state);
     // Add malformed events (missing required fields)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
     (serialized as any).activeEvents = [
       { type: CrazyEvent.KingForADay, remainingPlies: 2, triggeredBy: PieceColor.White, triggeredAtPly: 5 },
       { type: null, remainingPlies: 2, triggeredBy: PieceColor.White, triggeredAtPly: 3 },
