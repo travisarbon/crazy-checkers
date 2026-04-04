@@ -1,12 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { iterativeSearch } from './search';
+import { iterativeSearch, getDepthReduction, UP_IN_THE_AIR_DEPTH_REDUCTION, UP_IN_THE_AIR_MIN_DEPTH } from './search';
 import type { SearchConfig } from './search';
 import { buildBoard, W, B, P, K } from '../engine/test-utils';
-import { GameMode, PieceColor, square, GameStatus, PlayerType } from '../engine/types';
-import type { BoardState, GameState, Move } from '../engine/types';
+import { CrazyEvent, GameMode, PieceColor, square, GameStatus, PlayerType } from '../engine/types';
+import type { ActiveEvent, BoardState, GameState, Move } from '../engine/types';
 import { createAmericanRules } from '../engine/rules';
+import { createCompositeRuleSet } from '../engine/compositeRuleSet';
 import { createNewGame, makeMove } from '../engine/game';
 import { EVAL_WEIGHTS } from './evaluator';
+import { getTerminalLossScore } from './eventEvalWeights';
 
 const rules = createAmericanRules();
 
@@ -26,6 +28,35 @@ function stateFromBoard(board: BoardState, activeColor: PieceColor = PieceColor.
     mode: GameMode.Classic,
     activeEvents: [],
   };
+}
+
+/** Helper to create a Crazy mode GameState with the given active events. */
+function crazyStateFromBoard(
+  board: BoardState,
+  activeEvents: ActiveEvent[],
+  activeColor: PieceColor = PieceColor.White,
+): GameState {
+  const composite = createCompositeRuleSet(rules);
+  composite.setActiveEvents(activeEvents);
+  return {
+    board,
+    activeColor,
+    status: GameStatus.InProgress,
+    result: null,
+    ruleSet: composite,
+    players: { white: PlayerType.Human, black: PlayerType.CpuHard },
+    moveHistory: [],
+    positionHashes: [0n],
+    halfMoveClock: 0,
+    plyCount: 0,
+    mode: GameMode.Crazy,
+    activeEvents,
+  };
+}
+
+/** Builds a minimal ActiveEvent for a given CrazyEvent type. */
+function makeEvent(type: CrazyEvent, triggeredBy: PieceColor = PieceColor.White): ActiveEvent {
+  return { type, remainingPlies: 2, triggeredBy, triggeredAtPly: 0 };
 }
 
 /** Asserts the result has a move and returns it. */
@@ -467,4 +498,193 @@ describe('iterativeSearch — AI vs. AI integration', () => {
     // At least some games should end in wins (not all draws)
     expect(wins).toBeGreaterThan(0);
   }, 120_000); // Extended timeout for 50 games
+});
+
+// ---------------------------------------------------------------------------
+// Event-aware search
+// ---------------------------------------------------------------------------
+
+describe('getDepthReduction', () => {
+  it('returns 0 for empty event list (Classic mode)', () => {
+    expect(getDepthReduction([])).toBe(0);
+  });
+
+  it('returns 0 for events that do not affect branching', () => {
+    const events: ActiveEvent[] = [
+      makeEvent(CrazyEvent.KingForADay),
+      makeEvent(CrazyEvent.OppositeDay),
+      makeEvent(CrazyEvent.NoTouching),
+      makeEvent(CrazyEvent.LiveGrenade),
+      makeEvent(CrazyEvent.HotPotato),
+      makeEvent(CrazyEvent.ChecksMix),
+    ];
+    for (const event of events) {
+      expect(getDepthReduction([event])).toBe(0);
+    }
+  });
+
+  it('returns UP_IN_THE_AIR_DEPTH_REDUCTION when Up in the Air is active', () => {
+    const event = makeEvent(CrazyEvent.UpInTheAir);
+    expect(getDepthReduction([event])).toBe(UP_IN_THE_AIR_DEPTH_REDUCTION);
+  });
+
+  it('still returns UP_IN_THE_AIR_DEPTH_REDUCTION when mixed with other events', () => {
+    const events: ActiveEvent[] = [
+      makeEvent(CrazyEvent.KingForADay),
+      makeEvent(CrazyEvent.UpInTheAir),
+    ];
+    expect(getDepthReduction(events)).toBe(UP_IN_THE_AIR_DEPTH_REDUCTION);
+  });
+
+  it('depth cap is exported and positive', () => {
+    expect(UP_IN_THE_AIR_DEPTH_REDUCTION).toBeGreaterThan(0);
+    expect(UP_IN_THE_AIR_MIN_DEPTH).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('getTerminalLossScore', () => {
+  it('returns EVAL_WEIGHTS.lossScore for no events (Classic mode)', () => {
+    expect(getTerminalLossScore([])).toBe(EVAL_WEIGHTS.lossScore);
+  });
+
+  it('returns winScore for Opposite Day (inverted terminal)', () => {
+    const event = makeEvent(CrazyEvent.OppositeDay);
+    const score = getTerminalLossScore([event]);
+    // Opposite Day negates the score: loss becomes win
+    expect(score).toBe(EVAL_WEIGHTS.winScore);
+  });
+
+  it('returns lossScore for events without a scoreAdjuster', () => {
+    const event = makeEvent(CrazyEvent.KingForADay);
+    expect(getTerminalLossScore([event])).toBe(EVAL_WEIGHTS.lossScore);
+  });
+
+  it('returns lossScore for Up in the Air (no adjuster)', () => {
+    const event = makeEvent(CrazyEvent.UpInTheAir);
+    expect(getTerminalLossScore([event])).toBe(EVAL_WEIGHTS.lossScore);
+  });
+});
+
+describe('iterativeSearch — event-aware', () => {
+  it('Classic mode regression: returns a legal move with no events', () => {
+    const board = buildBoard([
+      { sq: 21, color: W, type: P },
+      { sq: 22, color: W, type: P },
+      { sq: 10, color: B, type: P },
+      { sq: 11, color: B, type: P },
+    ]);
+    const state = stateFromBoard(board, PieceColor.White);
+    const result = iterativeSearch(state, FAST_CONFIG);
+    const move = expectMove(result);
+
+    const legalMoves = rules.getLegalMoves(board, PieceColor.White);
+    const isLegal = legalMoves.some(
+      (m) =>
+        (m.from as number) === (move.from as number) &&
+        m.path.every((p, i) => (p as number) === (move.path[i] as number)),
+    );
+    expect(isLegal).toBe(true);
+  });
+
+  it('Opposite Day: terminal loss node returns winScore', () => {
+    // White has no legal moves — under Opposite Day this is a win for White.
+    const board = buildBoard([
+      { sq: 5, color: W, type: P },
+      { sq: 1, color: B, type: P },
+      { sq: 2, color: B, type: P },
+    ]);
+    const event = makeEvent(CrazyEvent.OppositeDay, PieceColor.Black);
+    const state = crazyStateFromBoard(board, [event], PieceColor.White);
+
+    const result = iterativeSearch(state, FAST_CONFIG);
+    expect(result.move).toBeNull();
+    // Under Opposite Day, no legal moves = win (inverted terminal)
+    expect(result.score).toBe(EVAL_WEIGHTS.winScore);
+  });
+
+  it('Opposite Day: search completes and returns a legal move', () => {
+    const board = buildBoard([
+      { sq: 21, color: W, type: P },
+      { sq: 22, color: W, type: P },
+      { sq: 10, color: B, type: P },
+      { sq: 11, color: B, type: P },
+    ]);
+    const event = makeEvent(CrazyEvent.OppositeDay, PieceColor.Black);
+    const state = crazyStateFromBoard(board, [event], PieceColor.White);
+
+    const result = iterativeSearch(state, FAST_CONFIG);
+    const move = expectMove(result);
+
+    const composite = createCompositeRuleSet(rules);
+    composite.setActiveEvents([event]);
+    const legalMoves = composite.getLegalMoves(board, PieceColor.White);
+    const isLegal = legalMoves.some(
+      (m) => (m.from as number) === (move.from as number),
+    );
+    expect(isLegal).toBe(true);
+  });
+
+  it('Up in the Air: applies depth reduction and completes within time limit', () => {
+    const state = createNewGame(rules, {
+      white: PlayerType.CpuHard,
+      black: PlayerType.CpuHard,
+    });
+    const event = makeEvent(CrazyEvent.UpInTheAir, PieceColor.White);
+    const composite = createCompositeRuleSet(rules);
+    composite.setActiveEvents([event]);
+    const crazyState: GameState = {
+      ...state,
+      ruleSet: composite,
+      mode: GameMode.Crazy,
+      activeEvents: [event],
+    };
+
+    const hardConfig: SearchConfig = {
+      maxDepth: 6,
+      timeLimitMs: 2000,
+      quiescenceEnabled: true,
+      quiescenceMaxDepth: 4,
+    };
+
+    const start = performance.now();
+    const result = iterativeSearch(crazyState, hardConfig);
+    const elapsed = performance.now() - start;
+
+    expectMove(result);
+    expect(elapsed).toBeLessThan(2000);
+    // Effective depth must be capped
+    expect(result.depth).toBeLessThanOrEqual(6 - UP_IN_THE_AIR_DEPTH_REDUCTION);
+  });
+
+  const NON_DEPTH_EVENTS: CrazyEvent[] = [
+    CrazyEvent.KingForADay,
+    CrazyEvent.LiveGrenade,
+    CrazyEvent.HotPotato,
+    CrazyEvent.NoTouching,
+    CrazyEvent.ChecksMix,
+  ];
+
+  for (const eventType of NON_DEPTH_EVENTS) {
+    it(`${eventType}: search returns a legal move without crashing`, () => {
+      const board = buildBoard([
+        { sq: 21, color: W, type: P },
+        { sq: 22, color: W, type: P },
+        { sq: 10, color: B, type: P },
+        { sq: 11, color: B, type: P },
+      ]);
+      const event = makeEvent(eventType, PieceColor.Black);
+      const state = crazyStateFromBoard(board, [event], PieceColor.White);
+      const result = iterativeSearch(state, FAST_CONFIG);
+      const move = expectMove(result);
+      expect(isFinite(result.score)).toBe(true);
+
+      const composite = createCompositeRuleSet(rules);
+      composite.setActiveEvents([event]);
+      const legalMoves = composite.getLegalMoves(board, PieceColor.White);
+      const isLegal = legalMoves.some(
+        (m) => (m.from as number) === (move.from as number),
+      );
+      expect(isLegal).toBe(true);
+    });
+  }
 });

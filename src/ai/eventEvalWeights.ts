@@ -11,7 +11,7 @@
 
 import type { ActiveEvent, BoardState } from '../engine/types';
 import { CrazyEvent, PieceColor, PieceType } from '../engine/types';
-import { getAllAdjacentSquares, getBoardSquare, getSquaresWithColor } from '../engine/board';
+import { getAllAdjacentSquares, getBoardSquare, getSquaresWithColor, BOARD_SIZE } from '../engine/board';
 import { evaluate, EVAL_WEIGHTS, type EvalWeights } from './evaluator';
 
 // ---------------------------------------------------------------------------
@@ -242,6 +242,19 @@ export const EVENT_EVAL_WEIGHTS_REGISTRY: ReadonlyMap<CrazyEvent, EventEvalWeigh
 ]);
 
 // ---------------------------------------------------------------------------
+// EMPTY_BOARD sentinel
+// ---------------------------------------------------------------------------
+
+/**
+ * An all-null board used as a placeholder at terminal nodes when calling
+ * score adjusters. At terminal nodes the game is already structurally
+ * decided, so board-dependent adjusters (Live Grenade, Hot Potato) yield
+ * zero adjustment; only board-independent adjusters (Opposite Day) produce
+ * meaningful results. Acceptable for Phase 2; revisit in Task 13 playtesting.
+ */
+export const EMPTY_BOARD: BoardState = new Array<null>(BOARD_SIZE).fill(null) as BoardState;
+
+// ---------------------------------------------------------------------------
 // evaluateWithEvents
 // ---------------------------------------------------------------------------
 
@@ -284,5 +297,35 @@ export function evaluateWithEvents(
     }
   }
 
+  return score;
+}
+
+// ---------------------------------------------------------------------------
+// getTerminalLossScore
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the terminal loss score adjusted for active events.
+ *
+ * At a node where the current player has no legal moves, the raw score is
+ * EVAL_WEIGHTS.lossScore. Under Opposite Day this must become a win score
+ * (losing all pieces is the win condition). This function applies all active
+ * event score adjusters to the base loss score using an empty board sentinel,
+ * so board-independent adjusters like Opposite Day work correctly.
+ *
+ * For Classic mode (empty activeEvents array) returns EVAL_WEIGHTS.lossScore
+ * directly with no overhead.
+ */
+export function getTerminalLossScore(activeEvents: readonly ActiveEvent[]): number {
+  if (activeEvents.length === 0) {
+    return EVAL_WEIGHTS.lossScore;
+  }
+  let score = EVAL_WEIGHTS.lossScore;
+  for (const event of activeEvents) {
+    const entry = EVENT_EVAL_WEIGHTS_REGISTRY.get(event.type);
+    if (entry?.scoreAdjuster !== undefined) {
+      score = entry.scoreAdjuster(score, EMPTY_BOARD, event.triggeredBy, event, EVAL_WEIGHTS);
+    }
+  }
   return score;
 }

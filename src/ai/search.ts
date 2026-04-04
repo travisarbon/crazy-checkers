@@ -4,9 +4,10 @@
  * Task 3.2 implements the full search algorithm.
  */
 
-import type { BoardState, GameState, Move, PieceColor, RuleSet } from '../engine/types';
-import { opponentColor } from '../engine/types';
-import { evaluate, EVAL_WEIGHTS, CENTER_SQUARES, EXPANDED_CENTER_SQUARES } from './evaluator';
+import type { ActiveEvent, BoardState, GameState, Move, PieceColor, RuleSet } from '../engine/types';
+import { CrazyEvent, opponentColor } from '../engine/types';
+import { EVAL_WEIGHTS, CENTER_SQUARES, EXPANDED_CENTER_SQUARES } from './evaluator';
+import { evaluateWithEvents, getTerminalLossScore } from './eventEvalWeights';
 import { movesAreEqual } from '../engine/game';
 
 // ---------------------------------------------------------------------------
@@ -61,12 +62,39 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
  */
 interface SearchContext {
   ruleSet: RuleSet;
+  /** Active events from the game state — propagated to all evaluation sites. */
+  activeEvents: readonly ActiveEvent[];
   nodesEvaluated: number;
   startTime: number;
   timeLimitMs: number;
   timeExpired: boolean;
   quiescenceEnabled: boolean;
   quiescenceMaxDepth: number;
+}
+
+// ---------------------------------------------------------------------------
+// Up in the Air depth cap
+// ---------------------------------------------------------------------------
+
+/**
+ * Ply reduction applied to maxDepth when Up in the Air is active.
+ * Up in the Air increases the branching factor 3–5× (flying movement),
+ * so at Hard difficulty (depth 6) search would explore ~64M nodes vs. ~262K.
+ * Exported so it can be asserted in tests and increased if needed.
+ */
+export const UP_IN_THE_AIR_DEPTH_REDUCTION = 2;
+
+/** Minimum search depth in plies — never cap below this. */
+export const UP_IN_THE_AIR_MIN_DEPTH = 1;
+
+/**
+ * Returns the number of plies to subtract from maxDepth based on active events.
+ * Currently only Up in the Air requires a cap. Returns 0 for all other events.
+ * Exported for unit testing.
+ */
+export function getDepthReduction(activeEvents: readonly ActiveEvent[]): number {
+  const hasUpInTheAir = activeEvents.some((e) => e.type === CrazyEvent.UpInTheAir);
+  return hasUpInTheAir ? UP_IN_THE_AIR_DEPTH_REDUCTION : 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -144,7 +172,7 @@ function quiescenceSearch(
 
   // Stand-pat evaluation
   ctx.nodesEvaluated++;
-  const standPat = evaluate(board, color);
+  const standPat = evaluateWithEvents(board, color, ctx.activeEvents);
 
   if (standPat >= beta) {
     return standPat;
@@ -165,7 +193,7 @@ function quiescenceSearch(
 
   if (captures.length === 0) {
     if (allMoves.length === 0) {
-      return EVAL_WEIGHTS.lossScore;
+      return getTerminalLossScore(ctx.activeEvents);
     }
     return standPat;
   }
@@ -231,7 +259,7 @@ function negamax(
 
   // Terminal node: no legal moves = current player loses
   if (moves.length === 0) {
-    return EVAL_WEIGHTS.lossScore;
+    return getTerminalLossScore(ctx.activeEvents);
   }
 
   // Leaf node: depth exhausted
@@ -244,7 +272,7 @@ function negamax(
     }
 
     ctx.nodesEvaluated++;
-    return evaluate(board, color);
+    return evaluateWithEvents(board, color, ctx.activeEvents);
   }
 
   const orderedMoves = orderMoves(moves, previousBestMove);
@@ -282,9 +310,10 @@ function negamax(
  * Returns the best move found within the depth and time constraints.
  */
 export function iterativeSearch(state: GameState, config: SearchConfig): SearchResult {
-  const { board, activeColor, ruleSet } = state;
+  const { board, activeColor, ruleSet, activeEvents } = state;
   const ctx: SearchContext = {
     ruleSet,
+    activeEvents,
     nodesEvaluated: 0,
     startTime: performance.now(),
     timeLimitMs: config.timeLimitMs,
@@ -293,13 +322,18 @@ export function iterativeSearch(state: GameState, config: SearchConfig): SearchR
     quiescenceMaxDepth: config.quiescenceMaxDepth,
   };
 
+  const effectiveMaxDepth = Math.max(
+    UP_IN_THE_AIR_MIN_DEPTH,
+    config.maxDepth - getDepthReduction(activeEvents),
+  );
+
   const rootMoves = ruleSet.getLegalMoves(board, activeColor);
 
   // No legal moves
   if (rootMoves.length === 0) {
     return {
       move: null,
-      score: EVAL_WEIGHTS.lossScore,
+      score: getTerminalLossScore(activeEvents),
       depth: 0,
       nodesEvaluated: 0,
       rootMoveScores: [],
@@ -311,7 +345,7 @@ export function iterativeSearch(state: GameState, config: SearchConfig): SearchR
     const onlyMove = rootMoves[0] as Move;
     ctx.nodesEvaluated++;
     const newBoard = ruleSet.applyMove(board, onlyMove);
-    const score = evaluate(newBoard, activeColor);
+    const score = evaluateWithEvents(newBoard, activeColor, activeEvents);
     return {
       move: onlyMove,
       score,
@@ -332,7 +366,7 @@ export function iterativeSearch(state: GameState, config: SearchConfig): SearchR
 
   let previousBestMove: Move | null = null;
 
-  for (let depth = 1; depth <= config.maxDepth; depth++) {
+  for (let depth = 1; depth <= effectiveMaxDepth; depth++) {
     const orderedRootMoves = orderMoves(rootMoves, previousBestMove);
 
     let bestMoveThisDepth: Move = orderedRootMoves[0] as Move;
