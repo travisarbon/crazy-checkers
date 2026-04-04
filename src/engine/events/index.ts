@@ -7,3 +7,4 @@
  */
 
 import './kingForADay';
+import './liveGrenade';

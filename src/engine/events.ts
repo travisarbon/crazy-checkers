@@ -203,6 +203,30 @@ export abstract class EventDecorator implements RuleSet {
   abstract withInner(inner: RuleSet): EventDecorator;
 
   /**
+   * Pending event removal requests accumulated during hook execution.
+   * Collected by CompositeEventRuleSet after hook chains complete.
+   */
+  private _pendingRemovals: CrazyEvent[] = [];
+
+  /**
+   * Called by subclasses to request removal of a condition-based event
+   * after its condition is met (e.g., Live Grenade detonates on capture).
+   */
+  protected requestEventRemoval(type: CrazyEvent): void {
+    this._pendingRemovals.push(type);
+  }
+
+  /**
+   * Returns and clears all pending removal requests.
+   * Called by CompositeEventRuleSet to drain removals from active decorators.
+   */
+  drainPendingRemovals(): CrazyEvent[] {
+    const removals = this._pendingRemovals;
+    this._pendingRemovals = [];
+    return removals;
+  }
+
+  /**
    * The active events context, set by CompositeEventRuleSet when building
    * the decorator chain. Allows decorators to read metadata from their
    * ActiveEvent entries without instance state.
@@ -376,6 +400,7 @@ export function removeEventsByType(
  */
 export const IMPLEMENTED_EVENTS: readonly CrazyEvent[] = [
   CrazyEvent.KingForADay,
+  CrazyEvent.LiveGrenade,
 ];
 
 /**

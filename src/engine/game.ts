@@ -18,7 +18,7 @@ import {
 } from './types';
 import { createInitialBoard, getBoardSquare } from './board';
 import { computeZobristHash, isRepetition, updateZobristHash } from './zobrist';
-import { checkEventTrigger, createActiveEvent, EVENT_METADATA_FACTORIES, resolveConflicts, tickAllEvents } from './events';
+import { checkEventTrigger, createActiveEvent, EVENT_METADATA_FACTORIES, removeEventsByType, resolveConflicts, tickAllEvents } from './events';
 import type { CompositeEventRuleSet } from './compositeRuleSet';
 import { createCompositeRuleSet } from './compositeRuleSet';
 
@@ -164,9 +164,26 @@ export function makeMove(state: GameState, move: Move): GameState {
     }
   }
 
+  // ── Drain pending removals after onCapture ──────────────────────────
+  let updatedEvents: readonly ActiveEvent[] = activeEvents;
+  if (isCompositeRuleSet(state.ruleSet)) {
+    const removals = state.ruleSet.drainPendingRemovals();
+    for (const type of removals) {
+      updatedEvents = removeEventsByType(updatedEvents, type);
+    }
+  }
+
   // ── onTurnEnd hook ──────────────────────────────────────────────────
   if (state.ruleSet.onTurnEnd) {
     board = state.ruleSet.onTurnEnd(board, state.activeColor, move);
+  }
+
+  // ── Drain pending removals after onTurnEnd ─────────────────────────
+  if (isCompositeRuleSet(state.ruleSet)) {
+    const removals = state.ruleSet.drainPendingRemovals();
+    for (const type of removals) {
+      updatedEvents = removeEventsByType(updatedEvents, type);
+    }
   }
 
   // ── Determine the landing piece (for Zobrist update) ────────────────
@@ -237,7 +254,6 @@ export function makeMove(state: GameState, move: Move): GameState {
   }
 
   // ── Tick existing event durations (Crazy mode only) ─────────────────
-  let updatedEvents: readonly ActiveEvent[] = activeEvents;
   if (state.mode === GameMode.Crazy && updatedEvents.length > 0) {
     updatedEvents = tickAllEvents(updatedEvents);
     updatedEvents = resolveConflicts(updatedEvents);

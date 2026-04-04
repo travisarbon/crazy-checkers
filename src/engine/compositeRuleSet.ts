@@ -63,6 +63,7 @@ export class CompositeEventRuleSet implements RuleSet {
   private readonly decoratorMap: ReadonlyMap<CrazyEvent, EventDecorator>;
   private currentActiveEvents: readonly ActiveEvent[] = [];
   private cachedChain: RuleSet | null = null;
+  private activeChainDecorators: EventDecorator[] = [];
 
   constructor(base: RuleSet, decorators: readonly EventDecorator[]) {
     this.base = base;
@@ -82,6 +83,19 @@ export class CompositeEventRuleSet implements RuleSet {
   /** Returns the current active events (for external inspection). */
   getActiveEvents(): readonly ActiveEvent[] {
     return this.currentActiveEvents;
+  }
+
+  /**
+   * Collects and clears pending removal requests from all active decorators.
+   * Called by game.ts after hook chains (onCapture, onTurnEnd) that may
+   * trigger condition-based event removal.
+   */
+  drainPendingRemovals(): CrazyEvent[] {
+    const removals: CrazyEvent[] = [];
+    for (const decorator of this.activeChainDecorators) {
+      removals.push(...decorator.drainPendingRemovals());
+    }
+    return removals;
   }
 
   /**
@@ -107,16 +121,20 @@ export class CompositeEventRuleSet implements RuleSet {
 
     const activeDecorators = this.getActiveDecorators(this.currentActiveEvents);
     if (activeDecorators.length === 0) {
+      this.activeChainDecorators = [];
       this.cachedChain = this.base;
       return this.base;
     }
 
+    const chainDecorators: EventDecorator[] = [];
     let chain: RuleSet = this.base;
     for (const decorator of activeDecorators) {
       const linked = decorator.withInner(chain);
       linked.setActiveEventsContext(this.currentActiveEvents);
+      chainDecorators.push(linked);
       chain = linked;
     }
+    this.activeChainDecorators = chainDecorators;
     this.cachedChain = chain;
     return chain;
   }
