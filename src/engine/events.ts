@@ -401,6 +401,7 @@ export function removeEventsByType(
 export const IMPLEMENTED_EVENTS: readonly CrazyEvent[] = [
   CrazyEvent.KingForADay,
   CrazyEvent.LiveGrenade,
+  CrazyEvent.NoTouching,
 ];
 
 /**
