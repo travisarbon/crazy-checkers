@@ -4,6 +4,7 @@ import {
   EVENT_DURATIONS,
   EVENT_FLAVOR_TEXT,
   EVENT_DISPLAY_NAMES,
+  IMPLEMENTED_EVENTS,
   createActiveEvent,
   tickAllEvents,
   removeEventsByType,
@@ -50,8 +51,8 @@ function makeEvent(
 // ===========================================================================
 
 describe('CrazyEvent', () => {
-  it('has 7 entries', () => {
-    expect(Object.values(CrazyEvent)).toHaveLength(7);
+  it('has 39 entries (all events from the Events and Choice Mode Playbook)', () => {
+    expect(Object.values(CrazyEvent)).toHaveLength(39);
   });
 });
 
@@ -359,8 +360,8 @@ describe('isMultiJump', () => {
 });
 
 describe('selectRandomEvent', () => {
-  it('returns a valid CrazyEvent for 100 random calls', () => {
-    const validEvents = new Set(Object.values(CrazyEvent));
+  it('returns an implemented event for 100 random calls', () => {
+    const validEvents = new Set<string>(IMPLEMENTED_EVENTS);
     for (let i = 0; i < 100; i++) {
       const event = selectRandomEvent();
       expect(validEvents.has(event)).toBe(true);
@@ -374,16 +375,23 @@ describe('selectRandomEvent', () => {
     expect(event1).toBe(event2);
   });
 
-  it('selects first event when random returns 0', () => {
+  it('selects first implemented event when random returns 0', () => {
     const event = selectRandomEvent(() => 0);
-    const allEvents = Object.values(CrazyEvent);
-    expect(event).toBe(allEvents[0]);
+    expect(event).toBe(IMPLEMENTED_EVENTS[0]);
   });
 
-  it('selects last event when random returns just under 1', () => {
+  it('selects last implemented event when random returns just under 1', () => {
     const event = selectRandomEvent(() => 0.999);
-    const allEvents = Object.values(CrazyEvent);
-    expect(event).toBe(allEvents[allEvents.length - 1]);
+    expect(event).toBe(IMPLEMENTED_EVENTS[IMPLEMENTED_EVENTS.length - 1]);
+  });
+
+  it('only draws from IMPLEMENTED_EVENTS, not the full enum', () => {
+    // With 39 enum entries but only a few implemented, verify we never get unimplemented events
+    const implementedSet = new Set<string>(IMPLEMENTED_EVENTS);
+    for (let i = 0; i < 200; i++) {
+      const event = selectRandomEvent();
+      expect(implementedSet.has(event)).toBe(true);
+    }
   });
 });
 
@@ -404,10 +412,10 @@ describe('checkEventTrigger', () => {
     captured: [],
   };
 
-  it('returns event for multi-jump in Crazy mode', () => {
+  it('returns an implemented event for multi-jump in Crazy mode', () => {
     const result = checkEventTrigger(multiJumpMove, GameMode.Crazy, () => 0.5);
     expect(result).not.toBeNull();
-    expect(Object.values(CrazyEvent)).toContain(result);
+    expect(IMPLEMENTED_EVENTS).toContain(result);
   });
 
   it('returns null for single jump in Crazy mode', () => {

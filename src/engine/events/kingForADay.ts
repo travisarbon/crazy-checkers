@@ -10,7 +10,7 @@
 import type { BoardState, Move, PieceColor, RuleSet, SquareState } from '../types';
 import { CrazyEvent, PieceType, square } from '../types';
 import { isPromotionSquare } from '../board';
-import { EventDecorator, EVENT_DECORATOR_REGISTRY } from '../events';
+import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } from '../events';
 
 /**
  * Metadata stored in ActiveEvent.metadata for King for a Day.
@@ -124,3 +124,15 @@ EVENT_DECORATOR_REGISTRY.set(
   CrazyEvent.KingForADay,
   (base: RuleSet) => new KingForADayDecorator(base),
 );
+
+// Register the metadata factory for KingForADay
+EVENT_METADATA_FACTORIES.set(CrazyEvent.KingForADay, (board: BoardState): Record<string, unknown> => {
+  const originalKingSquares: number[] = [];
+  for (let i = 0; i < board.length; i++) {
+    const p = board[i];
+    if (p != null && p.type === PieceType.King) {
+      originalKingSquares.push(i + 1); // 1-based square numbers
+    }
+  }
+  return { originalKingSquares };
+});

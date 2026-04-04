@@ -25,12 +25,15 @@ import { CrazyEvent, GameMode } from './types';
 /**
  * Default durations for each event type, in half-turns (plies).
  *
- * Source: Design Document §2.2.
+ * Source: Events and Choice Mode Playbook.
  * - Positive integer: fixed ply count.
  * - 0: instant (applied once, then removed).
  * - -1: condition-based (removed when a specific game condition is met).
+ *
+ * All 39 events are included for forward-compatibility with Phases 3–4.
  */
 export const EVENT_DURATIONS: Readonly<Record<CrazyEvent, number>> = {
+  // Phase 2 (core events)
   [CrazyEvent.KingForADay]: 2, // 1 round = 2 plies
   [CrazyEvent.LiveGrenade]: -1, // Until next capture
   [CrazyEvent.HotPotato]: 1, // 1 move = 1 ply
@@ -38,13 +41,47 @@ export const EVENT_DURATIONS: Readonly<Record<CrazyEvent, number>> = {
   [CrazyEvent.OppositeDay]: 2, // 1 round = 2 plies
   [CrazyEvent.UpInTheAir]: 2, // 1 round = 2 plies
   [CrazyEvent.NoTouching]: 2, // 1 round = 2 plies
+  // Phases 3–4 (Events 8–39)
+  [CrazyEvent.StepBack]: 4, // 2 rounds
+  [CrazyEvent.FlippedScript]: 0, // Instant, permanent transformation
+  [CrazyEvent.MarchingOrders]: -1, // Permanent
+  [CrazyEvent.DealersChoice]: -1, // Condition-based (both skips used)
+  [CrazyEvent.Bodyguard]: 4, // 2 rounds
+  [CrazyEvent.Quicksand]: 4, // 2 rounds
+  [CrazyEvent.Conscription]: 4, // 2 rounds
+  [CrazyEvent.GhostWalk]: 2, // 1 round
+  [CrazyEvent.Landmine]: 4, // 2 rounds
+  [CrazyEvent.Leapfrog]: 2, // 1 round
+  [CrazyEvent.FrozenAssets]: 4, // 2 rounds
+  [CrazyEvent.DoubleTime]: 2, // 1 round
+  [CrazyEvent.SafeHaven]: 4, // 2 rounds
+  [CrazyEvent.ChainReaction]: -1, // Until triggered
+  [CrazyEvent.PromotionParty]: 4, // 2 rounds
+  [CrazyEvent.Reinforcements]: 0, // Instant
+  [CrazyEvent.Wormhole]: 4, // 2 rounds
+  [CrazyEvent.Demotion]: 0, // Instant
+  [CrazyEvent.TimeBomb]: -1, // Countdown-based
+  [CrazyEvent.ForcedMarch]: 4, // 2 rounds
+  [CrazyEvent.Ricochet]: 2, // 1 round
+  [CrazyEvent.CrownThief]: 4, // 2 rounds
+  [CrazyEvent.Stampede]: 0, // Instant
+  [CrazyEvent.TollRoad]: 4, // 2 rounds
+  [CrazyEvent.SwapMeet]: 0, // Instant
+  [CrazyEvent.RoyalDecree]: 4, // 2 rounds
+  [CrazyEvent.Backfire]: 2, // 1 round
+  [CrazyEvent.Sentry]: 4, // 2 rounds
+  [CrazyEvent.RushHour]: 2, // 1 round
+  [CrazyEvent.Haunted]: -1, // Condition-based (3 ghosts)
+  [CrazyEvent.Sacrifice]: 4, // 2 rounds
+  [CrazyEvent.ShrinkingBoard]: -1, // Permanent
 };
 
 /**
- * Flavor text for each event (Design Document §2.2).
+ * Flavor text for each event (Events and Choice Mode Playbook).
  * Used by the UI for event announcements (Task 10.3).
  */
 export const EVENT_FLAVOR_TEXT: Readonly<Record<CrazyEvent, string>> = {
+  // Phase 2 (core events)
   [CrazyEvent.KingForADay]: 'For one round everyone wears the crown!',
   [CrazyEvent.LiveGrenade]: 'Your next jump causes a big boom!',
   [CrazyEvent.HotPotato]: 'Your next move changes hands!',
@@ -52,6 +89,39 @@ export const EVENT_FLAVOR_TEXT: Readonly<Record<CrazyEvent, string>> = {
   [CrazyEvent.OppositeDay]: "It's golf rules now!",
   [CrazyEvent.UpInTheAir]: 'Everyone can fly!',
   [CrazyEvent.NoTouching]: "Pawns can't capture kings!",
+  // Phases 3–4 (Events 8–39)
+  [CrazyEvent.StepBack]: "Don't look now — they're coming from behind!",
+  [CrazyEvent.FlippedScript]: 'Everything you knew is upside down!',
+  [CrazyEvent.MarchingOrders]: 'Fall in line, soldier — no more diagonals!',
+  [CrazyEvent.DealersChoice]: "You know what? I'll pass on that one.",
+  [CrazyEvent.Bodyguard]: 'The kings have hired protection!',
+  [CrazyEvent.Quicksand]: 'The edge of the board is sticky!',
+  [CrazyEvent.Conscription]: 'Your captured soldiers switch sides!',
+  [CrazyEvent.GhostWalk]: "Now you see them, now you don't!",
+  [CrazyEvent.Landmine]: "Watch your step — the center is rigged!",
+  [CrazyEvent.Leapfrog]: 'Jump your own team for extra distance!',
+  [CrazyEvent.FrozenAssets]: 'Brrr! The kings are frozen solid!',
+  [CrazyEvent.DoubleTime]: 'Double the moves, double the chaos!',
+  [CrazyEvent.SafeHaven]: 'Find shelter in the corners!',
+  [CrazyEvent.ChainReaction]: 'One falls, they all fall!',
+  [CrazyEvent.PromotionParty]: "It's a party — everyone's getting promoted!",
+  [CrazyEvent.Reinforcements]: 'Fresh troops reporting for duty!',
+  [CrazyEvent.Wormhole]: 'Space just folded in half!',
+  [CrazyEvent.Demotion]: "The crown is heavy — time to give it up!",
+  [CrazyEvent.TimeBomb]: "Tick… tick… tick… BOOM!",
+  [CrazyEvent.ForcedMarch]: 'The vanguard leads the charge!',
+  [CrazyEvent.Ricochet]: 'Boing! Off the walls they go!',
+  [CrazyEvent.CrownThief]: 'Steal the crown right off their head!',
+  [CrazyEvent.Stampede]: 'Charge! Everyone forward!',
+  [CrazyEvent.TollRoad]: 'Victory has a price!',
+  [CrazyEvent.SwapMeet]: "Wait — that's not my piece!",
+  [CrazyEvent.RoyalDecree]: 'Only royalty may move!',
+  [CrazyEvent.Backfire]: "Watch where you're jumping!",
+  [CrazyEvent.Sentry]: "Under the king's watchful eye, none shall pass!",
+  [CrazyEvent.RushHour]: 'Full speed ahead — no stopping!',
+  [CrazyEvent.Haunted]: "The fallen don't rest easy!",
+  [CrazyEvent.Sacrifice]: 'From loss comes strength!',
+  [CrazyEvent.ShrinkingBoard]: 'The walls are closing in!',
 };
 
 /**
@@ -59,6 +129,7 @@ export const EVENT_FLAVOR_TEXT: Readonly<Record<CrazyEvent, string>> = {
  * Used by the UI for the active events indicator (Task 10.3, Task 11.3).
  */
 export const EVENT_DISPLAY_NAMES: Readonly<Record<CrazyEvent, string>> = {
+  // Phase 2 (core events)
   [CrazyEvent.KingForADay]: 'King for a Day',
   [CrazyEvent.LiveGrenade]: 'Live Grenade',
   [CrazyEvent.HotPotato]: 'Hot Potato',
@@ -66,6 +137,39 @@ export const EVENT_DISPLAY_NAMES: Readonly<Record<CrazyEvent, string>> = {
   [CrazyEvent.OppositeDay]: 'Opposite Day',
   [CrazyEvent.UpInTheAir]: 'Up in the Air',
   [CrazyEvent.NoTouching]: 'No Touching!',
+  // Phases 3–4 (Events 8–39)
+  [CrazyEvent.StepBack]: 'Step-Back',
+  [CrazyEvent.FlippedScript]: 'Flipped Script',
+  [CrazyEvent.MarchingOrders]: 'Marching Orders',
+  [CrazyEvent.DealersChoice]: "Dealer's Choice",
+  [CrazyEvent.Bodyguard]: 'Bodyguard',
+  [CrazyEvent.Quicksand]: 'Quicksand',
+  [CrazyEvent.Conscription]: 'Conscription',
+  [CrazyEvent.GhostWalk]: 'Ghost Walk',
+  [CrazyEvent.Landmine]: 'Landmine',
+  [CrazyEvent.Leapfrog]: 'Leapfrog',
+  [CrazyEvent.FrozenAssets]: 'Frozen Assets',
+  [CrazyEvent.DoubleTime]: 'Double Time',
+  [CrazyEvent.SafeHaven]: 'Safe Haven',
+  [CrazyEvent.ChainReaction]: 'Chain Reaction',
+  [CrazyEvent.PromotionParty]: 'Promotion Party',
+  [CrazyEvent.Reinforcements]: 'Reinforcements',
+  [CrazyEvent.Wormhole]: 'Wormhole',
+  [CrazyEvent.Demotion]: 'Demotion',
+  [CrazyEvent.TimeBomb]: 'Time Bomb',
+  [CrazyEvent.ForcedMarch]: 'Forced March',
+  [CrazyEvent.Ricochet]: 'Ricochet',
+  [CrazyEvent.CrownThief]: 'Crown Thief',
+  [CrazyEvent.Stampede]: 'Stampede',
+  [CrazyEvent.TollRoad]: 'Toll Road',
+  [CrazyEvent.SwapMeet]: 'Swap Meet',
+  [CrazyEvent.RoyalDecree]: 'Royal Decree',
+  [CrazyEvent.Backfire]: 'Backfire',
+  [CrazyEvent.Sentry]: 'Sentry',
+  [CrazyEvent.RushHour]: 'Rush Hour',
+  [CrazyEvent.Haunted]: 'Haunted',
+  [CrazyEvent.Sacrifice]: 'Sacrifice',
+  [CrazyEvent.ShrinkingBoard]: 'Shrinking Board',
 };
 
 // ---------------------------------------------------------------------------
@@ -264,6 +368,17 @@ export function removeEventsByType(
 // ---------------------------------------------------------------------------
 
 /**
+ * The pool of currently implemented events that can be randomly triggered.
+ *
+ * Initially contains only KingForADay (Task 8.1). Each subsequent event
+ * implementation task (8.2–9.3) adds its event type to this array.
+ * This prevents unimplemented events from being selected at random.
+ */
+export const IMPLEMENTED_EVENTS: readonly CrazyEvent[] = [
+  CrazyEvent.KingForADay,
+];
+
+/**
  * Returns true if the given move is a multi-jump (two or more captures).
  * Multi-jumps are the trigger condition for Crazy mode events (Design Document §2.2).
  */
@@ -272,16 +387,18 @@ export function isMultiJump(move: Move): boolean {
 }
 
 /**
- * Selects a random event type from the seven Crazy mode events.
+ * Selects a random event type from the implemented event pool.
+ *
+ * Draws from IMPLEMENTED_EVENTS rather than the full CrazyEvent enum,
+ * so only events with registered decorators can be selected.
  *
  * Accepts an optional random function for testability (dependency injection).
  * The default uses Math.random(). For deterministic replays (Phase 3 Cogitate),
  * a seeded PRNG should be passed.
  */
 export function selectRandomEvent(randomFn: () => number = Math.random): CrazyEvent {
-  const events = Object.values(CrazyEvent);
-  const index = Math.floor(randomFn() * events.length);
-  return events[index] as CrazyEvent;
+  const index = Math.floor(randomFn() * IMPLEMENTED_EVENTS.length);
+  return IMPLEMENTED_EVENTS[index] as CrazyEvent;
 }
 
 /**
@@ -313,6 +430,25 @@ export const EVENT_DECORATOR_REGISTRY: Map<CrazyEvent, (base: RuleSet) => EventD
   new Map();
 
 // createCompositeRuleSet factory is in compositeRuleSet.ts to avoid circular imports.
+
+// ---------------------------------------------------------------------------
+// Event Metadata Factory Registry
+// ---------------------------------------------------------------------------
+
+/**
+ * Registry of event-specific metadata factories.
+ *
+ * When an event triggers, makeMove consults this registry to build the
+ * event's initial metadata. This keeps event-specific logic out of game.ts
+ * and co-located with the decorator that consumes the metadata.
+ *
+ * Each factory receives the current board state and the color of the player
+ * who triggered the event, and returns metadata (or undefined if none needed).
+ */
+export const EVENT_METADATA_FACTORIES: Map<
+  CrazyEvent,
+  (board: BoardState, activeColor: PieceColor) => Readonly<Record<string, unknown>> | undefined
+> = new Map();
 
 // ---------------------------------------------------------------------------
 // Step 8 — Serialization Support for AI Worker

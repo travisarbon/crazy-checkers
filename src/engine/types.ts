@@ -9,8 +9,14 @@ export const PieceColor = {
 } as const;
 export type PieceColor = (typeof PieceColor)[keyof typeof PieceColor];
 
-/** The seven Crazy mode events (Design Document §2.2). */
+/**
+ * All Crazy mode events (see Events and Choice Mode Playbook for details).
+ * Phase 2 implements Events 1–7; Events 8–39 are implemented in Phases 3–4.
+ * The enum is defined up front to establish stable string identifiers for
+ * persistence, serialization, and AI worker communication.
+ */
 export const CrazyEvent = {
+  // Phase 2 (core events, Events 1–7)
   KingForADay: 'KING_FOR_A_DAY',
   LiveGrenade: 'LIVE_GRENADE',
   HotPotato: 'HOT_POTATO',
@@ -18,6 +24,39 @@ export const CrazyEvent = {
   OppositeDay: 'OPPOSITE_DAY',
   UpInTheAir: 'UP_IN_THE_AIR',
   NoTouching: 'NO_TOUCHING',
+  // Phases 3–4 (Events 8–39)
+  StepBack: 'STEP_BACK',
+  FlippedScript: 'FLIPPED_SCRIPT',
+  MarchingOrders: 'MARCHING_ORDERS',
+  DealersChoice: 'DEALERS_CHOICE',
+  Bodyguard: 'BODYGUARD',
+  Quicksand: 'QUICKSAND',
+  Conscription: 'CONSCRIPTION',
+  GhostWalk: 'GHOST_WALK',
+  Landmine: 'LANDMINE',
+  Leapfrog: 'LEAPFROG',
+  FrozenAssets: 'FROZEN_ASSETS',
+  DoubleTime: 'DOUBLE_TIME',
+  SafeHaven: 'SAFE_HAVEN',
+  ChainReaction: 'CHAIN_REACTION',
+  PromotionParty: 'PROMOTION_PARTY',
+  Reinforcements: 'REINFORCEMENTS',
+  Wormhole: 'WORMHOLE',
+  Demotion: 'DEMOTION',
+  TimeBomb: 'TIME_BOMB',
+  ForcedMarch: 'FORCED_MARCH',
+  Ricochet: 'RICOCHET',
+  CrownThief: 'CROWN_THIEF',
+  Stampede: 'STAMPEDE',
+  TollRoad: 'TOLL_ROAD',
+  SwapMeet: 'SWAP_MEET',
+  RoyalDecree: 'ROYAL_DECREE',
+  Backfire: 'BACKFIRE',
+  Sentry: 'SENTRY',
+  RushHour: 'RUSH_HOUR',
+  Haunted: 'HAUNTED',
+  Sacrifice: 'SACRIFICE',
+  ShrinkingBoard: 'SHRINKING_BOARD',
 } as const;
 export type CrazyEvent = (typeof CrazyEvent)[keyof typeof CrazyEvent];
 
@@ -57,6 +96,7 @@ export interface ActiveEvent {
 export const GameMode = {
   Classic: 'CLASSIC',
   Crazy: 'CRAZY',
+  Choice: 'CHOICE',
 } as const;
 export type GameMode = (typeof GameMode)[keyof typeof GameMode];
 

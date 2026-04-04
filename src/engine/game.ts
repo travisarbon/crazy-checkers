@@ -7,7 +7,6 @@
 
 import type { ActiveEvent, GameResult, GameState, Move, Piece, PlayerSetup, RuleSet, Square } from './types';
 import {
-  CrazyEvent,
   GameEndReason,
   GameMode,
   GameResultType,
@@ -19,7 +18,7 @@ import {
 } from './types';
 import { createInitialBoard, getBoardSquare } from './board';
 import { computeZobristHash, isRepetition, updateZobristHash } from './zobrist';
-import { checkEventTrigger, createActiveEvent, resolveConflicts, tickAllEvents } from './events';
+import { checkEventTrigger, createActiveEvent, EVENT_METADATA_FACTORIES, resolveConflicts, tickAllEvents } from './events';
 import type { CompositeEventRuleSet } from './compositeRuleSet';
 import { createCompositeRuleSet } from './compositeRuleSet';
 
@@ -248,18 +247,9 @@ export function makeMove(state: GameState, move: Move): GameState {
   if (state.mode === GameMode.Crazy) {
     const triggeredEvent = checkEventTrigger(move, state.mode);
     if (triggeredEvent !== null) {
-      // Build event-specific metadata
-      let metadata: Record<string, unknown> | undefined;
-      if (triggeredEvent === CrazyEvent.KingForADay) {
-        const originalKingSquares: number[] = [];
-        for (let i = 0; i < board.length; i++) {
-          const p = board[i];
-          if (p != null && p.type === PieceType.King) {
-            originalKingSquares.push(i + 1); // 1-based square numbers
-          }
-        }
-        metadata = { originalKingSquares };
-      }
+      // Build event-specific metadata via the registry
+      const metadataFactory = EVENT_METADATA_FACTORIES.get(triggeredEvent);
+      const metadata = metadataFactory ? metadataFactory(board, state.activeColor) : undefined;
 
       const newEvent = createActiveEvent(
         triggeredEvent,
