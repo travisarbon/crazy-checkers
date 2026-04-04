@@ -156,8 +156,8 @@ describe('ChecksMixDecorator', () => {
       // At least some pieces should have moved
       let movedCount = 0;
       for (let i = 0; i < BOARD_SIZE; i++) {
-        const orig = board[i];
-        const shuf = shuffled[i];
+        const orig = board[i] ?? null;
+        const shuf = shuffled[i] ?? null;
         if (orig === null && shuf !== null) movedCount++;
         if (orig !== null && shuf === null) movedCount++;
         if (
@@ -385,8 +385,8 @@ describe('ChecksMixDecorator', () => {
 
       let different = false;
       for (let i = 0; i < BOARD_SIZE; i++) {
-        const p1 = shuffle1[i];
-        const p2 = shuffle2[i];
+        const p1 = shuffle1[i] ?? null;
+        const p2 = shuffle2[i] ?? null;
         if (p1 === null && p2 !== null) { different = true; break; }
         if (p1 !== null && p2 === null) { different = true; break; }
         if (p1 !== null && p2 !== null && (p1.color !== p2.color || p1.type !== p2.type)) {
