@@ -31,7 +31,22 @@ export const EVAL_WEIGHTS = {
   lossScore: -10_000,
 } as const;
 
-export type EvalWeights = typeof EVAL_WEIGHTS;
+export interface EvalWeights {
+  readonly pawnValue: number;
+  readonly kingValue: number;
+  readonly advancementPerRow: number;
+  readonly centerBonus: number;
+  readonly expandedCenterBonus: number;
+  readonly backRowBonus: number;
+  readonly mobilityPerMove: number;
+  readonly trappedKingPenalty: number;
+  readonly semiTrappedKingPenalty: number;
+  readonly endgamePieceThreshold: number;
+  readonly endgameKingValue: number;
+  readonly endgameAdvancementPerRow: number;
+  readonly winScore: number;
+  readonly lossScore: number;
+}
 
 // ---------------------------------------------------------------------------
 // Pre-computed square sets
@@ -100,6 +115,7 @@ function evaluatePieces(
   backRow: ReadonlySet<number>,
   advancementPerRow: number,
   kingValue: number,
+  weights: EvalWeights,
 ): number {
   let score = 0;
 
@@ -112,7 +128,7 @@ function evaluatePieces(
     if (piece.type === PieceType.King) {
       score += kingValue;
     } else {
-      score += EVAL_WEIGHTS.pawnValue;
+      score += weights.pawnValue;
     }
 
     // Advancement (pawns only)
@@ -122,23 +138,23 @@ function evaluatePieces(
 
     // Center control
     if (CENTER_SQUARES.has(sqNum)) {
-      score += EVAL_WEIGHTS.centerBonus;
+      score += weights.centerBonus;
     } else if (EXPANDED_CENTER_SQUARES.has(sqNum)) {
-      score += EVAL_WEIGHTS.expandedCenterBonus;
+      score += weights.expandedCenterBonus;
     }
 
     // Back-row defense (pawns on their starting back row)
     if (piece.type === PieceType.Pawn && backRow.has(sqNum)) {
-      score += EVAL_WEIGHTS.backRowBonus;
+      score += weights.backRowBonus;
     }
 
     // Trapped kings
     if (piece.type === PieceType.King) {
       const escapes = kingEscapeCount(board, sq);
       if (escapes === 0) {
-        score -= EVAL_WEIGHTS.trappedKingPenalty;
+        score -= weights.trappedKingPenalty;
       } else if (escapes === 1) {
-        score -= EVAL_WEIGHTS.semiTrappedKingPenalty;
+        score -= weights.semiTrappedKingPenalty;
       }
     }
   }
@@ -162,45 +178,45 @@ function evaluatePieces(
  * 5. Mobility (legal move count)
  * 6. Trapped kings
  */
-export function evaluate(board: BoardState, color: PieceColor): number {
+export function evaluate(board: BoardState, color: PieceColor, weights: EvalWeights = EVAL_WEIGHTS): number {
   const myPieces = getSquaresWithColor(board, color);
   const oppPieces = getSquaresWithColor(board, opponentColor(color));
 
   // --- Terminal state detection ---
   if (myPieces.length === 0) {
-    return EVAL_WEIGHTS.lossScore;
+    return weights.lossScore;
   }
   if (oppPieces.length === 0) {
-    return EVAL_WEIGHTS.winScore;
+    return weights.winScore;
   }
 
   // Check for no legal moves (loss)
   const myMoves = getLegalMoves(board, color);
   if (myMoves.length === 0) {
-    return EVAL_WEIGHTS.lossScore;
+    return weights.lossScore;
   }
 
   const oppMoves = getLegalMoves(board, opponentColor(color));
   if (oppMoves.length === 0) {
-    return EVAL_WEIGHTS.winScore;
+    return weights.winScore;
   }
 
   // --- Endgame detection ---
   const totalPieces = myPieces.length + oppPieces.length;
-  const isEndgame = totalPieces <= EVAL_WEIGHTS.endgamePieceThreshold;
+  const isEndgame = totalPieces <= weights.endgamePieceThreshold;
 
-  const kingValue = isEndgame ? EVAL_WEIGHTS.endgameKingValue : EVAL_WEIGHTS.kingValue;
+  const kingValue = isEndgame ? weights.endgameKingValue : weights.kingValue;
   const advancementPerRow = isEndgame
-    ? EVAL_WEIGHTS.endgameAdvancementPerRow
-    : EVAL_WEIGHTS.advancementPerRow;
+    ? weights.endgameAdvancementPerRow
+    : weights.advancementPerRow;
 
   // --- Score each side using the factored helper ---
   const backRow = color === PieceColor.White ? WHITE_BACK_ROW : BLACK_BACK_ROW;
   const oppBackRow = color === PieceColor.White ? BLACK_BACK_ROW : WHITE_BACK_ROW;
 
   const myScore =
-    evaluatePieces(board, myPieces, color, backRow, advancementPerRow, kingValue) +
-    myMoves.length * EVAL_WEIGHTS.mobilityPerMove;
+    evaluatePieces(board, myPieces, color, backRow, advancementPerRow, kingValue, weights) +
+    myMoves.length * weights.mobilityPerMove;
 
   const oppScore =
     evaluatePieces(
@@ -210,8 +226,9 @@ export function evaluate(board: BoardState, color: PieceColor): number {
       oppBackRow,
       advancementPerRow,
       kingValue,
+      weights,
     ) +
-    oppMoves.length * EVAL_WEIGHTS.mobilityPerMove;
+    oppMoves.length * weights.mobilityPerMove;
 
   return myScore - oppScore;
 }
