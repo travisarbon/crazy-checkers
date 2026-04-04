@@ -409,6 +409,7 @@ export const IMPLEMENTED_EVENTS: readonly CrazyEvent[] = [
   CrazyEvent.LiveGrenade,
   CrazyEvent.NoTouching,
   CrazyEvent.HotPotato,
+  CrazyEvent.ChecksMix,
 ];
 
 /**
