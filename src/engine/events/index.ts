@@ -12,3 +12,4 @@ import './noTouching';
 import './hotPotato';
 import './checksMix';
 import './oppositeDay';
+import './upInTheAir';

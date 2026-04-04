@@ -411,6 +411,7 @@ export const IMPLEMENTED_EVENTS: readonly CrazyEvent[] = [
   CrazyEvent.HotPotato,
   CrazyEvent.ChecksMix,
   CrazyEvent.OppositeDay,
+  CrazyEvent.UpInTheAir,
 ];
 
 /**
