@@ -55,9 +55,15 @@ describe('MenuScreen', () => {
     expect(btn).not.toBeDisabled();
   });
 
+  it('Crazy button is enabled', () => {
+    renderMenu();
+    const btn = screen.getByRole('button', { name: 'Crazy' });
+    expect(btn).not.toBeDisabled();
+  });
+
   it('disabled modes show "Coming Soon" badge', () => {
     renderMenu();
-    const disabledLabels = ['Crazy', 'Challenge', 'Code', 'Cogitate', 'Career'];
+    const disabledLabels = ['Challenge', 'Code', 'Cogitate', 'Career'];
     for (const label of disabledLabels) {
       const btn = screen.getByRole('button', { name: `${label} — Coming Soon` });
       expect(btn).toBeDisabled();
@@ -78,11 +84,17 @@ describe('MenuScreen', () => {
     expect(onConfigure).toHaveBeenCalledOnce();
   });
 
+  it('clicking Crazy opens game-setup dialog', () => {
+    renderMenu();
+    fireEvent.click(screen.getByRole('button', { name: 'Crazy' }));
+    expect(screen.getByTestId('game-setup-dialog')).toBeInTheDocument();
+  });
+
   it('disabled buttons do not trigger actions', () => {
     const onStartGame = vi.fn();
     const onConfigure = vi.fn();
     renderMenu({ onStartGame, onConfigure });
-    fireEvent.click(screen.getByRole('button', { name: 'Crazy — Coming Soon' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Challenge — Coming Soon' }));
     expect(onStartGame).not.toHaveBeenCalled();
     expect(onConfigure).not.toHaveBeenCalled();
     expect(screen.queryByTestId('game-setup-dialog')).not.toBeInTheDocument();

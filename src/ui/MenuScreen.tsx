@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import type { PlayerSetup } from '../engine/types';
+import { GameMode } from '../engine/types';
 import GameSetupDialog from './dialogs/GameSetupDialog';
 import styles from './MenuScreen.module.css';
 
@@ -16,7 +17,7 @@ import styles from './MenuScreen.module.css';
 // ---------------------------------------------------------------------------
 
 interface MenuScreenProps {
-  onStartGame: (players: PlayerSetup, flipped: boolean) => void;
+  onStartGame: (players: PlayerSetup, flipped: boolean, mode: GameMode) => void;
   onConfigure: () => void;
 }
 
@@ -36,7 +37,7 @@ const MODES: readonly ModeEntry[] = [
   {
     id: 'crazy',
     label: 'Crazy',
-    enabled: false,
+    enabled: true,
     hidden: false,
     description: 'Checkers with chaotic events',
   },
@@ -84,18 +85,20 @@ const MODES: readonly ModeEntry[] = [
 
 export default function MenuScreen({ onStartGame, onConfigure }: MenuScreenProps) {
   const [showSetupDialog, setShowSetupDialog] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<GameMode>(GameMode.Classic);
 
   function handleModeClick(modeId: string): void {
-    if (modeId === 'classic') {
+    if (modeId === 'classic' || modeId === 'crazy') {
+      setSelectedMode(modeId === 'crazy' ? GameMode.Crazy : GameMode.Classic);
       setShowSetupDialog(true);
     } else if (modeId === 'configure') {
       onConfigure();
     }
   }
 
-  function handleSetupConfirm(players: PlayerSetup, flipped: boolean): void {
+  function handleSetupConfirm(players: PlayerSetup, flipped: boolean, mode: GameMode): void {
     setShowSetupDialog(false);
-    onStartGame(players, flipped);
+    onStartGame(players, flipped, mode);
   }
 
   function handleSetupCancel(): void {
@@ -128,7 +131,7 @@ export default function MenuScreen({ onStartGame, onConfigure }: MenuScreenProps
       </nav>
 
       {showSetupDialog && (
-        <GameSetupDialog onConfirm={handleSetupConfirm} onCancel={handleSetupCancel} />
+        <GameSetupDialog mode={selectedMode} onConfirm={handleSetupConfirm} onCancel={handleSetupCancel} />
       )}
     </div>
   );

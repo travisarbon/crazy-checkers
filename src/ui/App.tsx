@@ -9,6 +9,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { applyTheme, THEMES } from '../themes/theme';
 import { createAmericanRules } from '../engine/rules';
 import type { GameState, PlayerSetup, RuleSet } from '../engine/types';
+import { GameMode } from '../engine/types';
 import { loadSettings, saveSettings, loadSavedGame, clearSavedGame } from '../persistence/settings';
 import type { SavedGame } from '../persistence/settings';
 import { deserializeGameState } from '../persistence/serialization';
@@ -28,6 +29,7 @@ type Screen =
       readonly players: PlayerSetup;
       readonly ruleSet: RuleSet;
       readonly flipped: boolean;
+      readonly mode: GameMode;
     }
   | { readonly kind: 'config' };
 
@@ -85,12 +87,13 @@ export default function App() {
     setScreen({ kind: 'menu' });
   }, []);
 
-  const navigateToGame = useCallback((players: PlayerSetup, flipped: boolean) => {
+  const navigateToGame = useCallback((players: PlayerSetup, flipped: boolean, mode: GameMode = GameMode.Classic) => {
     setScreen({
       kind: 'game',
       players,
       ruleSet: createAmericanRules(),
       flipped,
+      mode,
     });
     setGameKey((prev) => prev + 1);
     setGameStartedAt(Date.now());
@@ -111,6 +114,7 @@ export default function App() {
         players: gameState.players,
         ruleSet: gameState.ruleSet,
         flipped: pendingResume.flipped,
+        mode: gameState.mode,
       });
       setResumedGameState(gameState);
       setGameStartedAt(pendingResume.timestamp);
@@ -152,6 +156,7 @@ export default function App() {
           ruleSet={screen.ruleSet}
           players={screen.players}
           flipped={screen.flipped}
+          mode={screen.mode}
           animationSpeedMultiplier={settings.animationSpeed}
           moveConfirmation={settings.moveConfirmation}
           pieceShadow={THEMES[settings.themeId]?.pieceShadow ?? false}
@@ -159,7 +164,7 @@ export default function App() {
           gameStartedAt={gameStartedAt}
           onNewGame={() => {
             setResumedGameState(null);
-            navigateToGame(screen.players, screen.flipped);
+            navigateToGame(screen.players, screen.flipped, screen.mode);
           }}
           onMainMenu={() => {
             setResumedGameState(null);

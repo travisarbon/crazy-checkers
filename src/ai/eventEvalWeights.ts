@@ -320,7 +320,7 @@ export function getTerminalLossScore(activeEvents: readonly ActiveEvent[]): numb
   if (activeEvents.length === 0) {
     return EVAL_WEIGHTS.lossScore;
   }
-  let score = EVAL_WEIGHTS.lossScore;
+  let score: number = EVAL_WEIGHTS.lossScore;
   for (const event of activeEvents) {
     const entry = EVENT_EVAL_WEIGHTS_REGISTRY.get(event.type);
     if (entry?.scoreAdjuster !== undefined) {

@@ -216,4 +216,35 @@ describe('Crazy mode serialization', () => {
     expect(restored.activeEvents).toEqual([]);
     expect('setActiveEvents' in restored.ruleSet).toBe(false);
   });
+
+  it('deserializes with unrecognized mode as Classic', () => {
+    const state = createTestGame();
+    const serialized = serializeGameState(state);
+    // Set an invalid mode
+    (serialized as unknown as Record<string, unknown>).mode = 'UNKNOWN_MODE';
+
+    const restored = deserializeGameState(serialized);
+    expect(restored.mode).toBe(GameMode.Classic);
+  });
+
+  it('filters out malformed event entries during deserialization', () => {
+    const state = createNewGame(
+      createAmericanRules(),
+      { white: PlayerType.Human, black: PlayerType.Human },
+      GameMode.Crazy,
+    );
+    const serialized = serializeGameState(state);
+    // Add malformed events (missing required fields)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (serialized as any).activeEvents = [
+      { type: CrazyEvent.KingForADay, remainingPlies: 2, triggeredBy: PieceColor.White, triggeredAtPly: 5 },
+      { type: null, remainingPlies: 2, triggeredBy: PieceColor.White, triggeredAtPly: 3 },
+      { type: CrazyEvent.LiveGrenade },
+    ];
+
+    const restored = deserializeGameState(serialized);
+    // Only the first valid event should survive
+    expect(restored.activeEvents.length).toBe(1);
+    expect(restored.activeEvents[0]?.type).toBe(CrazyEvent.KingForADay);
+  });
 });

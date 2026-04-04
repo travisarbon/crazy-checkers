@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import GameSetupDialog from './GameSetupDialog';
-import { PlayerType } from '../../engine/types';
+import { GameMode, PlayerType } from '../../engine/types';
 
 // ---------------------------------------------------------------------------
 // Helper
@@ -11,14 +11,16 @@ function renderDialog(
   overrides?: Partial<{
     onConfirm: (...args: unknown[]) => void;
     onCancel: () => void;
+    mode: GameMode;
   }>,
 ) {
   const onConfirm = overrides?.onConfirm ?? vi.fn();
   const onCancel = overrides?.onCancel ?? vi.fn();
+  const mode = overrides?.mode ?? GameMode.Classic;
   return {
     onConfirm,
     onCancel,
-    ...render(<GameSetupDialog onConfirm={onConfirm} onCancel={onCancel} />),
+    ...render(<GameSetupDialog mode={mode} onConfirm={onConfirm} onCancel={onCancel} />),
   };
 }
 
@@ -72,6 +74,7 @@ describe('GameSetupDialog', () => {
     expect(onConfirm).toHaveBeenCalledWith(
       { white: PlayerType.Human, black: PlayerType.Human },
       false,
+      GameMode.Classic,
     );
   });
 
@@ -83,6 +86,7 @@ describe('GameSetupDialog', () => {
     expect(onConfirm).toHaveBeenCalledWith(
       { white: PlayerType.Human, black: PlayerType.Human },
       true,
+      GameMode.Classic,
     );
   });
 
@@ -94,6 +98,7 @@ describe('GameSetupDialog', () => {
     expect(onConfirm).toHaveBeenCalledWith(
       { white: PlayerType.Human, black: PlayerType.CpuEasy },
       false,
+      GameMode.Classic,
     );
   });
 
@@ -107,6 +112,7 @@ describe('GameSetupDialog', () => {
     expect(onConfirm).toHaveBeenCalledWith(
       { white: PlayerType.CpuHard, black: PlayerType.Human },
       true,
+      GameMode.Classic,
     );
   });
 
@@ -143,5 +149,21 @@ describe('GameSetupDialog', () => {
     renderDialog({ onCancel });
     fireEvent.click(screen.getByTestId('setup-overlay'));
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it('displays "Crazy Mode" header when mode is Crazy', () => {
+    renderDialog({ mode: GameMode.Crazy });
+    expect(screen.getByText('Crazy Mode')).toBeInTheDocument();
+  });
+
+  it('confirm with Crazy mode passes mode in callback', () => {
+    const onConfirm = vi.fn();
+    renderDialog({ onConfirm, mode: GameMode.Crazy });
+    fireEvent.click(screen.getByTestId('setup-start'));
+    expect(onConfirm).toHaveBeenCalledWith(
+      { white: PlayerType.Human, black: PlayerType.Human },
+      false,
+      GameMode.Crazy,
+    );
   });
 });

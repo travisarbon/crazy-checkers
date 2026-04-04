@@ -9,8 +9,8 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { BREAKPOINT } from './breakpoints';
-import type { GameState, PlayerSetup, RuleSet } from '../engine/types';
-import { GameStatus, PieceColor, PlayerType } from '../engine/types';
+import type { ActiveEvent, GameState, PlayerSetup, RuleSet } from '../engine/types';
+import { GameMode, GameStatus, PieceColor, PlayerType } from '../engine/types';
 import { createNewGame, makeMove, canUndo as engineCanUndo, resign } from '../engine/game';
 import { requestAIMove } from '../ai/workerClient';
 import type { Difficulty } from '../ai/difficulty';
@@ -23,6 +23,8 @@ import MoveHistory from './MoveHistory';
 import GameControls from './GameControls';
 import GameAnnouncer from './GameAnnouncer';
 import GameOverDialog from './dialogs/GameOverDialog';
+import EventAnnouncement from './EventAnnouncement';
+import ActiveEventsIndicator from './ActiveEventsIndicator';
 import { useGameInteraction } from './useGameInteraction';
 import { useAnimationQueue, buildAnimationSequence } from './useAnimationQueue';
 import styles from './GameScreen.module.css';
@@ -35,6 +37,7 @@ interface GameScreenProps {
   ruleSet: RuleSet;
   players: PlayerSetup;
   flipped?: boolean;
+  mode?: GameMode;
   animationSpeedMultiplier?: number;
   moveConfirmation?: boolean;
   pieceShadow?: boolean;
@@ -127,6 +130,18 @@ function useIsMobile(breakpoint = BREAKPOINT.PHABLET_MAX + 1): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Event detection helper
+// ---------------------------------------------------------------------------
+
+function getNewlyTriggeredEvents(
+  prevEvents: readonly ActiveEvent[],
+  nextEvents: readonly ActiveEvent[],
+): readonly ActiveEvent[] {
+  const prevKeys = new Set(prevEvents.map((e) => `${e.type}:${String(e.triggeredAtPly)}`));
+  return nextEvents.filter((e) => !prevKeys.has(`${e.type}:${String(e.triggeredAtPly)}`));
+}
+
+// ---------------------------------------------------------------------------
 // GameScreen component
 // ---------------------------------------------------------------------------
 
@@ -134,6 +149,7 @@ export default function GameScreen({
   ruleSet,
   players,
   flipped = false,
+  mode = GameMode.Classic,
   animationSpeedMultiplier = 1.0,
   moveConfirmation = false,
   pieceShadow = false,
@@ -144,8 +160,9 @@ export default function GameScreen({
 }: GameScreenProps) {
   // --- State ---
   const [gameState, setGameState] = useState<GameState>(
-    () => initialGameState ?? createNewGame(ruleSet, players),
+    () => initialGameState ?? createNewGame(ruleSet, players, mode),
   );
+  const [announcementEvents, setAnnouncementEvents] = useState<readonly ActiveEvent[]>([]);
   const [gameStartedAt] = useState(() => gameStartedAtProp ?? Date.now());
   const pendingStateRef = useRef<GameState | null>(null);
   const [undoStack, setUndoStack] = useState<GameState[]>([]);
@@ -178,14 +195,14 @@ export default function GameScreen({
 
   // --- Auto-save on every state change ---
   useEffect(() => {
-    saveGame(gameState, 'classic', flipped);
+    saveGame(gameState, gameState.mode, flipped);
   }, [gameState, flipped]);
 
   // --- Clear auto-save and record game on completion ---
   useEffect(() => {
     if (gameState.status === GameStatus.GameOver) {
       clearSavedGame();
-      recordGame(gameState, 'classic', gameStartedAt).catch((err: unknown) => {
+      recordGame(gameState, gameState.mode, gameStartedAt).catch((err: unknown) => {
         console.warn('Failed to record game history:', err);
       });
     }
@@ -195,6 +212,13 @@ export default function GameScreen({
   const handleMove = useCallback(
     (newState: GameState) => {
       setUndoStack((prev) => [...prev, gameState]);
+
+      // Detect newly triggered events
+      const triggered = getNewlyTriggeredEvents(gameState.activeEvents, newState.activeEvents);
+      if (triggered.length > 0) {
+        setAnnouncementEvents(triggered);
+      }
+
       const move = newState.moveHistory[newState.moveHistory.length - 1];
       if (!move) {
         setGameState(newState);
@@ -228,6 +252,7 @@ export default function GameScreen({
   useEffect(() => {
     if (animationQueue.isAnimating) return;
     if (aiThinkingRef.current) return;
+    if (announcementEvents.length > 0) return; // Wait for announcement to dismiss
 
     const state = gameStateRef.current;
     if (state.status !== GameStatus.InProgress) return;
@@ -271,7 +296,7 @@ export default function GameScreen({
       cancelled = true;
       aiThinkingRef.current = false;
     };
-  }, [gameState, animationQueue.isAnimating]);
+  }, [gameState, animationQueue.isAnimating, announcementEvents]);
 
   // --- Interaction hook ---
   const interaction = useGameInteraction({
@@ -302,6 +327,9 @@ export default function GameScreen({
   // --- Undo handler ---
   const handleUndo = useCallback(() => {
     if (animationQueue.isAnimating) return;
+
+    // Clear any visible event announcement on undo
+    setAnnouncementEvents([]);
 
     const isCpuGame = players.white !== PlayerType.Human || players.black !== PlayerType.Human;
 
@@ -388,6 +416,12 @@ export default function GameScreen({
           isThinking={isAIThinking}
         />
         <CapturedPieces moveHistory={gameState.moveHistory} pendingCaptures={pendingCaptures} />
+        {gameState.mode === GameMode.Crazy && (
+          <ActiveEventsIndicator
+            activeEvents={gameState.activeEvents}
+            activeColor={gameState.activeColor}
+          />
+        )}
         <MoveHistory
           moveHistory={gameState.moveHistory}
           currentMoveIndex={currentMoveIndex}
@@ -405,10 +439,21 @@ export default function GameScreen({
         />
       </aside>
 
+      {announcementEvents.length > 0 && (
+        <EventAnnouncement
+          events={announcementEvents}
+          onDismiss={() => {
+            setAnnouncementEvents([]);
+          }}
+        />
+      )}
+
       {isGameOver && gameState.result && (
         <GameOverDialog
           result={gameState.result}
           lastActiveColor={gameState.activeColor}
+          mode={gameState.mode}
+          activeEvents={gameState.activeEvents}
           onNewGame={onNewGame}
           onMainMenu={onMainMenu}
         />

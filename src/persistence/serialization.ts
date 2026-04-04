@@ -118,16 +118,26 @@ export function deserializeGameState(data: SerializedGameState): GameState {
 
   const positionHashes: bigint[] = data.positionHashes.map((h) => BigInt('0x' + h));
 
-  const mode = (data.mode ?? GameMode.Classic) as GameMode;
-  const activeEvents: ActiveEvent[] = (data.activeEvents ?? []).map((e) => ({
-    type: e.type as CrazyEvent,
-    remainingPlies: e.remainingPlies,
-    triggeredBy: e.triggeredBy as PieceColor,
-    triggeredAtPly: e.triggeredAtPly,
-    ...(e.metadata !== undefined
-      ? { metadata: e.metadata as Readonly<Record<string, unknown>> }
-      : {}),
-  }));
+  const mode = Object.values(GameMode).includes(data.mode as GameMode)
+    ? (data.mode as GameMode)
+    : GameMode.Classic;
+  const activeEvents: ActiveEvent[] = (data.activeEvents ?? [])
+    .filter(
+      (e: Partial<SerializedActiveEvent>) =>
+        e.type != null &&
+        e.remainingPlies != null &&
+        e.triggeredBy != null &&
+        e.triggeredAtPly != null,
+    )
+    .map((e: SerializedActiveEvent) => ({
+      type: e.type as CrazyEvent,
+      remainingPlies: e.remainingPlies,
+      triggeredBy: e.triggeredBy as PieceColor,
+      triggeredAtPly: e.triggeredAtPly,
+      ...(e.metadata != null
+        ? { metadata: e.metadata as Readonly<Record<string, unknown>> }
+        : {}),
+    }));
 
   const ruleSet =
     mode === GameMode.Crazy

@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { PlayerType } from '../../engine/types';
+import { PlayerType, GameMode } from '../../engine/types';
 import type { PlayerSetup } from '../../engine/types';
 import styles from './GameSetupDialog.module.css';
 
@@ -18,7 +18,8 @@ import styles from './GameSetupDialog.module.css';
 // ---------------------------------------------------------------------------
 
 interface GameSetupDialogProps {
-  onConfirm: (players: PlayerSetup, flipped: boolean) => void;
+  mode: GameMode;
+  onConfirm: (players: PlayerSetup, flipped: boolean, mode: GameMode) => void;
   onCancel: () => void;
 }
 
@@ -34,7 +35,7 @@ type DifficultyChoice = 'easy' | 'hard';
 // Component
 // ---------------------------------------------------------------------------
 
-export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialogProps) {
+export default function GameSetupDialog({ mode, onConfirm, onCancel }: GameSetupDialogProps) {
   const [gameType, setGameType] = useState<GameType>('pass-around');
   const [colorChoice, setColorChoice] = useState<ColorChoice>('white');
   const [difficultyChoice, setDifficultyChoice] = useState<DifficultyChoice>('easy');
@@ -113,7 +114,7 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
       }
     }
 
-    onConfirm(players, flipped);
+    onConfirm(players, flipped, mode);
   }
 
   return (
@@ -134,7 +135,7 @@ export default function GameSetupDialog({ onConfirm, onCancel }: GameSetupDialog
         data-testid="game-setup-dialog"
       >
         <h2 id="setup-title" className={styles.dialogTitle}>
-          Classic Mode
+          {mode === GameMode.Crazy ? 'Crazy' : 'Classic'} Mode
         </h2>
 
         {/* Game Type */}

@@ -1,0 +1,73 @@
+/* ── Event Announcement Overlay ──────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay-bg, rgba(0, 0, 0, 0.6));
+  z-index: 90;
+  cursor: pointer;
+  animation: fadeIn 200ms ease-out;
+}
+
+.overlay.fadeOut {
+  animation: fadeOut 200ms ease-in forwards;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 3rem;
+  max-width: 90vw;
+}
+
+.eventBlock {
+  text-align: center;
+}
+
+.eventName {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ui-accent);
+  margin: 0;
+}
+
+.eventFlavor {
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--ui-text, #fff);
+  opacity: 0.9;
+  margin: 0.25rem 0 0;
+}
+
+/* ── Animations ──────────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ── Mobile ──────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .content {
+    padding: 1.5rem 1.5rem;
+  }
+
+  .eventName {
+    font-size: 1.4rem;
+  }
+
+  .eventFlavor {
+    font-size: 0.9rem;
+  }
+}

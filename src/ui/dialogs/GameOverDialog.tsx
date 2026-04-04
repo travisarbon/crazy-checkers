@@ -8,8 +8,9 @@
  */
 
 import { useEffect, useRef } from 'react';
-import type { GameResult, PieceColor } from '../../engine/types';
-import { GameResultType, GameEndReason, PieceColor as PC } from '../../engine/types';
+import type { ActiveEvent, GameResult, PieceColor } from '../../engine/types';
+import { GameMode, GameResultType, GameEndReason, PieceColor as PC } from '../../engine/types';
+import { EVENT_DISPLAY_NAMES } from '../../engine/events';
 import styles from './GameOverDialog.module.css';
 
 // ---------------------------------------------------------------------------
@@ -19,6 +20,8 @@ import styles from './GameOverDialog.module.css';
 interface GameOverDialogProps {
   result: GameResult;
   lastActiveColor: PieceColor;
+  mode?: GameMode;
+  activeEvents?: readonly ActiveEvent[];
   onNewGame: () => void;
   onReview?: () => void;
   onMainMenu?: () => void;
@@ -123,6 +126,8 @@ function ResultIcon({ result }: { result: GameResult }) {
 export default function GameOverDialog({
   result,
   lastActiveColor,
+  mode,
+  activeEvents,
   onNewGame,
   onMainMenu,
 }: GameOverDialogProps) {
@@ -191,9 +196,17 @@ export default function GameOverDialog({
         <h2 id="game-over-heading" className={styles.heading}>
           {getResultHeading(result)}
         </h2>
+        {mode === GameMode.Crazy && (
+          <p className={styles.modeLabel} data-testid="game-over-mode-label">Crazy Mode</p>
+        )}
         <p id="game-over-reason" className={styles.reason}>
           {getReasonDescription(result, lastActiveColor)}
         </p>
+        {mode === GameMode.Crazy && activeEvents && activeEvents.length > 0 && (
+          <p className={styles.activeEventsNote} data-testid="game-over-active-events">
+            Events active at game end: {activeEvents.map((e) => EVENT_DISPLAY_NAMES[e.type]).join(', ')}
+          </p>
+        )}
         <div className={styles.actions}>
           {onMainMenu && (
             <button

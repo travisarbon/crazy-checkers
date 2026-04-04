@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import GameOverDialog from './GameOverDialog';
-import { GameResultType, GameEndReason, PieceColor } from '../../engine/types';
-import type { GameResult } from '../../engine/types';
+import { CrazyEvent, GameMode, GameResultType, GameEndReason, PieceColor } from '../../engine/types';
+import type { ActiveEvent, GameResult } from '../../engine/types';
 
 // ---------------------------------------------------------------------------
 // Helper
@@ -177,5 +177,49 @@ describe('GameOverDialog', () => {
     expect(document.body.style.overflow).toBe('hidden');
     unmount();
     expect(document.body.style.overflow).toBe('');
+  });
+
+  // --- Crazy mode enhancements ---
+
+  it('Classic mode game over shows no mode label or event list', () => {
+    renderDialog();
+    expect(screen.queryByTestId('game-over-mode-label')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('game-over-active-events')).not.toBeInTheDocument();
+  });
+
+  it('Crazy mode game over with no active events shows mode label only', () => {
+    const result: GameResult = { type: GameResultType.WhiteWin, reason: GameEndReason.NoPiecesLeft };
+    render(
+      <GameOverDialog
+        result={result}
+        lastActiveColor={PieceColor.Black}
+        mode={GameMode.Crazy}
+        activeEvents={[]}
+        onNewGame={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId('game-over-mode-label')).toHaveTextContent('Crazy Mode');
+    expect(screen.queryByTestId('game-over-active-events')).not.toBeInTheDocument();
+  });
+
+  it('Crazy mode game over with active events lists event names', () => {
+    const result: GameResult = { type: GameResultType.BlackWin, reason: GameEndReason.NoLegalMoves };
+    const events: ActiveEvent[] = [
+      { type: CrazyEvent.KingForADay, remainingPlies: 1, triggeredBy: PieceColor.White, triggeredAtPly: 5 },
+      { type: CrazyEvent.OppositeDay, remainingPlies: 2, triggeredBy: PieceColor.Black, triggeredAtPly: 8 },
+    ];
+    render(
+      <GameOverDialog
+        result={result}
+        lastActiveColor={PieceColor.White}
+        mode={GameMode.Crazy}
+        activeEvents={events}
+        onNewGame={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId('game-over-mode-label')).toBeInTheDocument();
+    const eventsNote = screen.getByTestId('game-over-active-events');
+    expect(eventsNote).toHaveTextContent('King for a Day');
+    expect(eventsNote).toHaveTextContent('Opposite Day');
   });
 });
