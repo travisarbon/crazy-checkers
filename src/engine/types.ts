@@ -11,7 +11,8 @@ export type PieceColor = (typeof PieceColor)[keyof typeof PieceColor];
 
 /**
  * All Crazy mode events (see Events and Choice Mode Playbook for details).
- * Phase 2 implements Events 1–7; Events 8–39 are implemented in Phases 3–4.
+ * Phase 2 implements Events 1–7; Events 8–40 are implemented in Phases 3–4.
+ * Event 40 (DoubleTrouble) is a meta-event with no decorator — handled by selection logic.
  * The enum is defined up front to establish stable string identifiers for
  * persistence, serialization, and AI worker communication.
  */
@@ -24,7 +25,7 @@ export const CrazyEvent = {
   OppositeDay: 'OPPOSITE_DAY',
   UpInTheAir: 'UP_IN_THE_AIR',
   NoTouching: 'NO_TOUCHING',
-  // Phases 3–4 (Events 8–39)
+  // Phases 3–4 (Events 8–40)
   StepBack: 'STEP_BACK',
   FlippedScript: 'FLIPPED_SCRIPT',
   MarchingOrders: 'MARCHING_ORDERS',
@@ -57,6 +58,8 @@ export const CrazyEvent = {
   Haunted: 'HAUNTED',
   Sacrifice: 'SACRIFICE',
   ShrinkingBoard: 'SHRINKING_BOARD',
+  // Event 40 — Meta-event (no decorator; handled by selection logic)
+  DoubleTrouble: 'DOUBLE_TROUBLE',
 } as const;
 export type CrazyEvent = (typeof CrazyEvent)[keyof typeof CrazyEvent];
 
@@ -97,6 +100,7 @@ export const GameMode = {
   Classic: 'CLASSIC',
   Crazy: 'CRAZY',
   Choice: 'CHOICE',
+  Chaos: 'CHAOS',
 } as const;
 export type GameMode = (typeof GameMode)[keyof typeof GameMode];
 

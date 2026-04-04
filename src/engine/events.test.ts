@@ -5,6 +5,7 @@ import {
   EVENT_FLAVOR_TEXT,
   EVENT_DISPLAY_NAMES,
   IMPLEMENTED_EVENTS,
+  META_EVENTS,
   createActiveEvent,
   tickAllEvents,
   removeEventsByType,
@@ -51,8 +52,8 @@ function makeEvent(
 // ===========================================================================
 
 describe('CrazyEvent', () => {
-  it('has 39 entries (all events from the Events and Choice Mode Playbook)', () => {
-    expect(Object.values(CrazyEvent)).toHaveLength(39);
+  it('has 40 entries (all events from the Events and Choice Mode Playbook)', () => {
+    expect(Object.values(CrazyEvent)).toHaveLength(40);
   });
 });
 
@@ -359,38 +360,61 @@ describe('isMultiJump', () => {
   });
 });
 
+describe('META_EVENTS', () => {
+  it('contains DoubleTrouble', () => {
+    expect(META_EVENTS).toContain(CrazyEvent.DoubleTrouble);
+  });
+
+  it('does not overlap with IMPLEMENTED_EVENTS in Phase 2', () => {
+    const implementedSet = new Set<string>(IMPLEMENTED_EVENTS);
+    for (const meta of META_EVENTS) {
+      expect(implementedSet.has(meta)).toBe(false);
+    }
+  });
+});
+
 describe('selectRandomEvent', () => {
-  it('returns an implemented event for 100 random calls', () => {
+  it('returns an array of implemented events for 100 random calls', () => {
     const validEvents = new Set<string>(IMPLEMENTED_EVENTS);
     for (let i = 0; i < 100; i++) {
-      const event = selectRandomEvent();
-      expect(validEvents.has(event)).toBe(true);
+      const events = selectRandomEvent();
+      expect(Array.isArray(events)).toBe(true);
+      expect(events.length).toBeGreaterThanOrEqual(1);
+      for (const event of events) {
+        expect(validEvents.has(event)).toBe(true);
+      }
     }
+  });
+
+  it('returns a single-element array in Phase 2 (no meta-events in pool)', () => {
+    const events = selectRandomEvent(() => 0.5);
+    expect(events).toHaveLength(1);
   });
 
   it('is deterministic with seeded random', () => {
     const seeded = () => 0.5;
-    const event1 = selectRandomEvent(seeded);
-    const event2 = selectRandomEvent(seeded);
-    expect(event1).toBe(event2);
+    const events1 = selectRandomEvent(seeded);
+    const events2 = selectRandomEvent(seeded);
+    expect(events1).toEqual(events2);
   });
 
   it('selects first implemented event when random returns 0', () => {
-    const event = selectRandomEvent(() => 0);
-    expect(event).toBe(IMPLEMENTED_EVENTS[0]);
+    const events = selectRandomEvent(() => 0);
+    expect(events[0]).toBe(IMPLEMENTED_EVENTS[0]);
   });
 
   it('selects last implemented event when random returns just under 1', () => {
-    const event = selectRandomEvent(() => 0.999);
-    expect(event).toBe(IMPLEMENTED_EVENTS[IMPLEMENTED_EVENTS.length - 1]);
+    const events = selectRandomEvent(() => 0.999);
+    expect(events[0]).toBe(IMPLEMENTED_EVENTS[IMPLEMENTED_EVENTS.length - 1]);
   });
 
   it('only draws from IMPLEMENTED_EVENTS, not the full enum', () => {
-    // With 39 enum entries but only a few implemented, verify we never get unimplemented events
     const implementedSet = new Set<string>(IMPLEMENTED_EVENTS);
     for (let i = 0; i < 200; i++) {
-      const event = selectRandomEvent();
-      expect(implementedSet.has(event)).toBe(true);
+      const events = selectRandomEvent();
+      for (const event of events) {
+        expect(implementedSet.has(event)).toBe(true);
+      }
     }
   });
 });
@@ -412,10 +436,15 @@ describe('checkEventTrigger', () => {
     captured: [],
   };
 
-  it('returns an implemented event for multi-jump in Crazy mode', () => {
+  it('returns an array of implemented events for multi-jump in Crazy mode', () => {
     const result = checkEventTrigger(multiJumpMove, GameMode.Crazy, () => 0.5);
     expect(result).not.toBeNull();
-    expect(IMPLEMENTED_EVENTS).toContain(result);
+    expect(Array.isArray(result)).toBe(true);
+    if (result !== null) {
+      for (const event of result) {
+        expect(IMPLEMENTED_EVENTS).toContain(event);
+      }
+    }
   });
 
   it('returns null for single jump in Crazy mode', () => {

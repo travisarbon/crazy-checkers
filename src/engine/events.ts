@@ -30,18 +30,18 @@ import { CrazyEvent, GameMode } from './types';
  * - 0: instant (applied once, then removed).
  * - -1: condition-based (removed when a specific game condition is met).
  *
- * All 39 events are included for forward-compatibility with Phases 3–4.
+ * All 40 events are included for forward-compatibility with Phases 3–4.
  */
 export const EVENT_DURATIONS: Readonly<Record<CrazyEvent, number>> = {
   // Phase 2 (core events)
   [CrazyEvent.KingForADay]: 2, // 1 round = 2 plies
   [CrazyEvent.LiveGrenade]: -1, // Until next capture
-  [CrazyEvent.HotPotato]: 2, // 1 move by affected player = 2 plies (survives opponent's intervening turn)
+  [CrazyEvent.HotPotato]: 2, // Design Decision: Playbook says 1 ply, but 2 plies needed to survive opponent's turn (see Task 8.4 §3.3)
   [CrazyEvent.ChecksMix]: 0, // Instant
   [CrazyEvent.OppositeDay]: 2, // 1 round = 2 plies
   [CrazyEvent.UpInTheAir]: 2, // 1 round = 2 plies
   [CrazyEvent.NoTouching]: 2, // 1 round = 2 plies
-  // Phases 3–4 (Events 8–39)
+  // Phases 3–4 (Events 8–40)
   [CrazyEvent.StepBack]: 4, // 2 rounds
   [CrazyEvent.FlippedScript]: 0, // Instant, permanent transformation
   [CrazyEvent.MarchingOrders]: -1, // Permanent
@@ -74,6 +74,8 @@ export const EVENT_DURATIONS: Readonly<Record<CrazyEvent, number>> = {
   [CrazyEvent.Haunted]: -1, // Condition-based (3 ghosts)
   [CrazyEvent.Sacrifice]: 4, // 2 rounds
   [CrazyEvent.ShrinkingBoard]: -1, // Permanent
+  // Event 40 — Meta-event (instant; resolved by selection logic, never added to activeEvents)
+  [CrazyEvent.DoubleTrouble]: 0, // Instant meta-event
 };
 
 /**
@@ -89,7 +91,7 @@ export const EVENT_FLAVOR_TEXT: Readonly<Record<CrazyEvent, string>> = {
   [CrazyEvent.OppositeDay]: "It's golf rules now!",
   [CrazyEvent.UpInTheAir]: 'Everyone can fly!',
   [CrazyEvent.NoTouching]: "Pawns can't capture kings!",
-  // Phases 3–4 (Events 8–39)
+  // Phases 3–4 (Events 8–40)
   [CrazyEvent.StepBack]: "Don't look now — they're coming from behind!",
   [CrazyEvent.FlippedScript]: 'Everything you knew is upside down!',
   [CrazyEvent.MarchingOrders]: 'Fall in line, soldier — no more diagonals!',
@@ -122,6 +124,8 @@ export const EVENT_FLAVOR_TEXT: Readonly<Record<CrazyEvent, string>> = {
   [CrazyEvent.Haunted]: "The fallen don't rest easy!",
   [CrazyEvent.Sacrifice]: 'From loss comes strength!',
   [CrazyEvent.ShrinkingBoard]: 'The walls are closing in!',
+  // Event 40 — Meta-event
+  [CrazyEvent.DoubleTrouble]: 'Twice the chaos, twice the fun!',
 };
 
 /**
@@ -137,7 +141,7 @@ export const EVENT_DISPLAY_NAMES: Readonly<Record<CrazyEvent, string>> = {
   [CrazyEvent.OppositeDay]: 'Opposite Day',
   [CrazyEvent.UpInTheAir]: 'Up in the Air',
   [CrazyEvent.NoTouching]: 'No Touching!',
-  // Phases 3–4 (Events 8–39)
+  // Phases 3–4 (Events 8–40)
   [CrazyEvent.StepBack]: 'Step-Back',
   [CrazyEvent.FlippedScript]: 'Flipped Script',
   [CrazyEvent.MarchingOrders]: 'Marching Orders',
@@ -170,6 +174,8 @@ export const EVENT_DISPLAY_NAMES: Readonly<Record<CrazyEvent, string>> = {
   [CrazyEvent.Haunted]: 'Haunted',
   [CrazyEvent.Sacrifice]: 'Sacrifice',
   [CrazyEvent.ShrinkingBoard]: 'Shrinking Board',
+  // Event 40 — Meta-event
+  [CrazyEvent.DoubleTrouble]: 'Double Trouble',
 };
 
 // ---------------------------------------------------------------------------
@@ -406,6 +412,17 @@ export const IMPLEMENTED_EVENTS: readonly CrazyEvent[] = [
 ];
 
 /**
+ * Meta-events that trigger re-rolls rather than decorator activations.
+ * When a meta-event is drawn, selectRandomEvent re-rolls from the regular
+ * event pool (IMPLEMENTED_EVENTS minus META_EVENTS).
+ *
+ * Currently contains only DoubleTrouble (Event 40). In Phase 2, DoubleTrouble
+ * is not in IMPLEMENTED_EVENTS, so this code path is never reached — but the
+ * architecture is validated and ready for when DoubleTrouble is added.
+ */
+export const META_EVENTS: readonly CrazyEvent[] = [CrazyEvent.DoubleTrouble] as const;
+
+/**
  * Returns true if the given move is a multi-jump (two or more captures).
  * Multi-jumps are the trigger condition for Crazy mode events (Design Document §2.2).
  */
@@ -414,7 +431,12 @@ export function isMultiJump(move: Move): boolean {
 }
 
 /**
- * Selects a random event type from the implemented event pool.
+ * Selects one or more random event types from the implemented event pool.
+ *
+ * Returns a `CrazyEvent[]` — in Phase 2 this is always a single-element array.
+ * When Double Trouble is added to IMPLEMENTED_EVENTS (Phase 3 or late Phase 2),
+ * drawing it will cause this function to return a two-element array of distinct
+ * non-meta events, without requiring any API changes to callers.
  *
  * Draws from IMPLEMENTED_EVENTS rather than the full CrazyEvent enum,
  * so only events with registered decorators can be selected.
@@ -423,20 +445,41 @@ export function isMultiJump(move: Move): boolean {
  * The default uses Math.random(). For deterministic replays (Phase 3 Cogitate),
  * a seeded PRNG should be passed.
  */
-export function selectRandomEvent(randomFn: () => number = Math.random): CrazyEvent {
+export function selectRandomEvent(randomFn: () => number = Math.random): CrazyEvent[] {
+  const metaSet = new Set<CrazyEvent>(META_EVENTS);
+
   const index = Math.floor(randomFn() * IMPLEMENTED_EVENTS.length);
-  return IMPLEMENTED_EVENTS[index] as CrazyEvent;
+  const drawn = IMPLEMENTED_EVENTS[index] as CrazyEvent;
+
+  // If a meta-event (e.g., DoubleTrouble) is drawn, re-roll twice from the
+  // regular pool (excluding meta-events), ensuring the two results differ.
+  if (metaSet.has(drawn)) {
+    const regularPool = IMPLEMENTED_EVENTS.filter((e) => !metaSet.has(e));
+    if (regularPool.length === 0) return [drawn]; // Defensive: no regular events available
+    const first = regularPool[Math.floor(randomFn() * regularPool.length)] as CrazyEvent;
+    if (regularPool.length === 1) return [first]; // Only one regular event — can't pick two distinct
+    let second: CrazyEvent;
+    do {
+      second = regularPool[Math.floor(randomFn() * regularPool.length)] as CrazyEvent;
+    } while (second === first);
+    return [first, second];
+  }
+
+  return [drawn];
 }
 
 /**
- * Determines whether an event should trigger and, if so, which event.
+ * Determines whether an event should trigger and, if so, which event(s).
  * Called after every move in Crazy mode.
+ *
+ * Returns a `CrazyEvent[]` on trigger (single-element in Phase 2, potentially
+ * two-element when Double Trouble is implemented), or `null` if no trigger.
  */
 export function checkEventTrigger(
   move: Move,
   mode: GameMode,
   randomFn: () => number = Math.random,
-): CrazyEvent | null {
+): CrazyEvent[] | null {
   if (mode !== GameMode.Crazy) return null;
   if (!isMultiJump(move)) return null;
   return selectRandomEvent(randomFn);

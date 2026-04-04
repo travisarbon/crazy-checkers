@@ -261,19 +261,22 @@ export function makeMove(state: GameState, move: Move): GameState {
 
   // ── Event trigger on multi-jump (Crazy mode only) ──────────────────
   if (state.mode === GameMode.Crazy) {
-    const triggeredEvent = checkEventTrigger(move, state.mode);
-    if (triggeredEvent !== null) {
-      // Build event-specific metadata via the registry
-      const metadataFactory = EVENT_METADATA_FACTORIES.get(triggeredEvent);
-      const metadata = metadataFactory ? metadataFactory(board, state.activeColor) : undefined;
+    const triggeredEvents = checkEventTrigger(move, state.mode);
+    if (triggeredEvents !== null) {
+      const newEvents: ActiveEvent[] = [];
+      for (const eventType of triggeredEvents) {
+        // Build event-specific metadata via the registry
+        const metadataFactory = EVENT_METADATA_FACTORIES.get(eventType);
+        const metadata = metadataFactory ? metadataFactory(board, state.activeColor) : undefined;
 
-      const newEvent = createActiveEvent(
-        triggeredEvent,
-        state.activeColor,
-        state.plyCount + 1,
-        metadata,
-      );
-      updatedEvents = [...updatedEvents, newEvent];
+        newEvents.push(createActiveEvent(
+          eventType,
+          state.activeColor,
+          state.plyCount + 1,
+          metadata,
+        ));
+      }
+      updatedEvents = [...updatedEvents, ...newEvents];
     }
   }
 
