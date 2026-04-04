@@ -12,7 +12,7 @@
 import type { BoardState, RuleSet, Square, SquareState } from '../types';
 import { CrazyEvent } from '../types';
 import { getAllAdjacentSquares } from '../board';
-import { EventDecorator, EVENT_DECORATOR_REGISTRY } from '../events';
+import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } from '../events';
 
 /**
  * Returns a new board with all pieces on squares diagonally adjacent to
@@ -60,4 +60,11 @@ export class LiveGrenadeDecorator extends EventDecorator {
 EVENT_DECORATOR_REGISTRY.set(
   CrazyEvent.LiveGrenade,
   (base: RuleSet) => new LiveGrenadeDecorator(base),
+);
+
+// No metadata needed — register undefined-returning factory for consistency
+// (pattern established in Task 9.2; see Task_9.2_Opposite_Day_Implementation_Plan.md §2.1)
+EVENT_METADATA_FACTORIES.set(
+  CrazyEvent.LiveGrenade,
+  () => undefined,
 );

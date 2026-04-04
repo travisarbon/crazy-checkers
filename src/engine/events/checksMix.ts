@@ -244,7 +244,7 @@ export class ChecksMixDecorator extends EventDecorator {
 
   /**
    * Applies all active Checks Mix shuffles to the board.
-   * Shared by onTurnStart and getLegalMoves to ensure consistency.
+   * Called from onTurnStart; extracted as a named helper for clarity.
    */
   private applyShuffles(board: BoardState, activeColor: PieceColor): BoardState {
     const checksMixEntries = this.activeEventsContext.filter(
@@ -291,8 +291,9 @@ EVENT_DECORATOR_REGISTRY.set(
 
 EVENT_METADATA_FACTORIES.set(
   CrazyEvent.ChecksMix,
-  (board: BoardState, activeColor: PieceColor): Record<string, unknown> => {
-    const seed = Math.floor(Math.random() * 0xffffffff);
+  (board: BoardState, activeColor: PieceColor, randomFn?: () => number): Record<string, unknown> => {
+    const rng = randomFn ?? Math.random;
+    const seed = Math.floor(rng() * 0xffffffff);
 
     // Pre-compute the placement for deterministic replay
     const shuffledBoard = shuffleBoard(board, activeColor, seed, (b, c) => getLegalMoves(b, c));

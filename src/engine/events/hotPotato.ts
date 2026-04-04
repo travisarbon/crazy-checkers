@@ -15,7 +15,7 @@
 import type { BoardState, Move, PieceColor, RuleSet, Square } from '../types';
 import { CrazyEvent, opponentColor, PieceType } from '../types';
 import { getBoardSquare, isPromotionSquare, setBoardSquare } from '../board';
-import { EventDecorator, EVENT_DECORATOR_REGISTRY } from '../events';
+import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } from '../events';
 
 /**
  * Switches the color of the piece on the given square to the opponent's color.
@@ -80,4 +80,11 @@ export class HotPotatoDecorator extends EventDecorator {
 EVENT_DECORATOR_REGISTRY.set(
   CrazyEvent.HotPotato,
   (base: RuleSet) => new HotPotatoDecorator(base),
+);
+
+// No metadata needed — register undefined-returning factory for consistency
+// (pattern established in Task 9.2; see Task_9.2_Opposite_Day_Implementation_Plan.md §2.1)
+EVENT_METADATA_FACTORIES.set(
+  CrazyEvent.HotPotato,
+  () => undefined,
 );

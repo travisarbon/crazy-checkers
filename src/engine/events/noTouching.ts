@@ -13,7 +13,7 @@ import type { BoardState, Move, PieceColor, RuleSet } from '../types';
 import { CrazyEvent, PieceType } from '../types';
 import { getBoardSquare, getSquaresWithColor } from '../board';
 import { getSimpleMovesForPiece } from '../moves';
-import { EventDecorator, EVENT_DECORATOR_REGISTRY } from '../events';
+import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } from '../events';
 
 /**
  * Filters out jump moves where the capturing piece is a pawn and
@@ -100,4 +100,11 @@ export class NoTouchingDecorator extends EventDecorator {
 EVENT_DECORATOR_REGISTRY.set(
   CrazyEvent.NoTouching,
   (base: RuleSet) => new NoTouchingDecorator(base),
+);
+
+// No metadata needed — register undefined-returning factory for consistency
+// (pattern established in Task 9.2; see Task_9.2_Opposite_Day_Implementation_Plan.md §2.1)
+EVENT_METADATA_FACTORIES.set(
+  CrazyEvent.NoTouching,
+  () => undefined,
 );
