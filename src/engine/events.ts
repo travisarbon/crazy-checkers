@@ -36,7 +36,7 @@ export const EVENT_DURATIONS: Readonly<Record<CrazyEvent, number>> = {
   // Phase 2 (core events)
   [CrazyEvent.KingForADay]: 2, // 1 round = 2 plies
   [CrazyEvent.LiveGrenade]: -1, // Until next capture
-  [CrazyEvent.HotPotato]: 1, // 1 move = 1 ply
+  [CrazyEvent.HotPotato]: 2, // 1 move by affected player = 2 plies (survives opponent's intervening turn)
   [CrazyEvent.ChecksMix]: 0, // Instant
   [CrazyEvent.OppositeDay]: 2, // 1 round = 2 plies
   [CrazyEvent.UpInTheAir]: 2, // 1 round = 2 plies
@@ -402,6 +402,7 @@ export const IMPLEMENTED_EVENTS: readonly CrazyEvent[] = [
   CrazyEvent.KingForADay,
   CrazyEvent.LiveGrenade,
   CrazyEvent.NoTouching,
+  CrazyEvent.HotPotato,
 ];
 
 /**

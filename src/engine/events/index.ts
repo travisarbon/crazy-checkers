@@ -9,3 +9,4 @@
 import './kingForADay';
 import './liveGrenade';
 import './noTouching';
+import './hotPotato';
