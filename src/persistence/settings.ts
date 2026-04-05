@@ -16,7 +16,7 @@ import { serializeGameState } from './serialization';
 // ---------------------------------------------------------------------------
 
 const SETTINGS_KEY = 'crazy-checkers-settings';
-const SETTINGS_VERSION = 1;
+const SETTINGS_VERSION = 2;
 
 interface PersistedSettingsEnvelope {
   version: number;
@@ -53,7 +53,10 @@ export function loadSettings(): Settings {
     const envelope: unknown = JSON.parse(raw);
     if (!isValidEnvelope(envelope)) return DEFAULT_SETTINGS;
 
-    if (envelope.version !== SETTINGS_VERSION) return DEFAULT_SETTINGS;
+    // Accept current version and previous version (v1 -> v2 migration)
+    if (envelope.version !== SETTINGS_VERSION && envelope.version !== SETTINGS_VERSION - 1) {
+      return DEFAULT_SETTINGS;
+    }
 
     return mergeWithDefaults(envelope.data);
   } catch {
@@ -95,7 +98,33 @@ function mergeWithDefaults(data: unknown): Settings {
       ? obj.moveConfirmation
       : DEFAULT_SETTINGS.moveConfirmation;
 
-  return { themeId, animationSpeed, moveConfirmation };
+  // Audio fields (new in v2, with safe defaults for v1 upgrades)
+  const masterVolume = isValidVolume(obj.masterVolume)
+    ? obj.masterVolume
+    : DEFAULT_SETTINGS.masterVolume;
+  const sfxVolume = isValidVolume(obj.sfxVolume)
+    ? obj.sfxVolume
+    : DEFAULT_SETTINGS.sfxVolume;
+  const musicVolume = isValidVolume(obj.musicVolume)
+    ? obj.musicVolume
+    : DEFAULT_SETTINGS.musicVolume;
+  const muted =
+    typeof obj.muted === 'boolean' ? obj.muted : DEFAULT_SETTINGS.muted;
+  const audioPackId =
+    typeof obj.audioPackId === 'string'
+      ? obj.audioPackId
+      : DEFAULT_SETTINGS.audioPackId;
+
+  return {
+    themeId,
+    animationSpeed,
+    moveConfirmation,
+    masterVolume,
+    sfxVolume,
+    musicVolume,
+    muted,
+    audioPackId,
+  };
 }
 
 /** Maps legacy theme IDs from before the rename to their new IDs. */
@@ -124,6 +153,10 @@ function isValidThemeId(value: unknown): value is Settings['themeId'] {
 
 function isValidAnimationSpeed(value: unknown): value is number {
   return typeof value === 'number' && value >= 0.5 && value <= 2.0;
+}
+
+function isValidVolume(value: unknown): value is number {
+  return typeof value === 'number' && value >= 0.0 && value <= 1.0;
 }
 
 // ---------------------------------------------------------------------------

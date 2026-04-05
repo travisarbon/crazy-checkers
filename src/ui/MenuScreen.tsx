@@ -9,6 +9,8 @@
 import { useState } from 'react';
 import type { PlayerSetup } from '../engine/types';
 import { GameMode } from '../engine/types';
+import { useAudioManager } from '../audio/useAudioManager';
+import { SoundEvent } from '../audio/types';
 import GameSetupDialog from './dialogs/GameSetupDialog';
 import styles from './MenuScreen.module.css';
 
@@ -86,8 +88,10 @@ const MODES: readonly ModeEntry[] = [
 export default function MenuScreen({ onStartGame, onConfigure }: MenuScreenProps) {
   const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>(GameMode.Classic);
+  const audioManager = useAudioManager();
 
   function handleModeClick(modeId: string): void {
+    audioManager?.play(SoundEvent.MenuClick);
     if (modeId === 'classic' || modeId === 'crazy') {
       setSelectedMode(modeId === 'crazy' ? GameMode.Crazy : GameMode.Classic);
       setShowSetupDialog(true);

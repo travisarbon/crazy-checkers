@@ -6,6 +6,8 @@
 
 import type { Settings } from './settings';
 import { THEMES } from '../themes/theme';
+import { useAudioManager } from '../audio/useAudioManager';
+import { SoundEvent } from '../audio/types';
 import BoardPreview from './BoardPreview';
 import styles from './ConfigScreen.module.css';
 
@@ -219,6 +221,8 @@ function DataSection() {
 // ---------------------------------------------------------------------------
 
 export default function ConfigScreen({ settings, onSettingsChange, onBack }: ConfigScreenProps) {
+  const audioManager = useAudioManager();
+
   const setTheme = (themeId: Settings['themeId']) => {
     onSettingsChange({ ...settings, themeId });
   };
@@ -234,7 +238,7 @@ export default function ConfigScreen({ settings, onSettingsChange, onBack }: Con
   return (
     <div className={styles.configScreen} data-testid="config-screen" role="main">
       <header className={styles.header}>
-        <button className={styles.backButton} onClick={onBack} aria-label="Back to main menu">
+        <button className={styles.backButton} onClick={() => { audioManager?.play(SoundEvent.MenuClick); onBack(); }} aria-label="Back to main menu">
           &larr; Back
         </button>
         <h1 className={styles.title}>Configure</h1>

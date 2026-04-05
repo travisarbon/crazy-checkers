@@ -55,7 +55,7 @@ describe('saveSettings', () => {
     const raw = localStorage.getItem('crazy-checkers-settings');
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw as string) as { version: number; data: Settings };
-    expect(parsed.version).toBe(1);
+    expect(parsed.version).toBe(2);
     expect(parsed.data).toEqual(DEFAULT_SETTINGS);
   });
 
@@ -71,7 +71,16 @@ describe('saveSettings', () => {
 
 describe('loadSettings', () => {
   it('returns saved settings', () => {
-    const custom: Settings = { themeId: 'current', animationSpeed: 1.5, moveConfirmation: true };
+    const custom: Settings = {
+      themeId: 'current',
+      animationSpeed: 1.5,
+      moveConfirmation: true,
+      masterVolume: 0.8,
+      sfxVolume: 0.9,
+      musicVolume: 0.6,
+      muted: true,
+      audioPackId: 'silent',
+    };
     saveSettings(custom);
     expect(loadSettings()).toEqual(custom);
   });
@@ -146,6 +155,75 @@ describe('loadSettings', () => {
       }),
     );
     expect(loadSettings().animationSpeed).toBe(DEFAULT_SETTINGS.animationSpeed);
+  });
+
+  it('migrates v1 settings to v2 (adds audio defaults)', () => {
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 1,
+        data: { themeId: 'current', animationSpeed: 1.5, moveConfirmation: true },
+      }),
+    );
+    const result = loadSettings();
+    // Original fields preserved
+    expect(result.themeId).toBe('current');
+    expect(result.animationSpeed).toBe(1.5);
+    expect(result.moveConfirmation).toBe(true);
+    // Audio fields get defaults
+    expect(result.masterVolume).toBe(DEFAULT_SETTINGS.masterVolume);
+    expect(result.sfxVolume).toBe(DEFAULT_SETTINGS.sfxVolume);
+    expect(result.musicVolume).toBe(DEFAULT_SETTINGS.musicVolume);
+    expect(result.muted).toBe(DEFAULT_SETTINGS.muted);
+    expect(result.audioPackId).toBe(DEFAULT_SETTINGS.audioPackId);
+  });
+
+  it('rejects volume values outside 0.0-1.0', () => {
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 2,
+        data: {
+          themeId: 'crazy',
+          animationSpeed: 1.0,
+          moveConfirmation: false,
+          masterVolume: 1.5,
+          sfxVolume: -0.1,
+          musicVolume: 'not a number',
+          muted: false,
+          audioPackId: 'default',
+        },
+      }),
+    );
+    const result = loadSettings();
+    expect(result.masterVolume).toBe(DEFAULT_SETTINGS.masterVolume);
+    expect(result.sfxVolume).toBe(DEFAULT_SETTINGS.sfxVolume);
+    expect(result.musicVolume).toBe(DEFAULT_SETTINGS.musicVolume);
+  });
+
+  it('preserves valid audio settings in v2', () => {
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 2,
+        data: {
+          themeId: 'crazy',
+          animationSpeed: 1.0,
+          moveConfirmation: false,
+          masterVolume: 0.3,
+          sfxVolume: 0.8,
+          musicVolume: 0.4,
+          muted: true,
+          audioPackId: 'silent',
+        },
+      }),
+    );
+    const result = loadSettings();
+    expect(result.masterVolume).toBe(0.3);
+    expect(result.sfxVolume).toBe(0.8);
+    expect(result.musicVolume).toBe(0.4);
+    expect(result.muted).toBe(true);
+    expect(result.audioPackId).toBe('silent');
   });
 });
 

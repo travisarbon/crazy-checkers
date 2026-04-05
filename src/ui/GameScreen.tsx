@@ -30,6 +30,8 @@ import type { AnimationStep } from './useAnimationQueue';
 import { useAnimationQueue, buildAnimationSequence } from './useAnimationQueue';
 import { useEventAnimations } from './useEventAnimations';
 import { useEventOverlays } from './useEventOverlays';
+import { useAudioManager } from '../audio/useAudioManager';
+import { SoundEvent } from '../audio/types';
 import styles from './GameScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -207,6 +209,9 @@ export default function GameScreen({
   // --- Event animation hook ---
   const eventAnimations = useEventAnimations({ flipped });
 
+  // --- Audio manager ---
+  const audioManager = useAudioManager();
+
   // --- Auto-save on every state change ---
   useEffect(() => {
     saveGame(gameState, gameState.mode, flipped);
@@ -219,8 +224,29 @@ export default function GameScreen({
       recordGame(gameState, gameState.mode, gameStartedAt).catch((err: unknown) => {
         console.warn('Failed to record game history:', err);
       });
+
+      // Game over SFX
+      if (audioManager && gameState.result) {
+        if (gameState.result.type === 'DRAW') {
+          audioManager.play(SoundEvent.GameOverDraw);
+        } else {
+          // Determine if the human player won
+          const humanColor =
+            players.white === PlayerType.Human ? PieceColor.White :
+            players.black === PlayerType.Human ? PieceColor.Black :
+            null;
+          if (humanColor === null) {
+            // AI vs AI — just play win sound
+            audioManager.play(SoundEvent.GameOverWin);
+          } else {
+            const winnerIsWhite = gameState.result.type === 'WHITE_WIN';
+            const humanWon = (humanColor === PieceColor.White) === winnerIsWhite;
+            audioManager.play(humanWon ? SoundEvent.GameOverWin : SoundEvent.GameOverLose);
+          }
+        }
+      }
     }
-  }, [gameState.status, gameState, gameStartedAt]);
+  }, [gameState.status, gameState, gameStartedAt, audioManager, players]);
 
   // --- Move handler ---
   const handleMove = useCallback(
@@ -233,12 +259,35 @@ export default function GameScreen({
 
       if (triggered.length > 0) {
         setAnnouncementEvents(triggered);
+        audioManager?.play(SoundEvent.EventTrigger);
       }
 
       const move = newState.moveHistory[newState.moveHistory.length - 1];
       if (!move) {
         setGameState(newState);
         return;
+      }
+
+      // SFX: capture or move sound
+      if (audioManager) {
+        if (move.captured.length > 0) {
+          audioManager.play(SoundEvent.Capture);
+        } else {
+          audioManager.play(SoundEvent.Move);
+        }
+      }
+
+      // SFX: promotion detection (pawn became king)
+      if (audioManager) {
+        const boardBefore2 = getEffectiveBoard(gameState);
+        const finalDest = move.path[move.path.length - 1];
+        if (finalDest !== undefined) {
+          const pieceBefore = boardBefore2[move.from];
+          const pieceAfter = newState.board[finalDest];
+          if (pieceBefore && pieceAfter && pieceBefore.type === 'PAWN' && pieceAfter.type === 'KING') {
+            audioManager.play(SoundEvent.Promotion);
+          }
+        }
       }
 
       // Use the effective board (after onTurnStart, e.g. Checks Mix shuffle)
@@ -274,7 +323,7 @@ export default function GameScreen({
       pendingStateRef.current = newState;
       animationQueue.enqueue(allSteps, boardBefore, gameState.activeColor);
     },
-    [gameState, animationQueue, eventAnimations],
+    [gameState, animationQueue, eventAnimations, audioManager],
   );
 
   // --- Keep gameStateRef in sync (ref must not be written during render) ---
@@ -352,6 +401,15 @@ export default function GameScreen({
     isDisabled: isAIThinking,
     moveConfirmation,
   });
+
+  // --- Piece selection SFX ---
+  const prevSelectedRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (interaction.selectedSquare !== null && interaction.selectedSquare !== prevSelectedRef.current) {
+      audioManager?.play(SoundEvent.Select);
+    }
+    prevSelectedRef.current = interaction.selectedSquare;
+  }, [interaction.selectedSquare, audioManager]);
 
   // --- Escape key ---
   useEffect(() => {

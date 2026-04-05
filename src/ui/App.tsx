@@ -13,6 +13,11 @@ import { GameMode } from '../engine/types';
 import { loadSettings, saveSettings, loadSavedGame, clearSavedGame } from '../persistence/settings';
 import type { SavedGame } from '../persistence/settings';
 import { deserializeGameState } from '../persistence/serialization';
+import { AudioManager } from '../audio/audioManager';
+import { AudioManagerContext } from '../audio/useAudioManager';
+import { DEFAULT_PACK } from '../audio/defaultPack';
+import { SILENT_PACK } from '../audio/silentPack';
+import { resolveMusicTrack } from '../audio/musicMapping';
 import GameScreen from './GameScreen';
 import MenuScreen from './MenuScreen';
 import ConfigScreen from './ConfigScreen';
@@ -45,10 +50,40 @@ export default function App() {
   const [resumedGameState, setResumedGameState] = useState<GameState | null>(null);
   const [gameStartedAt, setGameStartedAt] = useState(() => Date.now());
 
+  // Initialize AudioManager once (stable singleton across renders)
+  const [audioManager] = useState(() => {
+    const pack = settings.audioPackId === 'silent' ? SILENT_PACK : DEFAULT_PACK;
+    return new AudioManager(pack, {
+      masterVolume: settings.masterVolume,
+      sfxVolume: settings.sfxVolume,
+      musicVolume: settings.musicVolume,
+      muted: settings.muted,
+    });
+  });
+
   // Persist settings on every change
   useEffect(() => {
     saveSettings(settings);
   }, [settings]);
+
+  // Sync settings -> AudioManager on every settings change
+  useEffect(() => {
+    audioManager.updateSettings({
+      masterVolume: settings.masterVolume,
+      sfxVolume: settings.sfxVolume,
+      musicVolume: settings.musicVolume,
+      muted: settings.muted,
+    });
+  }, [settings.masterVolume, settings.sfxVolume, settings.musicVolume, settings.muted, audioManager]);
+
+  // Music routing: play the correct track for the current screen
+  useEffect(() => {
+    const gameMode = screen.kind === 'game' ? screen.mode : undefined;
+    const track = resolveMusicTrack(screen.kind, gameMode);
+    if (track) {
+      audioManager.playMusic(track);
+    }
+  }, [screen, audioManager]);
 
   // Apply theme reactively when themeId changes
   useEffect(() => {
@@ -134,9 +169,10 @@ export default function App() {
   }, []);
 
   // Render
+  let content: React.ReactNode;
   switch (screen.kind) {
     case 'menu':
-      return (
+      content = (
         <>
           <MenuScreen onStartGame={navigateToGame} onConfigure={navigateToConfig} />
           {pendingResume !== null && (
@@ -148,9 +184,10 @@ export default function App() {
           )}
         </>
       );
+      break;
 
     case 'game':
-      return (
+      content = (
         <GameScreen
           key={gameKey}
           ruleSet={screen.ruleSet}
@@ -172,10 +209,18 @@ export default function App() {
           }}
         />
       );
+      break;
 
     case 'config':
-      return (
+      content = (
         <ConfigScreen settings={settings} onSettingsChange={setSettings} onBack={navigateToMenu} />
       );
+      break;
   }
+
+  return (
+    <AudioManagerContext.Provider value={audioManager}>
+      {content}
+    </AudioManagerContext.Provider>
+  );
 }
