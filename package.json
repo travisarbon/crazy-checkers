@@ -15,7 +15,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "preview": "vite preview",
-    "test:ai": "vitest run src/ai/validation/selfPlay.test.ts --reporter=verbose",
+    "test:ai": "vitest run --config vitest.ai.config.ts --reporter=verbose",
     "test:perf": "node --expose-gc ./node_modules/.bin/vitest run --config vitest.perf.config.ts --reporter=verbose",
     "test:stress": "vitest run src/engine/events.stresstest.test.ts --reporter=verbose",
     "validate:ai": "tsx src/ai/validation/runValidation.ts"

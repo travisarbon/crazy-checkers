@@ -69,6 +69,8 @@ interface SerializedMove {
  * Converts a live GameState to a JSON-safe object.
  * The RuleSet is intentionally excluded — it is reconstructed
  * from the game mode on deserialization.
+ * The eventRandomFn field is also excluded — it is a function
+ * (not serializable) and defaults to undefined on deserialization.
  */
 export function serializeGameState(state: GameState): SerializedGameState {
   return {

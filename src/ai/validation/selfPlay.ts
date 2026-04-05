@@ -1,12 +1,15 @@
 import {
   PieceColor,
   PlayerType,
+  CrazyEvent,
   type GameState,
   GameStatus,
   GameResultType,
+  GameMode,
 } from '../../engine/types';
 import { createAmericanRules } from '../../engine/rules';
-import { createNewGame, makeMove, movesAreEqual } from '../../engine/game';
+import { createNewGame, getEffectiveBoard, getCurrentLegalMoves, makeMove, movesAreEqual } from '../../engine/game';
+import { IMPLEMENTED_EVENTS } from '../../engine/events';
 import { iterativeSearch } from '../search';
 import { getDifficultyConfig, toSearchConfig, selectMove, type Difficulty } from '../difficulty';
 
@@ -26,6 +29,21 @@ export interface MatchConfig {
   seed: number;
   /** Optional callback invoked after each game completes (for progress reporting). */
   onGameComplete?: (result: GameRecord) => void;
+
+  /** Game mode for this match. Defaults to Classic if omitted. */
+  mode?: GameMode;
+
+  /**
+   * Force a specific event type to trigger on every multi-jump.
+   * Only meaningful when mode is Crazy. Used for per-event validation.
+   */
+  forceEvent?: CrazyEvent;
+
+  /**
+   * Force a sequence of events to trigger in order, cycling through.
+   * Used for pairwise stacking validation. Takes precedence over forceEvent.
+   */
+  forceEventSequence?: CrazyEvent[];
 }
 
 /** Record of a single completed game. */
@@ -37,7 +55,7 @@ export interface GameRecord {
   /** Which difficulty played Black in this game. */
   blackDifficulty: Difficulty;
   /** Game outcome. */
-  result: 'white' | 'black' | 'draw';
+  result: 'white' | 'black' | 'draw' | 'error';
   /** Reason for game ending. */
   reason: string;
   /** Total number of moves (plies). */
@@ -48,6 +66,18 @@ export interface GameRecord {
   cappedByMoveLimit: boolean;
   /** Seed used for this game's PRNG. */
   gameSeed: number;
+
+  /** Game mode used (defaults to Classic for Phase 1 records). */
+  mode?: GameMode;
+
+  /** Ordered log of events triggered during the game. */
+  eventLog?: Array<{ ply: number; event: string }>;
+
+  /** Total number of events triggered. */
+  eventCount?: number;
+
+  /** Error message if the game crashed. */
+  errorMessage?: string;
 }
 
 /** Aggregated results of a full match. */
@@ -72,6 +102,21 @@ export interface MatchResult {
   totalElapsedMs: number;
   /** List of anomalous game indices (for investigation). */
   anomalousGames: number[];
+
+  /** Number of games that ended with an error/crash. */
+  errorGames: number;
+
+  /** Event statistics (only populated for Crazy mode matches). */
+  eventStats?: {
+    /** Total events triggered across all games. */
+    totalEvents: number;
+    /** Average events per game. */
+    avgEventsPerGame: number;
+    /** Frequency count by event type. */
+    eventFrequency: Record<string, number>;
+    /** Number of games with zero events triggered. */
+    zeroEventGames: number;
+  };
 }
 
 /**
@@ -99,6 +144,34 @@ const VALID_REASONS: ReadonlySet<string> = new Set<string>([
 ]);
 
 /**
+ * Creates a deterministic PRNG that always selects a specific event index
+ * from IMPLEMENTED_EVENTS when used by selectRandomEvent.
+ */
+function createForcedEventRandom(forceEvent: CrazyEvent): () => number {
+  const targetIndex = IMPLEMENTED_EVENTS.indexOf(forceEvent);
+  if (targetIndex === -1) {
+    throw new Error(`forceEvent ${forceEvent} is not in IMPLEMENTED_EVENTS`);
+  }
+  return () => (targetIndex + 0.5) / IMPLEMENTED_EVENTS.length;
+}
+
+/**
+ * Creates a PRNG that cycles through a sequence of forced events.
+ */
+function createForcedEventSequenceRandom(sequence: CrazyEvent[]): () => number {
+  let callCount = 0;
+  return () => {
+    const event = sequence[callCount % sequence.length] as CrazyEvent;
+    callCount++;
+    const targetIndex = IMPLEMENTED_EVENTS.indexOf(event);
+    if (targetIndex === -1) {
+      throw new Error(`forceEvent ${event} is not in IMPLEMENTED_EVENTS`);
+    }
+    return (targetIndex + 0.5) / IMPLEMENTED_EVENTS.length;
+  };
+}
+
+/**
  * Plays a single game between two AI opponents.
  *
  * Uses the engine's createNewGame + makeMove pipeline directly,
@@ -111,12 +184,35 @@ export function playSingleGame(
   randomFn: () => number,
   gameNumber: number = 0,
   gameSeed: number = 0,
+  mode: GameMode = GameMode.Classic,
+  forceEvent?: CrazyEvent,
+  forceEventSequence?: CrazyEvent[],
 ): GameRecord {
   const ruleSet = createAmericanRules();
+  const isCrazyMode = mode === GameMode.Crazy || mode === GameMode.Chaos;
+
+  // Build the event PRNG for deterministic event selection in Crazy mode.
+  // Uses a separate seeded PRNG (derived from gameSeed) so event selection
+  // is reproducible. Forced-event PRNGs override when specified.
+  let eventRandomFn: (() => number) | undefined;
+  if (isCrazyMode) {
+    if (forceEventSequence && forceEventSequence.length > 0) {
+      eventRandomFn = createForcedEventSequenceRandom(forceEventSequence);
+    } else if (forceEvent !== undefined) {
+      eventRandomFn = createForcedEventRandom(forceEvent);
+    } else {
+      // Use a seeded PRNG for deterministic event selection
+      eventRandomFn = createSeededRandom(gameSeed + 999_983);
+    }
+  }
+
   let currentState: GameState = createNewGame(ruleSet, {
     white: PlayerType.CpuHard,
     black: PlayerType.CpuHard,
-  });
+  }, mode, eventRandomFn);
+
+  const eventLog: Array<{ ply: number; event: string }> = [];
+  let prevEventCount = 0;
 
   let moveCount = 0;
   let cappedByMoveLimit = false;
@@ -133,11 +229,17 @@ export function playSingleGame(
 
     const config = getDifficultyConfig(difficulty);
     const searchConfig = toSearchConfig(config);
-    const searchResult = iterativeSearch(currentState, searchConfig);
-    const legalMoves = currentState.ruleSet.getLegalMoves(
-      currentState.board,
-      currentState.activeColor,
-    );
+
+    // In Crazy mode, onTurnStart hooks (e.g., Checks Mix shuffle) transform the
+    // board before move validation. Present the search with the effective board
+    // so its root move list matches what makeMove will validate against.
+    const effectiveBoard = getEffectiveBoard(currentState);
+    const searchState: GameState = effectiveBoard !== currentState.board
+      ? { ...currentState, board: effectiveBoard }
+      : currentState;
+
+    const searchResult = iterativeSearch(searchState, searchConfig);
+    const legalMoves = getCurrentLegalMoves(currentState);
 
     if (searchResult.move === null || legalMoves.length === 0) {
       throw new Error(
@@ -164,6 +266,20 @@ export function playSingleGame(
 
     currentState = makeMove(currentState, selectedMove);
     moveCount++;
+
+    // Track event triggers for Crazy mode
+    if (isCrazyMode) {
+      const currentEventCount = currentState.activeEvents.length;
+      if (currentEventCount > prevEventCount) {
+        for (let i = prevEventCount; i < currentEventCount; i++) {
+          const evt = currentState.activeEvents[i];
+          if (evt) {
+            eventLog.push({ ply: moveCount, event: evt.type });
+          }
+        }
+      }
+      prevEventCount = currentEventCount;
+    }
   }
 
   const elapsedMs = performance.now() - startTime;
@@ -202,6 +318,9 @@ export function playSingleGame(
     elapsedMs,
     cappedByMoveLimit,
     gameSeed,
+    mode,
+    eventLog: isCrazyMode ? eventLog : undefined,
+    eventCount: isCrazyMode ? eventLog.length : undefined,
   };
 }
 
@@ -215,9 +334,20 @@ function aggregateResults(games: GameRecord[], config: MatchConfig): MatchResult
   let maxMoves = 0;
   let minMoves = Infinity;
   let cappedCount = 0;
+  let errorCount = 0;
   const anomalous: number[] = [];
 
+  const isCrazyMode = config.mode === GameMode.Crazy || config.mode === GameMode.Chaos;
+  const shortGameThreshold = isCrazyMode ? 6 : 10;
+  const longGameThreshold = isCrazyMode ? 400 : Infinity;
+
   for (const game of games) {
+    if (game.result === 'error') {
+      errorCount++;
+      anomalous.push(game.gameNumber);
+      continue;
+    }
+
     wins[game.result]++;
     totalMoves += game.moveCount;
     maxMoves = Math.max(maxMoves, game.moveCount);
@@ -227,22 +357,63 @@ function aggregateResults(games: GameRecord[], config: MatchConfig): MatchResult
     if (game.cappedByMoveLimit) {
       anomalous.push(game.gameNumber);
     }
-    if (game.moveCount < 10) {
+    if (game.moveCount < shortGameThreshold) {
       anomalous.push(game.gameNumber);
     }
+    if (game.moveCount > longGameThreshold) {
+      anomalous.push(game.gameNumber);
+    }
+
+    // Crazy mode: flag zero-event games
+    if (isCrazyMode && (game.eventCount ?? 0) === 0) {
+      anomalous.push(game.gameNumber);
+    }
+
+    // Crazy mode: flag 3+ consecutive same-event triggers
+    if (isCrazyMode && game.eventLog && game.eventLog.length >= 3) {
+      for (let i = 2; i < game.eventLog.length; i++) {
+        const curr = game.eventLog[i];
+        const prev1 = game.eventLog[i - 1];
+        const prev2 = game.eventLog[i - 2];
+        if (curr && prev1 && prev2 && curr.event === prev1.event && curr.event === prev2.event) {
+          anomalous.push(game.gameNumber);
+          break;
+        }
+      }
+    }
   }
+
+  const nonErrorGames = games.filter((g) => g.result !== 'error');
 
   let primaryWinRate: number;
   if (config.alternateColors) {
     let hardWins = 0;
-    for (const game of games) {
+    for (const game of nonErrorGames) {
       const hardIsWhite = game.whiteDifficulty === 'hard';
       if (hardIsWhite && game.result === 'white') hardWins++;
       if (!hardIsWhite && game.result === 'black') hardWins++;
     }
-    primaryWinRate = games.length > 0 ? hardWins / games.length : 0;
+    primaryWinRate = nonErrorGames.length > 0 ? hardWins / nonErrorGames.length : 0;
   } else {
-    primaryWinRate = games.length > 0 ? wins.white / games.length : 0;
+    primaryWinRate = nonErrorGames.length > 0 ? wins.white / nonErrorGames.length : 0;
+  }
+
+  // Crazy mode event statistics
+  let eventStats: MatchResult['eventStats'] = undefined;
+  if (isCrazyMode) {
+    const totalEvents = games.reduce((sum, g) => sum + (g.eventCount ?? 0), 0);
+    const frequency: Record<string, number> = {};
+    for (const game of games) {
+      for (const entry of game.eventLog ?? []) {
+        frequency[entry.event] = (frequency[entry.event] ?? 0) + 1;
+      }
+    }
+    eventStats = {
+      totalEvents,
+      avgEventsPerGame: games.length > 0 ? totalEvents / games.length : 0,
+      eventFrequency: frequency,
+      zeroEventGames: games.filter((g) => (g.eventCount ?? 0) === 0).length,
+    };
   }
 
   return {
@@ -250,12 +421,14 @@ function aggregateResults(games: GameRecord[], config: MatchConfig): MatchResult
     totalGames: games.length,
     wins,
     primaryWinRate,
-    avgMoveCount: games.length > 0 ? totalMoves / games.length : 0,
+    avgMoveCount: nonErrorGames.length > 0 ? totalMoves / nonErrorGames.length : 0,
     maxMoveCount: maxMoves,
     minMoveCount: minMoves === Infinity ? 0 : minMoves,
     cappedGames: cappedCount,
     totalElapsedMs: games.reduce((sum, g) => sum + g.elapsedMs, 0),
     anomalousGames: [...new Set(anomalous)],
+    errorGames: errorCount,
+    eventStats,
   };
 }
 
@@ -265,6 +438,7 @@ function aggregateResults(games: GameRecord[], config: MatchConfig): MatchResult
  */
 export function runMatch(config: MatchConfig): MatchResult {
   const games: GameRecord[] = [];
+  const mode = config.mode ?? GameMode.Classic;
 
   for (let i = 0; i < config.gameCount; i++) {
     const gameSeed = config.seed + i * 7919;
@@ -277,14 +451,35 @@ export function runMatch(config: MatchConfig): MatchResult {
       blackDiff = config.whiteDifficulty;
     }
 
-    const record = playSingleGame(
-      whiteDiff,
-      blackDiff,
-      config.maxMovesPerGame,
-      randomFn,
-      i + 1,
-      gameSeed,
-    );
+    let record: GameRecord;
+    try {
+      record = playSingleGame(
+        whiteDiff,
+        blackDiff,
+        config.maxMovesPerGame,
+        randomFn,
+        i + 1,
+        gameSeed,
+        mode,
+        config.forceEvent,
+        config.forceEventSequence,
+      );
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      record = {
+        gameNumber: i + 1,
+        whiteDifficulty: whiteDiff,
+        blackDifficulty: blackDiff,
+        result: 'error',
+        reason: 'crash',
+        moveCount: 0,
+        elapsedMs: 0,
+        cappedByMoveLimit: false,
+        gameSeed,
+        mode,
+        errorMessage,
+      };
+    }
 
     games.push(record);
 

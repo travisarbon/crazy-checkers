@@ -39,6 +39,7 @@ export function createNewGame(
   ruleSet: RuleSet,
   players: PlayerSetup,
   mode: GameMode = GameMode.Classic,
+  eventRandomFn?: () => number,
 ): GameState {
   const board = createInitialBoard();
   const activeColor = PieceColor.White;
@@ -62,6 +63,7 @@ export function createNewGame(
     plyCount: 0,
     mode,
     activeEvents: [],
+    eventRandomFn,
   };
 }
 
@@ -267,7 +269,7 @@ export function makeMove(state: GameState, move: Move): GameState {
 
   // ── Event trigger on multi-jump (Crazy and Chaos modes) ────────────
   if (state.mode === GameMode.Crazy || state.mode === GameMode.Chaos) {
-    const triggeredEvents = checkEventTrigger(move, state.mode);
+    const triggeredEvents = checkEventTrigger(move, state.mode, state.eventRandomFn);
     if (triggeredEvents !== null) {
       const newEvents: ActiveEvent[] = [];
       for (const eventType of triggeredEvents) {
@@ -300,6 +302,7 @@ export function makeMove(state: GameState, move: Move): GameState {
     plyCount: state.plyCount + 1,
     mode: state.mode,
     activeEvents: updatedEvents,
+    eventRandomFn: state.eventRandomFn,
   };
 }
 

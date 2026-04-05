@@ -309,6 +309,13 @@ export interface GameState {
    * Empty array for Classic mode and for Crazy mode before any event triggers.
    */
   readonly activeEvents: readonly ActiveEvent[];
+
+  /**
+   * Optional PRNG for event selection. Used by self-play to force specific events.
+   * Not serialized (functions cannot be serialized).
+   * When undefined, Math.random is used.
+   */
+  readonly eventRandomFn?: () => number;
 }
 
 /** Diagonal directions for adjacency lookups. */
