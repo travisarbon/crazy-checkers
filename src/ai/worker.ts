@@ -113,8 +113,19 @@ export function getAIMove(data: SerializableGameState, difficulty: Difficulty): 
   const state = deserializeGameState(data);
   const config = getDifficultyConfig(difficulty);
   const searchConfig = toSearchConfig(config);
-  const searchResult = iterativeSearch(state, searchConfig);
-  const legalMoves = state.ruleSet.getLegalMoves(state.board, state.activeColor);
+
+  // Apply onTurnStart to get the effective board (e.g. Checks Mix shuffle).
+  // Legal moves and search must use the transformed board.
+  let effectiveBoard = state.board;
+  if (state.ruleSet.onTurnStart) {
+    effectiveBoard = state.ruleSet.onTurnStart(state.board, state.activeColor);
+  }
+  const effectiveState: GameState = effectiveBoard !== state.board
+    ? { ...state, board: effectiveBoard }
+    : state;
+
+  const searchResult = iterativeSearch(effectiveState, searchConfig);
+  const legalMoves = state.ruleSet.getLegalMoves(effectiveBoard, state.activeColor);
 
   return selectMove(searchResult, searchResult.rootMoveScores, legalMoves, config);
 }

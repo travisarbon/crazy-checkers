@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { BREAKPOINT } from './breakpoints';
 import type { ActiveEvent, GameState, PlayerSetup, RuleSet } from '../engine/types';
 import { GameMode, GameStatus, PieceColor, PlayerType } from '../engine/types';
-import { createNewGame, makeMove, canUndo as engineCanUndo, resign } from '../engine/game';
+import { createNewGame, makeMove, canUndo as engineCanUndo, resign, getEffectiveBoard } from '../engine/game';
 import { requestAIMove } from '../ai/workerClient';
 import type { Difficulty } from '../ai/difficulty';
 import { saveGame, clearSavedGame } from '../persistence/settings';
@@ -224,9 +224,12 @@ export default function GameScreen({
         setGameState(newState);
         return;
       }
-      const steps = buildAnimationSequence(move, gameState.board, newState.board);
+      // Use the effective board (after onTurnStart, e.g. Checks Mix shuffle)
+      // so the animation starts from the board the player actually sees.
+      const boardBefore = getEffectiveBoard(gameState);
+      const steps = buildAnimationSequence(move, boardBefore, newState.board);
       pendingStateRef.current = newState;
-      animationQueue.enqueue(steps, gameState.board, gameState.activeColor);
+      animationQueue.enqueue(steps, boardBefore, gameState.activeColor);
     },
     [gameState, animationQueue],
   );
@@ -405,6 +408,9 @@ export default function GameScreen({
           isAnimating={animationQueue.isAnimating}
           animSpeedMultiplier={effectiveAnimSpeed}
           pieceShadow={pieceShadow}
+          flashingSquares={animationQueue.flashingSquares}
+          explosionState={animationQueue.explosionState}
+          overlayState={animationQueue.overlayState}
         />
       </div>
 
@@ -416,7 +422,7 @@ export default function GameScreen({
           isThinking={isAIThinking}
         />
         <CapturedPieces moveHistory={gameState.moveHistory} pendingCaptures={pendingCaptures} />
-        {gameState.mode === GameMode.Crazy && (
+        {(gameState.mode === GameMode.Crazy || gameState.mode === GameMode.Chaos) && (
           <ActiveEventsIndicator
             activeEvents={gameState.activeEvents}
             activeColor={gameState.activeColor}

@@ -35,6 +35,8 @@ interface PieceProps {
   animOpacity?: number;
   /** Scale override. Used for king pulse. */
   animScale?: number;
+  /** Horizontal scale override (0–1). Used for color swap Y-axis flip. */
+  animScaleX?: number;
   /** Transition duration for opacity changes (ms). */
   animOpacityDurationMs?: number;
   /** Called when the slide transition completes. */
@@ -70,6 +72,7 @@ export default function Piece({
   animEasing = 'ease-out',
   animOpacity,
   animScale,
+  animScaleX,
   animOpacityDurationMs,
   onTransitionEnd,
   svgFilter,
@@ -84,9 +87,12 @@ export default function Piece({
   const renderCy = animTargetCy ?? cy;
 
   // Build the transform: translate to center, then scale if needed
-  const hasAnimOverride = animTargetCx != null || animScale != null;
+  const hasAnimOverride = animTargetCx != null || animScale != null || animScaleX != null;
   const scale = animScale ?? (isSelected && !hasAnimOverride ? 1.05 : 1);
-  const transform = `translate(${String(renderCx)}, ${String(renderCy)}) scale(${String(scale)})`;
+  const sx = animScaleX ?? 1;
+  const transform = sx !== 1
+    ? `translate(${String(renderCx)}, ${String(renderCy)}) scale(${String(sx * scale)}, ${String(scale)})`
+    : `translate(${String(renderCx)}, ${String(renderCy)}) scale(${String(scale)})`;
 
   // Build transition string
   const transitions: string[] = [];

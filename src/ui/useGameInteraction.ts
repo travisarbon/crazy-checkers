@@ -11,7 +11,7 @@ import type { BoardState, GameState, Move, Square, SquareState } from '../engine
 import { GameStatus } from '../engine/types';
 import { getBoardSquare } from '../engine/board';
 import { getMovesToSquare, getJumpsForPiece } from '../engine/moves';
-import { makeMove, getCurrentLegalMoves } from '../engine/game';
+import { makeMove, getCurrentLegalMoves, getEffectiveBoard } from '../engine/game';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -185,8 +185,11 @@ export function useGameInteraction({
     return set as ReadonlySet<number>;
   }, [gameState, multiJumpProgress, selectedSquare]);
 
+  // ── Effective board (after onTurnStart, e.g. Checks Mix shuffle) ─────
+  const effectiveBoard: BoardState = useMemo(() => getEffectiveBoard(gameState), [gameState]);
+
   // ── Display board ────────────────────────────────────────────────────
-  const displayBoard = intermediateBoard ?? gameState.board;
+  const displayBoard = intermediateBoard ?? effectiveBoard;
 
   // ── Core click handler ───────────────────────────────────────────────
   const handleSquareClick = useCallback(
@@ -276,7 +279,7 @@ export function useGameInteraction({
           if (captured === null) return;
 
           const applyFirstHop = () => {
-            const newBoard = applyPartialHop(gameState.board, selectedSquare, sq, captured);
+            const newBoard = applyPartialHop(effectiveBoard, selectedSquare, sq, captured);
             const continuations = getJumpsForPiece(newBoard, sq);
 
             if (continuations.length > 0) {
@@ -316,7 +319,7 @@ export function useGameInteraction({
       }
 
       // Clicking a piece of the active color — select it (or switch selection)
-      const piece = getBoardSquare(gameState.board, sq);
+      const piece = getBoardSquare(effectiveBoard, sq);
       if (piece !== null && piece.color === gameState.activeColor) {
         if (selectablePieces.has(sq as number)) {
           setSelectedSquare(sq);
@@ -332,6 +335,7 @@ export function useGameInteraction({
     },
     [
       gameState,
+      effectiveBoard,
       selectedSquare,
       legalDestinations,
       legalMoves,

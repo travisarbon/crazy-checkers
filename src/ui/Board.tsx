@@ -11,9 +11,10 @@ import { useState, useRef, useCallback, memo } from 'react';
 import type { BoardState, Piece as PieceData, Square } from '../engine/types';
 import { getBoardSquare, gridToSquare, squareToGrid } from '../engine/board';
 import { PieceColor, PieceType, square } from '../engine/types';
-import type { AnimatingPiece } from './useAnimationQueue';
+import type { AnimatingPiece, FlashingSquaresState, ExplosionState, OverlayState } from './useAnimationQueue';
 import { ANIM_DURATION } from './useAnimationQueue';
 import PieceComponent from './Piece';
+import EventAnimations from './EventAnimations';
 import styles from './Board.module.css';
 
 const SQUARE_SIZE = 100;
@@ -42,6 +43,14 @@ interface BoardProps {
   animSpeedMultiplier?: number;
   /** Whether to apply drop shadow to pieces (theme-dependent). */
   pieceShadow?: boolean;
+
+  // Event animation overlay props (Task 11.1)
+  /** Flash overlay state from useAnimationQueue. */
+  flashingSquares?: FlashingSquaresState | null;
+  /** Explosion overlay state from useAnimationQueue. */
+  explosionState?: ExplosionState | null;
+  /** Text overlay state from useAnimationQueue. */
+  overlayState?: OverlayState | null;
 }
 
 function describeSquare(sq: Square, piece: PieceData | null): string {
@@ -115,6 +124,9 @@ function Board({
   isAnimating = false,
   animSpeedMultiplier = 1.0,
   pieceShadow = false,
+  flashingSquares,
+  explosionState,
+  overlayState,
 }: BoardProps) {
   const rows = Array.from({ length: 8 }, (_, i) => i);
   const cols = Array.from({ length: 8 }, (_, i) => i);
@@ -452,8 +464,20 @@ function Board({
               isFading ? ANIM_DURATION.CAPTURE_FADE * animSpeedMultiplier : undefined
             }
             animScale={animOverride?.scale ?? undefined}
+            animScaleX={animOverride?.scaleX ?? undefined}
           />
         ))}
+
+        {/* Event animation overlays (Task 11.1) — rendered above floating pieces */}
+        <EventAnimations
+          viewBoxWidth={800}
+          viewBoxHeight={800}
+          flipped={flipped}
+          flashingSquares={flashingSquares ?? null}
+          explosionState={explosionState ?? null}
+          overlayState={overlayState ?? null}
+          speedMultiplier={animSpeedMultiplier}
+        />
       </svg>
     </div>
   );

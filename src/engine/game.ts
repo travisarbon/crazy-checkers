@@ -5,7 +5,7 @@
  * The UI (Zustand store) and AI (Web Worker) consume these functions.
  */
 
-import type { ActiveEvent, GameResult, GameState, Move, Piece, PlayerSetup, RuleSet, Square } from './types';
+import type { ActiveEvent, BoardState, GameResult, GameState, Move, Piece, PlayerSetup, RuleSet, Square } from './types';
 import {
   GameEndReason,
   GameMode,
@@ -108,12 +108,13 @@ function isCompositeRuleSet(ruleSet: RuleSet): ruleSet is CompositeEventRuleSet 
  * Applies a move to the current game state, producing a new GameState.
  *
  * Orchestrates the full turn lifecycle:
- * 1. Validate the game is in progress and the move is legal.
- * 2. Call optional ruleSet hooks (onTurnStart, onCapture, onTurnEnd).
+ * 1. Apply onTurnStart hooks (e.g., Checks Mix board shuffle).
+ * 2. Validate the move is legal on the transformed board.
  * 3. Apply the move via the ruleSet.
- * 4. Compute new Zobrist hash.
- * 5. Update half-move clock, switch active color.
- * 6. Check for game-over conditions (win + draws).
+ * 4. Call optional ruleSet hooks (onCapture, onTurnEnd).
+ * 5. Compute new Zobrist hash.
+ * 6. Update half-move clock, switch active color.
+ * 7. Check for game-over conditions (win + draws).
  *
  * @throws Error if the game is not in progress or the move is not legal.
  */
@@ -129,15 +130,18 @@ export function makeMove(state: GameState, move: Move): GameState {
     state.ruleSet.setActiveEvents(activeEvents);
   }
 
-  const legalMoves = state.ruleSet.getLegalMoves(state.board, state.activeColor);
-  if (!legalMoves.some((m) => movesAreEqual(m, move))) {
-    throw new Error('Illegal move.');
-  }
-
-  // ── onTurnStart hook ────────────────────────────────────────────────
+  // ── onTurnStart hook (BEFORE validation) ────────────────────────────
+  // Instant events like Checks Mix transform the board at the start of
+  // the turn. Legal moves must be computed on the transformed board so
+  // validation matches what the UI displayed via getEffectiveBoard().
   let board = state.board;
   if (state.ruleSet.onTurnStart) {
     board = state.ruleSet.onTurnStart(board, state.activeColor);
+  }
+
+  const legalMoves = state.ruleSet.getLegalMoves(board, state.activeColor);
+  if (!legalMoves.some((m) => movesAreEqual(m, move))) {
+    throw new Error('Illegal move.');
   }
 
   // ── Snapshot captured pieces before removal ─────────────────────────
@@ -340,6 +344,26 @@ export function resign(state: GameState, resigningColor: PieceColor): GameState 
 // Query helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Returns the board after applying onTurnStart hooks (e.g., Checks Mix shuffle).
+ * The UI should display this board rather than raw state.board when instant
+ * events are pending. Deterministic: seeded events produce the same result
+ * on every call for the same state.
+ */
+export function getEffectiveBoard(state: GameState): BoardState {
+  if (state.status !== GameStatus.InProgress) return state.board;
+
+  if (isCompositeRuleSet(state.ruleSet)) {
+    state.ruleSet.setActiveEvents(state.activeEvents);
+  }
+
+  if (state.ruleSet.onTurnStart) {
+    return state.ruleSet.onTurnStart(state.board, state.activeColor);
+  }
+
+  return state.board;
+}
+
 /** Returns the legal moves for the active player in the current state. */
 export function getCurrentLegalMoves(state: GameState): Move[] {
   if (state.status !== GameStatus.InProgress) return [];
@@ -349,7 +373,13 @@ export function getCurrentLegalMoves(state: GameState): Move[] {
     state.ruleSet.setActiveEvents(state.activeEvents);
   }
 
-  return state.ruleSet.getLegalMoves(state.board, state.activeColor);
+  // Apply onTurnStart so legal moves reflect instant board transformations
+  // (e.g., Checks Mix shuffle). Must match what makeMove uses for validation.
+  const board = state.ruleSet.onTurnStart
+    ? state.ruleSet.onTurnStart(state.board, state.activeColor)
+    : state.board;
+
+  return state.ruleSet.getLegalMoves(board, state.activeColor);
 }
 
 /** Returns the PlayerType for the currently active color. */

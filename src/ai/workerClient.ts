@@ -71,8 +71,18 @@ function getWorkerApi(): Remote<WorkerApi> | null {
 function mainThreadFallback(state: GameState, difficulty: Difficulty): Move {
   const config = getDifficultyConfig(difficulty);
   const searchConfig = toSearchConfig(config);
-  const searchResult = iterativeSearch(state, searchConfig);
-  const legalMoves = state.ruleSet.getLegalMoves(state.board, state.activeColor);
+
+  // Apply onTurnStart to get the effective board (e.g. Checks Mix shuffle).
+  let effectiveBoard = state.board;
+  if (state.ruleSet.onTurnStart) {
+    effectiveBoard = state.ruleSet.onTurnStart(state.board, state.activeColor);
+  }
+  const effectiveState: GameState = effectiveBoard !== state.board
+    ? { ...state, board: effectiveBoard }
+    : state;
+
+  const searchResult = iterativeSearch(effectiveState, searchConfig);
+  const legalMoves = state.ruleSet.getLegalMoves(effectiveBoard, state.activeColor);
 
   return selectMove(searchResult, searchResult.rootMoveScores, legalMoves, config);
 }

@@ -1,0 +1,141 @@
+/**
+ * CSS for event animation overlays rendered inside the board SVG.
+ * Task 11.1 — Flash, Explosion, and Overlay effects.
+ *
+ * Animations use CSS @keyframes for GPU-composited performance.
+ * All effects respect prefers-reduced-motion.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Flash pulse overlay
+ * --------------------------------------------------------------------------- */
+
+.flashOverlay {
+  pointer-events: none;
+  will-change: opacity;
+  animation: flashPulseKeyframes var(--flash-duration, 600ms) var(--flash-easing, ease-in-out)
+    forwards;
+  animation-iteration-count: var(--flash-pulses, 2);
+}
+
+@keyframes flashPulseKeyframes {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Explosion burst effect
+ * --------------------------------------------------------------------------- */
+
+.explosionBurst {
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: burstExpand var(--explosion-duration, 500ms) ease-out forwards;
+  transform-origin: center;
+}
+
+@keyframes burstExpand {
+  0% {
+    transform: scale(0.1);
+    opacity: 0.9;
+  }
+  60% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+.explosionParticle {
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: particleScatter var(--explosion-duration, 500ms) ease-out forwards;
+}
+
+@keyframes particleScatter {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--particle-dx, 30px), var(--particle-dy, -30px)) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Text overlay (event announcements as animation beats)
+ * --------------------------------------------------------------------------- */
+
+.textOverlay {
+  pointer-events: none;
+  will-change: opacity;
+  animation: overlayFade var(--overlay-duration, 1200ms) linear forwards;
+}
+
+@keyframes overlayFade {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.textOverlayBackdrop {
+  fill: rgba(0, 0, 0, 0.5);
+  rx: 12;
+  ry: 12;
+}
+
+.textOverlayText {
+  fill: white;
+  font-size: 36px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-family: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+ * Reduced motion overrides
+ * --------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .flashOverlay {
+    animation: none;
+    opacity: 0.3;
+  }
+
+  .explosionBurst {
+    animation: none;
+    opacity: 0.4;
+    transform: scale(1);
+  }
+
+  .explosionParticle {
+    animation: none;
+    opacity: 0;
+  }
+
+  .textOverlay {
+    animation: none;
+    opacity: 1;
+  }
+}
