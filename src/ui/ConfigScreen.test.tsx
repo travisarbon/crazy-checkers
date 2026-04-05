@@ -229,14 +229,6 @@ describe('ConfigScreen', () => {
     expect(muteToggle).toBeInTheDocument();
   });
 
-  it('renders Audio pack selector with 2 radio buttons', () => {
-    renderConfig();
-    const radiogroup = screen.getByRole('radiogroup', { name: 'Audio pack selection' });
-    expect(radiogroup).toBeInTheDocument();
-    const packRadios = Array.from(radiogroup.querySelectorAll('[role="radio"]'));
-    expect(packRadios).toHaveLength(2);
-  });
-
   // ── Sound section: Interaction tests ───────────────────────────────
 
   it('Master slider change calls onSettingsChange with masterVolume', () => {
@@ -279,15 +271,6 @@ describe('ConfigScreen', () => {
     );
   });
 
-  it('Audio pack selection calls onSettingsChange with audioPackId silent', () => {
-    const onSettingsChange = vi.fn();
-    renderConfig({ onSettingsChange });
-    fireEvent.click(screen.getByRole('radio', { name: 'Silent' }));
-    expect(onSettingsChange).toHaveBeenCalledWith(
-      expect.objectContaining({ audioPackId: 'silent' }),
-    );
-  });
-
   // ── Sound section: State reflection tests ──────────────────────────
 
   it('sliders reflect settings values', () => {
@@ -303,12 +286,6 @@ describe('ConfigScreen', () => {
     renderConfig({ settings: { ...DEFAULT_SETTINGS, muted: true } });
     const muteToggle = document.getElementById('mute-toggle') as HTMLElement;
     expect(muteToggle).toHaveAttribute('aria-checked', 'true');
-  });
-
-  it('Audio pack reflects selection', () => {
-    renderConfig({ settings: { ...DEFAULT_SETTINGS, audioPackId: 'silent' } });
-    expect(screen.getByRole('radio', { name: 'Silent' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('radio', { name: 'Crazy Checkers' })).toHaveAttribute('aria-checked', 'false');
   });
 
   it('sliders dimmed when muted', () => {
@@ -328,17 +305,6 @@ describe('ConfigScreen', () => {
     expect(screen.getByRole('slider', { name: 'Music Volume' })).toHaveAttribute('aria-valuetext', '20%');
   });
 
-  it('pack selector supports arrow key navigation', () => {
-    const onSettingsChange = vi.fn();
-    renderConfig({ onSettingsChange });
-    const crazyPackBtn = screen.getByRole('radio', { name: 'Crazy Checkers' });
-    crazyPackBtn.focus();
-    const radiogroup = screen.getByRole('radiogroup', { name: 'Audio pack selection' });
-    fireEvent.keyDown(radiogroup, { key: 'ArrowRight' });
-    expect(onSettingsChange).toHaveBeenCalledWith(
-      expect.objectContaining({ audioPackId: 'silent' }),
-    );
-  });
 });
 
 // ---------------------------------------------------------------------------

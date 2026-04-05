@@ -13,15 +13,6 @@ import BoardPreview from './BoardPreview';
 import styles from './ConfigScreen.module.css';
 
 // ---------------------------------------------------------------------------
-// Audio pack options
-// ---------------------------------------------------------------------------
-
-const AVAILABLE_PACKS = [
-  { id: 'default', label: 'Crazy Checkers' },
-  { id: 'silent', label: 'Silent' },
-] as const;
-
-// ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
@@ -228,30 +219,6 @@ function SoundSection({
   onChange: (settings: Settings) => void;
   audioManager: AudioManager | null;
 }) {
-  function handlePackKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    const buttons = e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]');
-    const currentIndex = Array.from(buttons).findIndex((b) => b === document.activeElement);
-    if (currentIndex === -1) return;
-
-    let nextIndex = currentIndex;
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-      nextIndex = (currentIndex + 1) % buttons.length;
-      e.preventDefault();
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-      nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
-      e.preventDefault();
-    }
-
-    if (nextIndex !== currentIndex) {
-      const button = buttons[nextIndex];
-      if (button) {
-        button.focus();
-        const packId = button.dataset.packId;
-        if (packId) onChange({ ...settings, audioPackId: packId });
-      }
-    }
-  }
-
   return (
     <section className={styles.section} aria-labelledby="sound-heading">
       <h2 id="sound-heading" className={styles.sectionTitle}>
@@ -313,36 +280,6 @@ function SoundSection({
         />
       </div>
 
-      <div className={styles.packSelector}>
-        <span className={styles.packLabel}>Audio Pack</span>
-        <div
-          className={styles.packGrid}
-          role="radiogroup"
-          aria-label="Audio pack selection"
-          onKeyDown={handlePackKeyDown}
-        >
-          {AVAILABLE_PACKS.map((pack) => {
-            const selected = settings.audioPackId === pack.id;
-            return (
-              <button
-                key={pack.id}
-                role="radio"
-                aria-checked={selected}
-                data-pack-id={pack.id}
-                tabIndex={selected ? 0 : -1}
-                className={[styles.packOption, selected ? styles.packOptionSelected : '']
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={() => {
-                  onChange({ ...settings, audioPackId: pack.id });
-                }}
-              >
-                {pack.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
     </section>
   );
 }
