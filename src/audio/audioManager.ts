@@ -51,7 +51,16 @@ export class AudioManager {
    * Returns the audio nodes, or null if initialization fails.
    */
   private ensureContext(): AudioNodes | null {
-    if (this.nodes) return this.nodes;
+    if (this.nodes) {
+      // Resume a suspended context (browser autoplay policy may have blocked it
+      // when it was created outside a user gesture)
+      if (this.nodes.context.state === 'suspended') {
+        void this.nodes.context.resume().then(() => {
+          this.onContextResumed();
+        });
+      }
+      return this.nodes;
+    }
 
     try {
       const context = new AudioContext();
@@ -69,10 +78,34 @@ export class AudioManager {
       this.nodes = { context, masterGain, sfxGain, musicGain };
       this.applyVolumes();
       void this.preloadSfx();
+
+      if (context.state === 'suspended') {
+        void context.resume().then(() => {
+          this.onContextResumed();
+        });
+      }
+
       return this.nodes;
     } catch (err) {
       console.warn('AudioManager: Web Audio API not available:', err);
       return null;
+    }
+  }
+
+  /**
+   * Called after a suspended AudioContext resumes. Restarts music playback
+   * that was blocked by the browser's autoplay policy.
+   */
+  private onContextResumed(): void {
+    if (
+      this.currentMusicTrack &&
+      !this.settings.muted &&
+      this.musicElement &&
+      this.musicElement.paused
+    ) {
+      this.musicElement.play().catch(() => {
+        /* ignore — will retry on next user interaction */
+      });
     }
   }
 
