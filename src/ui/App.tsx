@@ -76,6 +76,16 @@ export default function App() {
     });
   }, [settings.masterVolume, settings.sfxVolume, settings.musicVolume, settings.muted, audioManager]);
 
+  // Sync audio pack when audioPackId changes
+  const prevPackIdRef = useRef(settings.audioPackId);
+  useEffect(() => {
+    if (settings.audioPackId !== prevPackIdRef.current) {
+      prevPackIdRef.current = settings.audioPackId;
+      const newPack = settings.audioPackId === 'silent' ? SILENT_PACK : DEFAULT_PACK;
+      void audioManager.loadPack(newPack);
+    }
+  }, [settings.audioPackId, audioManager]);
+
   // Music routing: play the correct track for the current screen
   useEffect(() => {
     const gameMode = screen.kind === 'game' ? screen.mode : undefined;

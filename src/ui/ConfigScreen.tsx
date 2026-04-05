@@ -5,11 +5,21 @@
  */
 
 import type { Settings } from './settings';
+import type { AudioManager } from '../audio/audioManager';
 import { THEMES } from '../themes/theme';
 import { useAudioManager } from '../audio/useAudioManager';
 import { SoundEvent } from '../audio/types';
 import BoardPreview from './BoardPreview';
 import styles from './ConfigScreen.module.css';
+
+// ---------------------------------------------------------------------------
+// Audio pack options
+// ---------------------------------------------------------------------------
+
+const AVAILABLE_PACKS = [
+  { id: 'default', label: 'Crazy Checkers' },
+  { id: 'silent', label: 'Silent' },
+] as const;
 
 // ---------------------------------------------------------------------------
 // Props
@@ -153,6 +163,190 @@ function AnimationSpeedSection({
   );
 }
 
+function VolumeSlider({
+  id,
+  label,
+  value,
+  onChange,
+  disabled,
+  audioManager,
+  playPreview,
+}: {
+  id: string;
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  disabled: boolean;
+  audioManager: AudioManager | null;
+  playPreview: boolean;
+}) {
+  const percent = Math.round(value * 100);
+
+  return (
+    <div className={styles.volumeRow}>
+      <label htmlFor={id} className={styles.volumeLabel}>
+        {label}
+      </label>
+      <input
+        id={id}
+        type="range"
+        min="0"
+        max="100"
+        step="1"
+        value={percent}
+        onChange={(e) => {
+          onChange(parseInt(e.target.value, 10) / 100);
+        }}
+        onPointerUp={() => {
+          if (playPreview && !disabled) {
+            audioManager?.play(SoundEvent.MenuClick);
+          }
+        }}
+        onTouchEnd={() => {
+          if (playPreview && !disabled) {
+            audioManager?.play(SoundEvent.MenuClick);
+          }
+        }}
+        className={styles.slider}
+        aria-label={label}
+        aria-valuetext={String(percent) + '%'}
+        disabled={disabled}
+      />
+      <span className={styles.volumeValue} aria-hidden="true">
+        {percent}%
+      </span>
+    </div>
+  );
+}
+
+function SoundSection({
+  settings,
+  onChange,
+  audioManager,
+}: {
+  settings: Settings;
+  onChange: (settings: Settings) => void;
+  audioManager: AudioManager | null;
+}) {
+  function handlePackKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    const buttons = e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]');
+    const currentIndex = Array.from(buttons).findIndex((b) => b === document.activeElement);
+    if (currentIndex === -1) return;
+
+    let nextIndex = currentIndex;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      nextIndex = (currentIndex + 1) % buttons.length;
+      e.preventDefault();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+      e.preventDefault();
+    }
+
+    if (nextIndex !== currentIndex) {
+      const button = buttons[nextIndex];
+      if (button) {
+        button.focus();
+        const packId = button.dataset.packId;
+        if (packId) onChange({ ...settings, audioPackId: packId });
+      }
+    }
+  }
+
+  return (
+    <section className={styles.section} aria-labelledby="sound-heading">
+      <h2 id="sound-heading" className={styles.sectionTitle}>
+        Sound
+      </h2>
+
+      <div className={styles.toggleRow}>
+        <label htmlFor="mute-toggle" className={styles.toggleLabel}>
+          Mute all audio
+        </label>
+        <button
+          id="mute-toggle"
+          role="switch"
+          aria-checked={settings.muted}
+          className={[styles.toggleSwitch, settings.muted ? styles.toggleOn : '']
+            .filter(Boolean)
+            .join(' ')}
+          onClick={() => {
+            onChange({ ...settings, muted: !settings.muted });
+          }}
+        >
+          <span className={styles.toggleKnob} />
+        </button>
+      </div>
+
+      <div className={styles.volumeSliders} data-muted={settings.muted}>
+        <VolumeSlider
+          id="master-volume"
+          label="Master Volume"
+          value={settings.masterVolume}
+          onChange={(v) => {
+            onChange({ ...settings, masterVolume: v });
+          }}
+          disabled={settings.muted}
+          audioManager={audioManager}
+          playPreview={true}
+        />
+        <VolumeSlider
+          id="sfx-volume"
+          label="SFX Volume"
+          value={settings.sfxVolume}
+          onChange={(v) => {
+            onChange({ ...settings, sfxVolume: v });
+          }}
+          disabled={settings.muted}
+          audioManager={audioManager}
+          playPreview={true}
+        />
+        <VolumeSlider
+          id="music-volume"
+          label="Music Volume"
+          value={settings.musicVolume}
+          onChange={(v) => {
+            onChange({ ...settings, musicVolume: v });
+          }}
+          disabled={settings.muted}
+          audioManager={audioManager}
+          playPreview={false}
+        />
+      </div>
+
+      <div className={styles.packSelector}>
+        <span className={styles.packLabel}>Audio Pack</span>
+        <div
+          className={styles.packGrid}
+          role="radiogroup"
+          aria-label="Audio pack selection"
+          onKeyDown={handlePackKeyDown}
+        >
+          {AVAILABLE_PACKS.map((pack) => {
+            const selected = settings.audioPackId === pack.id;
+            return (
+              <button
+                key={pack.id}
+                role="radio"
+                aria-checked={selected}
+                data-pack-id={pack.id}
+                tabIndex={selected ? 0 : -1}
+                className={[styles.packOption, selected ? styles.packOptionSelected : '']
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => {
+                  onChange({ ...settings, audioPackId: pack.id });
+                }}
+              >
+                {pack.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function MoveConfirmationSection({
   enabled,
   onChange,
@@ -248,6 +442,8 @@ export default function ConfigScreen({ settings, onSettingsChange, onBack }: Con
         <ThemeSection selectedThemeId={settings.themeId} onSelect={setTheme} />
 
         <AnimationSpeedSection speed={settings.animationSpeed} onChange={setAnimationSpeed} />
+
+        <SoundSection settings={settings} onChange={onSettingsChange} audioManager={audioManager} />
 
         <MoveConfirmationSection
           enabled={settings.moveConfirmation}

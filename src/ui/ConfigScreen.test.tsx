@@ -5,6 +5,25 @@ import BoardPreview from './BoardPreview';
 import type { Settings } from './settings';
 import { DEFAULT_SETTINGS } from './settings';
 import { THEMES } from '../themes/theme';
+import { AudioManagerContext } from '../audio/useAudioManager';
+import type { AudioManager } from '../audio/audioManager';
+
+// ---------------------------------------------------------------------------
+// Mock AudioManager
+// ---------------------------------------------------------------------------
+
+function createMockAudioManager(): AudioManager {
+  return {
+    play: vi.fn(),
+    playMusic: vi.fn(),
+    stopMusic: vi.fn(),
+    updateSettings: vi.fn(),
+    loadPack: vi.fn().mockResolvedValue(undefined),
+    getPackId: vi.fn(() => 'default'),
+    getCurrentMusicTrack: vi.fn(() => null),
+    dispose: vi.fn(),
+  } as unknown as AudioManager;
+}
 
 // ---------------------------------------------------------------------------
 // Helper
@@ -15,17 +34,22 @@ function renderConfig(
     settings: Settings;
     onSettingsChange: (s: Settings) => void;
     onBack: () => void;
+    audioManager: AudioManager;
   }>,
 ) {
   const settings = overrides?.settings ?? { ...DEFAULT_SETTINGS };
   const onSettingsChange = overrides?.onSettingsChange ?? vi.fn();
   const onBack = overrides?.onBack ?? vi.fn();
+  const audioManager = overrides?.audioManager ?? createMockAudioManager();
   return {
     settings,
     onSettingsChange,
     onBack,
+    audioManager,
     ...render(
-      <ConfigScreen settings={settings} onSettingsChange={onSettingsChange} onBack={onBack} />,
+      <AudioManagerContext.Provider value={audioManager}>
+        <ConfigScreen settings={settings} onSettingsChange={onSettingsChange} onBack={onBack} />
+      </AudioManagerContext.Provider>,
     ),
   };
 }
@@ -47,7 +71,8 @@ describe('ConfigScreen', () => {
 
   it('renders five theme cards', () => {
     renderConfig();
-    const radios = screen.getAllByRole('radio');
+    const themeGroup = screen.getByRole('radiogroup', { name: 'Theme selection' });
+    const radios = Array.from(themeGroup.querySelectorAll('[role="radio"]'));
     expect(radios).toHaveLength(5);
   });
 
@@ -58,7 +83,9 @@ describe('ConfigScreen', () => {
 
   it('renders move confirmation toggle', () => {
     renderConfig();
-    expect(screen.getByRole('switch')).toBeInTheDocument();
+    const switches = screen.getAllByRole('switch');
+    expect(switches.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByLabelText('Require confirmation before executing a move')).toBeInTheDocument();
   });
 
   it('renders data section with disabled buttons', () => {
@@ -137,14 +164,16 @@ describe('ConfigScreen', () => {
   // ── Move confirmation tests ─────────────────────────────────────────
 
   it('toggle default is off', () => {
-    renderConfig();
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+    const { container } = renderConfig();
+    const toggle = container.querySelector('#move-confirm-toggle');
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
   });
 
   it('clicking toggle calls onSettingsChange with moveConfirmation true', () => {
     const onSettingsChange = vi.fn();
-    renderConfig({ onSettingsChange });
-    fireEvent.click(screen.getByRole('switch'));
+    const { container } = renderConfig({ onSettingsChange });
+    const toggle = container.querySelector('#move-confirm-toggle') as HTMLElement;
+    fireEvent.click(toggle);
     expect(onSettingsChange).toHaveBeenCalledWith({
       ...DEFAULT_SETTINGS,
       moveConfirmation: true,
@@ -152,8 +181,9 @@ describe('ConfigScreen', () => {
   });
 
   it('toggle reflects enabled state', () => {
-    renderConfig({ settings: { ...DEFAULT_SETTINGS, moveConfirmation: true } });
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
+    const { container } = renderConfig({ settings: { ...DEFAULT_SETTINGS, moveConfirmation: true } });
+    const toggle = container.querySelector('#move-confirm-toggle');
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
   });
 
   // ── Navigation tests ────────────────────────────────────────────────
@@ -163,6 +193,151 @@ describe('ConfigScreen', () => {
     renderConfig({ onBack });
     fireEvent.click(screen.getByRole('button', { name: 'Back to main menu' }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  // ── Sound section: Rendering tests ─────────────────────────────────
+
+  it('renders Sound section heading', () => {
+    renderConfig();
+    expect(screen.getByRole('heading', { name: 'Sound' })).toBeInTheDocument();
+  });
+
+  it('renders Master Volume slider with correct ARIA attributes', () => {
+    renderConfig();
+    const slider = screen.getByRole('slider', { name: 'Master Volume' });
+    expect(slider).toBeInTheDocument();
+    expect(slider).toHaveAttribute('aria-valuetext', '70%');
+  });
+
+  it('renders SFX Volume slider with correct ARIA attributes', () => {
+    renderConfig();
+    const slider = screen.getByRole('slider', { name: 'SFX Volume' });
+    expect(slider).toBeInTheDocument();
+    expect(slider).toHaveAttribute('aria-valuetext', '100%');
+  });
+
+  it('renders Music Volume slider with correct ARIA attributes', () => {
+    renderConfig();
+    const slider = screen.getByRole('slider', { name: 'Music Volume' });
+    expect(slider).toBeInTheDocument();
+    expect(slider).toHaveAttribute('aria-valuetext', '50%');
+  });
+
+  it('renders Mute toggle', () => {
+    renderConfig();
+    const muteToggle = document.getElementById('mute-toggle') as HTMLElement;
+    expect(muteToggle).toBeInTheDocument();
+  });
+
+  it('renders Audio pack selector with 2 radio buttons', () => {
+    renderConfig();
+    const radiogroup = screen.getByRole('radiogroup', { name: 'Audio pack selection' });
+    expect(radiogroup).toBeInTheDocument();
+    const packRadios = Array.from(radiogroup.querySelectorAll('[role="radio"]'));
+    expect(packRadios).toHaveLength(2);
+  });
+
+  // ── Sound section: Interaction tests ───────────────────────────────
+
+  it('Master slider change calls onSettingsChange with masterVolume', () => {
+    const onSettingsChange = vi.fn();
+    renderConfig({ onSettingsChange });
+    const slider = screen.getByRole('slider', { name: 'Master Volume' });
+    fireEvent.change(slider, { target: { value: '50' } });
+    expect(onSettingsChange).toHaveBeenCalledWith(
+      expect.objectContaining({ masterVolume: 0.5 }),
+    );
+  });
+
+  it('SFX slider change calls onSettingsChange with sfxVolume', () => {
+    const onSettingsChange = vi.fn();
+    renderConfig({ onSettingsChange });
+    const slider = screen.getByRole('slider', { name: 'SFX Volume' });
+    fireEvent.change(slider, { target: { value: '80' } });
+    expect(onSettingsChange).toHaveBeenCalledWith(
+      expect.objectContaining({ sfxVolume: 0.8 }),
+    );
+  });
+
+  it('Music slider change calls onSettingsChange with musicVolume', () => {
+    const onSettingsChange = vi.fn();
+    renderConfig({ onSettingsChange });
+    const slider = screen.getByRole('slider', { name: 'Music Volume' });
+    fireEvent.change(slider, { target: { value: '30' } });
+    expect(onSettingsChange).toHaveBeenCalledWith(
+      expect.objectContaining({ musicVolume: 0.3 }),
+    );
+  });
+
+  it('Mute toggle click calls onSettingsChange with muted true', () => {
+    const onSettingsChange = vi.fn();
+    renderConfig({ onSettingsChange });
+    const muteToggle = document.getElementById('mute-toggle') as HTMLElement;
+    fireEvent.click(muteToggle);
+    expect(onSettingsChange).toHaveBeenCalledWith(
+      expect.objectContaining({ muted: true }),
+    );
+  });
+
+  it('Audio pack selection calls onSettingsChange with audioPackId silent', () => {
+    const onSettingsChange = vi.fn();
+    renderConfig({ onSettingsChange });
+    fireEvent.click(screen.getByRole('radio', { name: 'Silent' }));
+    expect(onSettingsChange).toHaveBeenCalledWith(
+      expect.objectContaining({ audioPackId: 'silent' }),
+    );
+  });
+
+  // ── Sound section: State reflection tests ──────────────────────────
+
+  it('sliders reflect settings values', () => {
+    renderConfig({
+      settings: { ...DEFAULT_SETTINGS, masterVolume: 0.3, sfxVolume: 0.6, musicVolume: 0.9 },
+    });
+    expect(screen.getByRole('slider', { name: 'Master Volume' })).toHaveValue('30');
+    expect(screen.getByRole('slider', { name: 'SFX Volume' })).toHaveValue('60');
+    expect(screen.getByRole('slider', { name: 'Music Volume' })).toHaveValue('90');
+  });
+
+  it('Mute toggle reflects muted state with aria-checked true', () => {
+    renderConfig({ settings: { ...DEFAULT_SETTINGS, muted: true } });
+    const muteToggle = document.getElementById('mute-toggle') as HTMLElement;
+    expect(muteToggle).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('Audio pack reflects selection', () => {
+    renderConfig({ settings: { ...DEFAULT_SETTINGS, audioPackId: 'silent' } });
+    expect(screen.getByRole('radio', { name: 'Silent' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: 'Crazy Checkers' })).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('sliders dimmed when muted', () => {
+    const { container } = renderConfig({ settings: { ...DEFAULT_SETTINGS, muted: true } });
+    const volumeSliders = container.querySelector('[data-muted="true"]');
+    expect(volumeSliders).toBeInTheDocument();
+  });
+
+  // ── Sound section: Accessibility tests ─────────────────────────────
+
+  it('volume sliders have aria-valuetext showing percentages', () => {
+    renderConfig({
+      settings: { ...DEFAULT_SETTINGS, masterVolume: 0.45, sfxVolume: 0.8, musicVolume: 0.2 },
+    });
+    expect(screen.getByRole('slider', { name: 'Master Volume' })).toHaveAttribute('aria-valuetext', '45%');
+    expect(screen.getByRole('slider', { name: 'SFX Volume' })).toHaveAttribute('aria-valuetext', '80%');
+    expect(screen.getByRole('slider', { name: 'Music Volume' })).toHaveAttribute('aria-valuetext', '20%');
+  });
+
+  it('pack selector supports arrow key navigation', () => {
+    const onSettingsChange = vi.fn();
+    renderConfig({ onSettingsChange });
+    const crazyPackBtn = screen.getByRole('radio', { name: 'Crazy Checkers' });
+    crazyPackBtn.focus();
+    const radiogroup = screen.getByRole('radiogroup', { name: 'Audio pack selection' });
+    fireEvent.keyDown(radiogroup, { key: 'ArrowRight' });
+    expect(onSettingsChange).toHaveBeenCalledWith(
+      expect.objectContaining({ audioPackId: 'silent' }),
+    );
   });
 });
 
