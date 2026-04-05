@@ -529,7 +529,7 @@ export const EVENT_DECORATOR_REGISTRY: Map<CrazyEvent, (base: RuleSet) => EventD
  */
 export const EVENT_METADATA_FACTORIES: Map<
   CrazyEvent,
-  (board: BoardState, activeColor: PieceColor, randomFn?: () => number) => Readonly<Record<string, unknown>> | undefined
+  (board: BoardState, activeColor: PieceColor, randomFn?: () => number, move?: Move) => Readonly<Record<string, unknown>> | undefined
 > = new Map();
 
 // ---------------------------------------------------------------------------

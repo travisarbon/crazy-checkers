@@ -1,0 +1,130 @@
+/**
+ * CSS for persistent event visual indicators rendered inside the board SVG.
+ * Task 11.3 — Live Grenade, Hot Potato, Opposite Day, King for a Day,
+ * No Touching! indicators.
+ *
+ * Animations use CSS @keyframes for GPU-composited performance.
+ * All effects respect prefers-reduced-motion.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Live Grenade — pulsing bomb icon
+ * --------------------------------------------------------------------------- */
+
+.liveGrenadeIndicator {
+  pointer-events: none;
+  will-change: opacity;
+  animation: bombPulse var(--pulse-duration, 1200ms) ease-in-out infinite;
+}
+
+@keyframes bombPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.sparkPulse {
+  will-change: transform;
+  animation: sparkFlicker 600ms ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes sparkFlicker {
+  0%, 100% { transform: scale(0.8); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Hot Potato — glowing ring around hot piece
+ * --------------------------------------------------------------------------- */
+
+.hotPotatoGlow {
+  pointer-events: none;
+  will-change: opacity, stroke-width;
+  animation: hotGlow var(--glow-duration, 900ms) ease-in-out infinite;
+}
+
+@keyframes hotGlow {
+  0%, 100% { opacity: 0.3; stroke-width: 2; }
+  50% { opacity: 0.8; stroke-width: 4; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Opposite Day — board border color shift
+ * --------------------------------------------------------------------------- */
+
+.oppositeDayBorder {
+  pointer-events: none;
+  will-change: opacity;
+  animation: borderPulse var(--border-duration, 2000ms) ease-in-out infinite;
+}
+
+@keyframes borderPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* ---------------------------------------------------------------------------
+ * King for a Day — temporary crown shimmer (rendered in Piece.tsx)
+ * --------------------------------------------------------------------------- */
+
+.temporaryCrown {
+  opacity: 0.7;
+  animation: crownShimmer 2000ms ease-in-out infinite;
+}
+
+@keyframes crownShimmer {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+/* ---------------------------------------------------------------------------
+ * No Touching! — restricted capture ring
+ * --------------------------------------------------------------------------- */
+
+.restrictedCapture {
+  pointer-events: none;
+  animation: restrictedPulse 1500ms ease-in-out infinite;
+}
+
+@keyframes restrictedPulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.4; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Reduced motion overrides
+ * --------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .liveGrenadeIndicator {
+    animation: none;
+    opacity: 0.8;
+  }
+
+  .sparkPulse {
+    animation: none;
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  .hotPotatoGlow {
+    animation: none;
+    opacity: 0.6;
+    stroke-width: 3;
+  }
+
+  .oppositeDayBorder {
+    animation: none;
+    opacity: 0.45;
+  }
+
+  .temporaryCrown {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .restrictedCapture {
+    animation: none;
+    opacity: 0.3;
+  }
+}

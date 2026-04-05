@@ -273,7 +273,7 @@ export function makeMove(state: GameState, move: Move): GameState {
       for (const eventType of triggeredEvents) {
         // Build event-specific metadata via the registry
         const metadataFactory = EVENT_METADATA_FACTORIES.get(eventType);
-        const metadata = metadataFactory ? metadataFactory(board, state.activeColor) : undefined;
+        const metadata = metadataFactory ? metadataFactory(board, state.activeColor, undefined, move) : undefined;
 
         newEvents.push(createActiveEvent(
           eventType,

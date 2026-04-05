@@ -10,6 +10,7 @@
 import type { Piece as PieceData, Square } from '../engine/types';
 import { PieceColor, PieceType } from '../engine/types';
 import styles from './Board.module.css';
+import overlayStyles from './EventOverlays.module.css';
 
 const PIECE_RADIUS = 38;
 const PIECE_STROKE_WIDTH = 3;
@@ -43,6 +44,8 @@ interface PieceProps {
   onTransitionEnd?: () => void;
   /** SVG filter URL for drop shadow (e.g., 'url(#piece-shadow)'). */
   svgFilter?: string;
+  /** Whether this king is temporary (King for a Day). Renders a dashed crown. */
+  isTemporaryKing?: boolean;
 }
 
 function getPieceColors(piece: PieceData) {
@@ -76,6 +79,7 @@ export default function Piece({
   animOpacityDurationMs,
   onTransitionEnd,
   svgFilter,
+  isTemporaryKing = false,
 }: PieceProps) {
   const { fill, stroke } = getPieceColors(piece);
   const isKing = piece.type === PieceType.King;
@@ -135,13 +139,25 @@ export default function Piece({
         stroke={isSelected ? 'var(--ui-accent)' : stroke}
         strokeWidth={isSelected ? PIECE_STROKE_WIDTH + SELECTED_STROKE_EXTRA : PIECE_STROKE_WIDTH}
       />
-      {isKing && (
+      {isKing && !isTemporaryKing && (
         <path
           d="M -12,6 L -8,-6 L -4,2 L 0,-6 L 4,2 L 8,-6 L 12,6 Z"
           transform="translate(0, 4)"
           fill="var(--ui-accent)"
           data-testid="crown"
         />
+      )}
+      {isKing && isTemporaryKing && (
+        <g data-testid="temporary-crown" className={overlayStyles.temporaryCrown}>
+          <path
+            d="M -12,6 L -8,-6 L -4,2 L 0,-6 L 4,2 L 8,-6 L 12,6 Z"
+            transform="translate(0, 4)"
+            fill="none"
+            stroke="var(--ui-accent)"
+            strokeWidth={1.5}
+            strokeDasharray="3 2"
+          />
+        </g>
       )}
     </g>
   );

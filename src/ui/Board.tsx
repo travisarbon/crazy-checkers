@@ -15,7 +15,10 @@ import type { AnimatingPiece, FlashingSquaresState, ExplosionState, OverlayState
 import { ANIM_DURATION } from './useAnimationQueue';
 import PieceComponent from './Piece';
 import EventAnimations from './EventAnimations';
+import EventOverlays from './EventOverlays';
+import type { EventOverlayState } from './useEventOverlays';
 import styles from './Board.module.css';
+import overlayStyles from './EventOverlays.module.css';
 
 const SQUARE_SIZE = 100;
 const LEGAL_DOT_RADIUS = 15;
@@ -51,6 +54,10 @@ interface BoardProps {
   explosionState?: ExplosionState | null;
   /** Text overlay state from useAnimationQueue. */
   overlayState?: OverlayState | null;
+
+  // Persistent event overlay props (Task 11.3)
+  /** Persistent event indicator state from useEventOverlays. */
+  eventOverlayState?: EventOverlayState;
 }
 
 function describeSquare(sq: Square, piece: PieceData | null): string {
@@ -110,6 +117,17 @@ function findNextSquare(currentSq: Square, key: string, flipped: boolean): Squar
   return null;
 }
 
+/**
+ * Returns true if the target square is at extended range (distance > 1
+ * diagonal step) from the selected square. Used for Up in the Air
+ * to render smaller dots for extended-range legal moves.
+ */
+function isExtendedRange(selectedSq: Square, targetSq: Square): boolean {
+  const sel = squareToGrid(selectedSq);
+  const tgt = squareToGrid(targetSq);
+  return Math.abs(sel.row - tgt.row) > 1;
+}
+
 function Board({
   board,
   flipped = false,
@@ -127,6 +145,7 @@ function Board({
   flashingSquares,
   explosionState,
   overlayState,
+  eventOverlayState,
 }: BoardProps) {
   const rows = Array.from({ length: 8 }, (_, i) => i);
   const cols = Array.from({ length: 8 }, (_, i) => i);
@@ -400,20 +419,31 @@ function Board({
                       isSelectable={!isAnimating && (selectablePieces?.has(sq as number) ?? false)}
                       isSelected={isSelected}
                       svgFilter={pieceShadow ? 'url(#piece-shadow)' : undefined}
+                      isTemporaryKing={eventOverlayState?.temporaryKingSquares.has(sq as number) ?? false}
                     />
                   )}
 
                   {/* Legal destination dot (on empty squares) */}
-                  {isLegalDest && !piece && (
-                    <circle
-                      cx={x + SQUARE_SIZE / 2}
-                      cy={y + SQUARE_SIZE / 2}
-                      r={LEGAL_DOT_RADIUS}
-                      fill="var(--highlight-legal)"
-                      data-testid="legal-dot"
-                      className={styles.legalDot}
-                    />
-                  )}
+                  {isLegalDest && !piece && (() => {
+                    const dotRadius =
+                      eventOverlayState?.upInTheAirActive &&
+                      selectedSquare !== null &&
+                      selectedSquare !== undefined &&
+                      sq &&
+                      isExtendedRange(selectedSquare, sq)
+                        ? LEGAL_DOT_RADIUS * 0.65
+                        : LEGAL_DOT_RADIUS;
+                    return (
+                      <circle
+                        cx={x + SQUARE_SIZE / 2}
+                        cy={y + SQUARE_SIZE / 2}
+                        r={dotRadius}
+                        fill="var(--highlight-legal)"
+                        data-testid="legal-dot"
+                        className={styles.legalDot}
+                      />
+                    );
+                  })()}
 
                   {/* Legal destination ring (on squares with capturable enemy pieces) */}
                   {isLegalDest && piece && (
@@ -426,6 +456,23 @@ function Board({
                       strokeWidth={CAPTURE_RING_STROKE}
                       data-testid="legal-capture-ring"
                       className={styles.legalDot}
+                    />
+                  )}
+
+                  {/* Restricted capture ring (No Touching! — pawn can't capture king) */}
+                  {sq !== null && eventOverlayState?.noTouchingActive &&
+                    eventOverlayState.restrictedCaptureSquares.has(sq as number) && (
+                    <circle
+                      cx={x + SQUARE_SIZE / 2}
+                      cy={y + SQUARE_SIZE / 2}
+                      r={CAPTURE_RING_RADIUS}
+                      fill="none"
+                      stroke="var(--highlight-legal)"
+                      strokeWidth={CAPTURE_RING_STROKE}
+                      opacity={0.3}
+                      strokeDasharray="6 4"
+                      data-testid="restricted-capture-ring"
+                      className={overlayStyles.restrictedCapture}
                     />
                   )}
 
@@ -443,6 +490,17 @@ function Board({
             })}
           </g>
         ))}
+
+        {/* Persistent event overlays (Task 11.3) — rendered above static pieces,
+            below floating animation layer */}
+        {eventOverlayState && (
+          <EventOverlays
+            viewBoxWidth={800}
+            flipped={flipped}
+            overlayState={eventOverlayState}
+            speedMultiplier={animSpeedMultiplier}
+          />
+        )}
 
         {/* Floating animation layer — rendered above all squares so animating
             pieces don't clip underneath other board squares during slides */}

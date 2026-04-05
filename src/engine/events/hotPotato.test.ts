@@ -17,6 +17,7 @@ import {
   IMPLEMENTED_EVENTS,
   EVENT_DECORATOR_REGISTRY,
   EVENT_DURATIONS,
+  EVENT_METADATA_FACTORIES,
 } from '../events';
 import { createCompositeRuleSet } from '../compositeRuleSet';
 import {
@@ -611,6 +612,30 @@ describe('HotPotatoDecorator', () => {
 
     it('EVENT_DURATIONS[CrazyEvent.HotPotato] is 2', () => {
       expect(EVENT_DURATIONS[CrazyEvent.HotPotato]).toBe(2);
+    });
+
+    it('metadata factory stores hotSquare from triggering move', () => {
+      const board = buildBoard([
+        { sq: 22, color: W, type: P },
+        { sq: 10, color: B, type: P },
+      ]);
+      const factory = EVENT_METADATA_FACTORIES.get(CrazyEvent.HotPotato);
+      expect(factory).toBeDefined();
+      if (!factory) return;
+
+      const m = move(22, [17]);
+      const metadata = factory(board, W, undefined, m);
+      expect(metadata).toEqual({ hotSquare: 17 });
+    });
+
+    it('metadata factory returns undefined when no move provided', () => {
+      const board = buildBoard([{ sq: 22, color: W, type: P }]);
+      const factory = EVENT_METADATA_FACTORIES.get(CrazyEvent.HotPotato);
+      expect(factory).toBeDefined();
+      if (!factory) return;
+
+      const metadata = factory(board, W);
+      expect(metadata).toBeUndefined();
     });
 
     it('serialization round-trip preserves HotPotato event', () => {

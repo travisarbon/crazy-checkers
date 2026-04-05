@@ -29,6 +29,7 @@ import { useGameInteraction } from './useGameInteraction';
 import type { AnimationStep } from './useAnimationQueue';
 import { useAnimationQueue, buildAnimationSequence } from './useAnimationQueue';
 import { useEventAnimations } from './useEventAnimations';
+import { useEventOverlays } from './useEventOverlays';
 import styles from './GameScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -404,6 +405,13 @@ export default function GameScreen({
     setGameState(newState);
   }, [gameState]);
 
+  // --- Persistent event overlay state (Task 11.3) ---
+  const eventOverlayState = useEventOverlays(
+    gameState.activeEvents,
+    animationQueue.animationBoard ?? interaction.displayBoard,
+    animationQueue.isAnimating ? null : interaction.selectedSquare,
+  );
+
   // --- Derived state ---
   const displayBoard = animationQueue.animationBoard ?? interaction.displayBoard;
   const isGameOver = gameState.status === GameStatus.GameOver;
@@ -453,6 +461,7 @@ export default function GameScreen({
           flashingSquares={animationQueue.flashingSquares}
           explosionState={animationQueue.explosionState}
           overlayState={animationQueue.overlayState}
+          eventOverlayState={eventOverlayState}
         />
       </div>
 

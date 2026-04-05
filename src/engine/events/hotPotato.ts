@@ -82,9 +82,23 @@ EVENT_DECORATOR_REGISTRY.set(
   (base: RuleSet) => new HotPotatoDecorator(base),
 );
 
-// No metadata needed — register undefined-returning factory for consistency
-// (pattern established in Task 9.2; see Task_9.2_Opposite_Day_Implementation_Plan.md §2.1)
+/**
+ * Metadata stored in ActiveEvent.metadata for Hot Potato.
+ * Records the square of the "hot" piece at trigger time so the UI
+ * can render a visual indicator on that piece.
+ */
+export interface HotPotatoMetadata {
+  readonly hotSquare: number;
+}
+
+// Register metadata factory — stores the landing square of the triggering move
+// so the UI overlay can highlight the "hot" piece (Task 11.3).
 EVENT_METADATA_FACTORIES.set(
   CrazyEvent.HotPotato,
-  () => undefined,
+  (_board, _activeColor, _randomFn?, move?) => {
+    if (!move) return undefined;
+    const landingSquare = move.path[move.path.length - 1];
+    if (landingSquare === undefined) return undefined;
+    return { hotSquare: landingSquare as number };
+  },
 );
