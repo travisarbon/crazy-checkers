@@ -12,6 +12,16 @@ import { EVENT_DISPLAY_NAMES } from '../engine/events';
 import type { AnimationStep } from './useAnimationQueue';
 import { EVENT_ANIM_DURATION, ANIM_DURATION, ANIM_EASING } from './useAnimationQueue';
 
+// Computed totals from granular constants
+const OVERLAY_TOTAL =
+  EVENT_ANIM_DURATION.OVERLAY_FADE_IN +
+  EVENT_ANIM_DURATION.OVERLAY_HOLD +
+  EVENT_ANIM_DURATION.OVERLAY_FADE_OUT;
+const SHUFFLE_TOTAL =
+  EVENT_ANIM_DURATION.SHUFFLE_LIFT +
+  EVENT_ANIM_DURATION.SHUFFLE_SCATTER +
+  EVENT_ANIM_DURATION.SHUFFLE_SETTLE;
+
 // ---------------------------------------------------------------------------
 // Helper functions (module-private)
 // ---------------------------------------------------------------------------
@@ -86,13 +96,13 @@ function buildKingForADayActivation(
       type: 'overlay',
       text: 'King for a Day!',
       icon: 'crown',
-      durationMs: EVENT_ANIM_DURATION.OVERLAY,
+      durationMs: OVERLAY_TOTAL,
     },
     {
       type: 'flash',
       squares: pawnSquares,
       color: 'var(--ui-accent)',
-      durationMs: EVENT_ANIM_DURATION.FLASH,
+      durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 3,
       pulses: 3,
     },
   ];
@@ -104,7 +114,7 @@ function buildLiveGrenadeActivation(): AnimationStep[] {
       type: 'overlay',
       text: 'Live Grenade!',
       icon: 'bomb',
-      durationMs: EVENT_ANIM_DURATION.OVERLAY,
+      durationMs: OVERLAY_TOTAL,
     },
   ];
 }
@@ -115,7 +125,7 @@ function buildHotPotatoActivation(): AnimationStep[] {
       type: 'overlay',
       text: 'Hot Potato!',
       icon: 'swap',
-      durationMs: EVENT_ANIM_DURATION.OVERLAY,
+      durationMs: OVERLAY_TOTAL,
     },
     {
       type: 'pause',
@@ -147,13 +157,13 @@ function buildChecksMixActivation(
       type: 'overlay',
       text: 'Checks Mix!',
       icon: 'shuffle',
-      durationMs: EVENT_ANIM_DURATION.OVERLAY,
+      durationMs: OVERLAY_TOTAL,
     },
     {
       type: 'shuffle',
       fromPositions,
       toPositions,
-      durationMs: EVENT_ANIM_DURATION.SHUFFLE,
+      durationMs: SHUFFLE_TOTAL,
     },
   ];
 }
@@ -166,13 +176,13 @@ function buildOppositeDayActivation(board: BoardState): AnimationStep[] {
       type: 'overlay',
       text: 'Opposite Day!',
       icon: 'invert',
-      durationMs: EVENT_ANIM_DURATION.OVERLAY,
+      durationMs: OVERLAY_TOTAL,
     },
     {
       type: 'flash',
       squares: occupiedSquares,
       color: 'var(--ui-danger)',
-      durationMs: EVENT_ANIM_DURATION.FLASH,
+      durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2,
       pulses: 2,
     },
   ];
@@ -186,13 +196,13 @@ function buildUpInTheAirActivation(board: BoardState): AnimationStep[] {
       type: 'overlay',
       text: 'Up in the Air!',
       icon: 'fly',
-      durationMs: EVENT_ANIM_DURATION.OVERLAY,
+      durationMs: OVERLAY_TOTAL,
     },
     {
       type: 'flash',
       squares: allPieceSquares,
       color: 'var(--ui-accent)',
-      durationMs: EVENT_ANIM_DURATION.FLASH,
+      durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2,
       pulses: 2,
     },
   ];
@@ -206,13 +216,13 @@ function buildNoTouchingActivation(board: BoardState): AnimationStep[] {
       type: 'overlay',
       text: 'No Touching!',
       icon: 'shield',
-      durationMs: EVENT_ANIM_DURATION.OVERLAY,
+      durationMs: OVERLAY_TOTAL,
     },
     {
       type: 'flash',
       squares: kingSquares,
       color: 'var(--ui-accent)',
-      durationMs: EVENT_ANIM_DURATION.FLASH,
+      durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2,
       pulses: 2,
     },
   ];
@@ -290,7 +300,7 @@ function buildKingForADayExpiration(
       type: 'flash',
       squares: pawnSquares,
       color: 'var(--ui-accent)',
-      durationMs: 400,
+      durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2,
       pulses: 2,
     },
   ];
@@ -304,7 +314,7 @@ function buildOppositeDayExpiration(board: BoardState): AnimationStep[] {
       type: 'flash',
       squares: occupiedSquares,
       color: 'var(--ui-danger)',
-      durationMs: 300,
+      durationMs: EVENT_ANIM_DURATION.FLASH_PULSE,
       pulses: 1,
     },
   ];
@@ -318,7 +328,7 @@ function buildUpInTheAirExpiration(board: BoardState): AnimationStep[] {
       type: 'flash',
       squares: allPieceSquares,
       color: 'var(--ui-accent)',
-      durationMs: 300,
+      durationMs: EVENT_ANIM_DURATION.FLASH_PULSE,
       pulses: 1,
     },
   ];
@@ -354,7 +364,7 @@ function buildActivationForEvent(
         {
           type: 'overlay',
           text: EVENT_DISPLAY_NAMES[event.type],
-          durationMs: EVENT_ANIM_DURATION.OVERLAY,
+          durationMs: OVERLAY_TOTAL,
         },
       ];
   }

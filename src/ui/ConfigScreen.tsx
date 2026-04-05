@@ -129,9 +129,9 @@ function AnimationSpeedSection({
         Animation Speed
       </h2>
       <div className={styles.sliderRow}>
-        <label htmlFor="anim-speed-slider" className={styles.sliderLabel}>
+        <span className={styles.sliderLabel} aria-hidden="true">
           Slow
-        </label>
+        </span>
         <input
           id="anim-speed-slider"
           type="range"
@@ -144,9 +144,9 @@ function AnimationSpeedSection({
           aria-valuetext={speedLabel}
           aria-label="Animation speed"
         />
-        <span className={styles.sliderLabel}>Fast</span>
+        <span className={styles.sliderLabel} aria-hidden="true">Fast</span>
       </div>
-      <p className={styles.sliderHint}>{speedLabel}</p>
+      <p className={styles.sliderHint} aria-live="polite">{speedLabel}</p>
     </section>
   );
 }

@@ -6,6 +6,8 @@ import {
   squareCenterCoords,
   ANIM_DURATION,
   ANIM_EASING,
+  EVENT_ANIM_DURATION,
+  EVENT_ANIM_EASING,
 } from './useAnimationQueue';
 import type { AnimationStep } from './useAnimationQueue';
 import { createInitialBoard } from '../engine/board';
@@ -488,5 +490,401 @@ describe('useAnimationQueue', () => {
 
     expect(result.current.isAnimating).toBe(false);
     expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  // ── Flash step tests ─────────────────────────────────────────────────
+
+  it('flash step sets flashingSquares state with correct squares, color, and pulses', () => {
+    const { result } = renderHook(() => useAnimationQueue());
+
+    const steps: AnimationStep[] = [
+      { type: 'flash', squares: [square(1), square(5), square(10)], color: 'gold', durationMs: 600, pulses: 3 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    expect(result.current.flashingSquares).not.toBeNull();
+    expect(result.current.flashingSquares?.squares).toEqual(new Set([1, 5, 10]));
+    expect(result.current.flashingSquares?.color).toBe('gold');
+    expect(result.current.flashingSquares?.pulses).toBe(3);
+  });
+
+  it('flash step auto-advances after duration', () => {
+    const onComplete = vi.fn();
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
+
+    const steps: AnimationStep[] = [
+      { type: 'flash', squares: [square(1)], color: 'gold', durationMs: 600 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    expect(result.current.flashingSquares).not.toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(620);
+    });
+
+    expect(result.current.flashingSquares).toBeNull();
+    expect(result.current.isAnimating).toBe(false);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('flash step with speed multiplier scales duration', () => {
+    const onComplete = vi.fn();
+    const { result } = renderHook(() => useAnimationQueue({ speedMultiplier: 2.0, onComplete }));
+
+    const steps: AnimationStep[] = [
+      { type: 'flash', squares: [square(1)], color: 'red', durationMs: 600 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    // At 2x speed multiplier, duration is 1200ms. At 700ms it should still be animating
+    act(() => {
+      vi.advanceTimersByTime(700);
+    });
+    expect(result.current.isAnimating).toBe(true);
+    expect(result.current.flashingSquares).not.toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+    expect(result.current.isAnimating).toBe(false);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('flash step defaults to 2 pulses when not specified', () => {
+    const { result } = renderHook(() => useAnimationQueue());
+
+    const steps: AnimationStep[] = [
+      { type: 'flash', squares: [square(1)], color: 'gold', durationMs: 600 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    expect(result.current.flashingSquares?.pulses).toBe(2);
+  });
+
+  // ── Explosion step tests ──────────────────────────────────────────────
+
+  it('explosion step sets explosionState with center and affected squares', () => {
+    const { result } = renderHook(() => useAnimationQueue());
+
+    const steps: AnimationStep[] = [
+      { type: 'explosion', centerSquare: square(14), affectedSquares: [square(14), square(10), square(18)], durationMs: 600 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    expect(result.current.explosionState).not.toBeNull();
+    expect(result.current.explosionState?.centerSquare).toBe(14);
+    expect(result.current.explosionState?.affectedSquares).toEqual(new Set([14, 10, 18]));
+  });
+
+  it('explosion step auto-advances after duration', () => {
+    const onComplete = vi.fn();
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
+
+    const steps: AnimationStep[] = [
+      { type: 'explosion', centerSquare: square(14), affectedSquares: [square(14)], durationMs: 600 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(620);
+    });
+
+    expect(result.current.explosionState).toBeNull();
+    expect(result.current.isAnimating).toBe(false);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('explosion step clears state on completion', () => {
+    const { result } = renderHook(() => useAnimationQueue());
+
+    const steps: AnimationStep[] = [
+      { type: 'explosion', centerSquare: square(14), affectedSquares: [square(14), square(10)], durationMs: 600 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    expect(result.current.explosionState).not.toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(620);
+    });
+
+    expect(result.current.explosionState).toBeNull();
+  });
+
+  // ── Shuffle step tests ────────────────────────────────────────────────
+
+  it('shuffle step moves pieces from fromPositions to toPositions on the animation board', () => {
+    const onComplete = vi.fn();
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
+
+    const boardWithPieces = [...board] as SquareState[];
+    boardWithPieces[0] = { color: PieceColor.White, type: PieceType.Pawn };
+    boardWithPieces[4] = { color: PieceColor.Black, type: PieceType.Pawn };
+
+    const fromPositions = new Map<number, { color: PieceColor; type: PieceType }>([
+      [1, { color: PieceColor.White, type: PieceType.Pawn }],
+      [5, { color: PieceColor.Black, type: PieceType.Pawn }],
+    ]);
+    const toPositions = new Map<number, { color: PieceColor; type: PieceType }>([
+      [10, { color: PieceColor.White, type: PieceType.Pawn }],
+      [20, { color: PieceColor.Black, type: PieceType.Pawn }],
+    ]);
+
+    const steps: AnimationStep[] = [
+      { type: 'shuffle', fromPositions, toPositions, durationMs: 700 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, boardWithPieces);
+    });
+
+    // Total duration = SHUFFLE_LIFT + SHUFFLE_SCATTER + SHUFFLE_SETTLE = 150 + 400 + 150 = 700ms
+    const totalDuration = EVENT_ANIM_DURATION.SHUFFLE_LIFT + EVENT_ANIM_DURATION.SHUFFLE_SCATTER + EVENT_ANIM_DURATION.SHUFFLE_SETTLE;
+    act(() => {
+      vi.advanceTimersByTime(totalDuration + 20);
+    });
+
+    expect(result.current.isAnimating).toBe(false);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('shuffle step uses phase-specific easing from constants', () => {
+    const { result } = renderHook(() => useAnimationQueue());
+
+    const fromPositions = new Map<number, { color: PieceColor; type: PieceType }>([
+      [1, { color: PieceColor.White, type: PieceType.Pawn }],
+    ]);
+    const toPositions = new Map<number, { color: PieceColor; type: PieceType }>([
+      [10, { color: PieceColor.White, type: PieceType.Pawn }],
+    ]);
+
+    const steps: AnimationStep[] = [
+      { type: 'shuffle', fromPositions, toPositions, durationMs: 700 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    // During lift phase, piece should have ease-out easing
+    const liftPiece = result.current.animatingPieces.get(1);
+    expect(liftPiece).toBeDefined();
+    expect(liftPiece?.easing).toBe(EVENT_ANIM_EASING.SHUFFLE_LIFT);
+    expect(liftPiece?.scale).toBe(1.1);
+  });
+
+  it('shuffle step respects phase timing', () => {
+    const { result } = renderHook(() => useAnimationQueue());
+
+    const fromPositions = new Map<number, { color: PieceColor; type: PieceType }>([
+      [1, { color: PieceColor.White, type: PieceType.Pawn }],
+    ]);
+    const toPositions = new Map<number, { color: PieceColor; type: PieceType }>([
+      [10, { color: PieceColor.White, type: PieceType.Pawn }],
+    ]);
+
+    const steps: AnimationStep[] = [
+      { type: 'shuffle', fromPositions, toPositions, durationMs: 700 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    // After lift phase (150ms), scatter should begin
+    act(() => {
+      vi.advanceTimersByTime(EVENT_ANIM_DURATION.SHUFFLE_LIFT + 10);
+    });
+
+    // Piece 1 should now be animating to its new position with scatter easing
+    const scatterPiece = result.current.animatingPieces.get(1);
+    expect(scatterPiece).toBeDefined();
+    expect(scatterPiece?.easing).toBe(EVENT_ANIM_EASING.SHUFFLE_SCATTER);
+    expect(scatterPiece?.scale).toBe(1.0);
+  });
+
+  // ── ColorSwap step tests ──────────────────────────────────────────────
+
+  it('colorSwap step sets scaleX to 0 at midpoint', () => {
+    const { result } = renderHook(() => useAnimationQueue());
+
+    const boardWithPiece = [...board] as SquareState[];
+    boardWithPiece[9] = { color: PieceColor.White, type: PieceType.Pawn };
+
+    const steps: AnimationStep[] = [
+      { type: 'colorSwap', square: square(10), fromColor: PieceColor.White, toColor: PieceColor.Black, durationMs: 400 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, boardWithPiece);
+    });
+
+    // Initially, scaleX should be animating toward 0
+    const animPiece = result.current.animatingPieces.get(10);
+    expect(animPiece).toBeDefined();
+    expect(animPiece?.scaleX).toBe(0);
+  });
+
+  it('colorSwap step swaps piece color at midpoint and restores scaleX', () => {
+    const { result } = renderHook(() => useAnimationQueue());
+
+    const boardWithPiece = [...board] as SquareState[];
+    boardWithPiece[9] = { color: PieceColor.White, type: PieceType.Pawn };
+
+    const steps: AnimationStep[] = [
+      { type: 'colorSwap', square: square(10), fromColor: PieceColor.White, toColor: PieceColor.Black, durationMs: 400 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, boardWithPiece);
+    });
+
+    // Advance past midpoint (200ms)
+    act(() => {
+      vi.advanceTimersByTime(210);
+    });
+
+    // After midpoint, scaleX should be animating back to 1
+    const animPiece = result.current.animatingPieces.get(10);
+    expect(animPiece).toBeDefined();
+    expect(animPiece?.scaleX).toBe(1);
+
+    // Board should show the new color
+    const piece = result.current.animationBoard?.[9];
+    expect(piece).not.toBeNull();
+    expect(piece?.color).toBe(PieceColor.Black);
+  });
+
+  it('colorSwap step completes and clears animating pieces', () => {
+    const onComplete = vi.fn();
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
+
+    const boardWithPiece = [...board] as SquareState[];
+    boardWithPiece[9] = { color: PieceColor.White, type: PieceType.Pawn };
+
+    const steps: AnimationStep[] = [
+      { type: 'colorSwap', square: square(10), fromColor: PieceColor.White, toColor: PieceColor.Black, durationMs: 400 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, boardWithPiece);
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(420);
+    });
+
+    expect(result.current.isAnimating).toBe(false);
+    expect(result.current.animatingPieces.size).toBe(0);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  // ── Overlay step tests ────────────────────────────────────────────────
+
+  it('overlay step sets overlayState with text and icon', () => {
+    const { result } = renderHook(() => useAnimationQueue());
+
+    const steps: AnimationStep[] = [
+      { type: 'overlay', text: 'King for a Day!', icon: 'crown', durationMs: 1000 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    expect(result.current.overlayState).not.toBeNull();
+    expect(result.current.overlayState?.text).toBe('King for a Day!');
+    expect(result.current.overlayState?.icon).toBe('crown');
+  });
+
+  it('overlay step auto-advances after duration', () => {
+    const onComplete = vi.fn();
+    const { result } = renderHook(() => useAnimationQueue({ onComplete }));
+
+    const steps: AnimationStep[] = [
+      { type: 'overlay', text: 'Test', durationMs: 1000 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(1020);
+    });
+
+    expect(result.current.overlayState).toBeNull();
+    expect(result.current.isAnimating).toBe(false);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('overlay step clears state on completion', () => {
+    const { result } = renderHook(() => useAnimationQueue());
+
+    const steps: AnimationStep[] = [
+      { type: 'overlay', text: 'Test', durationMs: 1000 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    expect(result.current.overlayState).not.toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(1020);
+    });
+
+    expect(result.current.overlayState).toBeNull();
+  });
+
+  // ── skipAnimation clears event animation state ────────────────────────
+
+  it('skipAnimation clears all event animation states', () => {
+    const { result } = renderHook(() => useAnimationQueue());
+
+    const steps: AnimationStep[] = [
+      { type: 'flash', squares: [square(1)], color: 'gold', durationMs: 600 },
+      { type: 'explosion', centerSquare: square(14), affectedSquares: [square(14)], durationMs: 600 },
+      { type: 'overlay', text: 'Test', durationMs: 1000 },
+    ];
+
+    act(() => {
+      result.current.enqueue(steps, board);
+    });
+
+    // Flash should be active
+    expect(result.current.flashingSquares).not.toBeNull();
+
+    act(() => {
+      result.current.skipAnimation();
+    });
+
+    expect(result.current.flashingSquares).toBeNull();
+    expect(result.current.explosionState).toBeNull();
+    expect(result.current.overlayState).toBeNull();
+    expect(result.current.isAnimating).toBe(false);
   });
 });

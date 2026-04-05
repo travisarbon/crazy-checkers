@@ -142,11 +142,15 @@ export const ANIM_DURATION = {
 
 /** Event animation durations (ms). Scaled by the speed multiplier at runtime. */
 export const EVENT_ANIM_DURATION = {
-  FLASH: 600,
-  EXPLOSION: 500,
-  SHUFFLE: 800,
+  FLASH_PULSE: 300,
+  EXPLOSION: 600,
+  SHUFFLE_LIFT: 150,
+  SHUFFLE_SCATTER: 400,
+  SHUFFLE_SETTLE: 150,
   COLOR_SWAP: 400,
-  OVERLAY: 1200,
+  OVERLAY_FADE_IN: 200,
+  OVERLAY_HOLD: 600,
+  OVERLAY_FADE_OUT: 200,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -171,10 +175,14 @@ export const ANIM_EASING = {
 export const EVENT_ANIM_EASING = {
   /** Flash pulse: smooth oscillation. */
   FLASH: 'ease-in-out',
-  /** Explosion burst: quick attack, slow decay. */
-  EXPLOSION: 'cubic-bezier(0.25, 0.1, 0.25, 1.0)',
-  /** Shuffle scatter: ease-out for a natural arc. */
-  SHUFFLE: 'ease-out',
+  /** Explosion burst: sharp deceleration (Material Design decelerate curve). */
+  EXPLOSION_EXPAND: 'cubic-bezier(0.0, 0.0, 0.2, 1.0)',
+  /** Shuffle lift: ease-out for upward momentum. */
+  SHUFFLE_LIFT: 'ease-out',
+  /** Shuffle scatter: smooth arc to new positions. */
+  SHUFFLE_SCATTER: 'cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+  /** Shuffle settle: ease-in for settling feel. */
+  SHUFFLE_SETTLE: 'ease-in',
   /** Color swap flip: ease-in-out for symmetric rotation. */
   COLOR_SWAP: 'ease-in-out',
   /** Overlay fade: linear for consistent opacity transitions. */
@@ -755,12 +763,13 @@ export function useAnimationQueue({
         }
 
         case 'shuffle': {
-          // Phase 1: All pieces lift slightly (scale up)
-          const liftDuration = duration * 0.2;
-          const scatterDuration = duration * 0.6;
-          const settleDuration = duration * 0.2;
+          // Use absolute phase durations from constants (scaled by multiplier)
+          const liftDuration = EVENT_ANIM_DURATION.SHUFFLE_LIFT * multiplier;
+          const scatterDuration = EVENT_ANIM_DURATION.SHUFFLE_SCATTER * multiplier;
+          const settleDuration = EVENT_ANIM_DURATION.SHUFFLE_SETTLE * multiplier;
+          const totalDuration = liftDuration + scatterDuration + settleDuration;
 
-          // Build animating pieces at their starting positions
+          // Phase 1: All pieces lift slightly (scale up)
           const liftMap = new Map<number, AnimatingPiece>();
           for (const [sq] of step.fromPositions) {
             const coords = squareCenterCoords(sq as Square, fl);
@@ -770,7 +779,7 @@ export function useAnimationQueue({
               scale: 1.1,
               scaleX: null,
               transitionDurationMs: liftDuration,
-              easing: 'ease-out',
+              easing: EVENT_ANIM_EASING.SHUFFLE_LIFT,
             });
           }
           setAnimatingPieces(liftMap);
@@ -781,12 +790,9 @@ export function useAnimationQueue({
             if (!isAnimatingRef.current) return;
 
             const scatterMap = new Map<number, AnimatingPiece>();
-            // Map from-square pieces to their to-square destinations
-            // We need to track which pieces move where for animation
             const fromEntries = Array.from(step.fromPositions.entries());
             const toEntries = Array.from(step.toPositions.entries());
 
-            // For each from-position, animate the piece to a to-position
             for (let i = 0; i < fromEntries.length && i < toEntries.length; i++) {
               const fromEntry = fromEntries[i];
               const toEntry = toEntries[i];
@@ -800,7 +806,7 @@ export function useAnimationQueue({
                 scale: 1.0,
                 scaleX: null,
                 transitionDurationMs: scatterDuration,
-                easing: EVENT_ANIM_EASING.SHUFFLE,
+                easing: EVENT_ANIM_EASING.SHUFFLE_SCATTER,
               });
             }
             setAnimatingPieces(scatterMap);
@@ -825,7 +831,6 @@ export function useAnimationQueue({
               setAnimationBoard(board);
             }
 
-            // Brief settle with slight scale
             const settleMap = new Map<number, AnimatingPiece>();
             for (const [sq] of step.toPositions) {
               const coords = squareCenterCoords(sq as Square, fl);
@@ -835,7 +840,7 @@ export function useAnimationQueue({
                 scale: 1.0,
                 scaleX: null,
                 transitionDurationMs: settleDuration,
-                easing: 'ease-in',
+                easing: EVENT_ANIM_EASING.SHUFFLE_SETTLE,
               });
             }
             setAnimatingPieces(settleMap);
@@ -848,7 +853,7 @@ export function useAnimationQueue({
             if (!isAnimatingRef.current) return;
             setAnimatingPieces(new Map());
             advance();
-          }, duration);
+          }, totalDuration);
           activeTimersRef.current.add(completeTimer);
           break;
         }

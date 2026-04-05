@@ -168,12 +168,12 @@ describe('buildActivationSequence', () => {
         type: 'overlay',
         text: 'King for a Day!',
         icon: 'crown',
-        durationMs: EVENT_ANIM_DURATION.OVERLAY,
+        durationMs: EVENT_ANIM_DURATION.OVERLAY_FADE_IN + EVENT_ANIM_DURATION.OVERLAY_HOLD + EVENT_ANIM_DURATION.OVERLAY_FADE_OUT,
       });
       expect(steps[1]).toMatchObject({
         type: 'flash',
         color: 'var(--ui-accent)',
-        durationMs: EVENT_ANIM_DURATION.FLASH,
+        durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 3,
         pulses: 3,
       });
       // Flash should target 3 pawns, not the king
@@ -207,7 +207,7 @@ describe('buildActivationSequence', () => {
         type: 'overlay',
         text: 'Live Grenade!',
         icon: 'bomb',
-        durationMs: EVENT_ANIM_DURATION.OVERLAY,
+        durationMs: EVENT_ANIM_DURATION.OVERLAY_FADE_IN + EVENT_ANIM_DURATION.OVERLAY_HOLD + EVENT_ANIM_DURATION.OVERLAY_FADE_OUT,
       });
     });
   });
@@ -368,7 +368,7 @@ describe('buildActivationSequence', () => {
       expect(steps[0]).toMatchObject({
         type: 'overlay',
         text: 'Step-Back',
-        durationMs: EVENT_ANIM_DURATION.OVERLAY,
+        durationMs: EVENT_ANIM_DURATION.OVERLAY_FADE_IN + EVENT_ANIM_DURATION.OVERLAY_HOLD + EVENT_ANIM_DURATION.OVERLAY_FADE_OUT,
       });
     });
   });
@@ -510,7 +510,7 @@ describe('buildExpirationSequence', () => {
       type: 'flash',
       color: 'var(--ui-danger)',
       pulses: 1,
-      durationMs: 300,
+      durationMs: EVENT_ANIM_DURATION.FLASH_PULSE,
     });
   });
 
@@ -527,7 +527,7 @@ describe('buildExpirationSequence', () => {
       type: 'flash',
       color: 'var(--ui-accent)',
       pulses: 1,
-      durationMs: 300,
+      durationMs: EVENT_ANIM_DURATION.FLASH_PULSE,
     });
   });
 
