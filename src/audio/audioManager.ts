@@ -37,6 +37,12 @@ export class AudioManager {
   private musicSource: MediaElementAudioSourceNode | null = null;
   private currentMusicTrack: MusicTrack | null = null;
 
+  /**
+   * Desired music track set before the AudioContext exists.
+   * Started once the context is created during a user gesture.
+   */
+  private pendingMusicTrack: MusicTrack | null = null;
+
   constructor(pack: AudioPack, settings: AudioSettings) {
     this.pack = pack;
     this.settings = settings;
@@ -47,17 +53,15 @@ export class AudioManager {
   // -------------------------------------------------------------------------
 
   /**
-   * Lazily initializes the AudioContext on first user interaction.
-   * Returns the audio nodes, or null if initialization fails.
+   * Lazily initializes the AudioContext on first call.
+   * Should only be called from user-gesture-driven code paths (play())
+   * so the browser allows the context to start in 'running' state.
    */
   private ensureContext(): AudioNodes | null {
     if (this.nodes) {
-      // Resume a suspended context (browser autoplay policy may have blocked it
-      // when it was created outside a user gesture)
+      // Safety net: resume if browser suspended the context (e.g. tab backgrounded)
       if (this.nodes.context.state === 'suspended') {
-        void this.nodes.context.resume().then(() => {
-          this.onContextResumed();
-        });
+        void this.nodes.context.resume();
       }
       return this.nodes;
     }
@@ -79,33 +83,10 @@ export class AudioManager {
       this.applyVolumes();
       void this.preloadSfx();
 
-      if (context.state === 'suspended') {
-        void context.resume().then(() => {
-          this.onContextResumed();
-        });
-      }
-
       return this.nodes;
     } catch (err) {
       console.warn('AudioManager: Web Audio API not available:', err);
       return null;
-    }
-  }
-
-  /**
-   * Called after a suspended AudioContext resumes. Restarts music playback
-   * that was blocked by the browser's autoplay policy.
-   */
-  private onContextResumed(): void {
-    if (
-      this.currentMusicTrack &&
-      !this.settings.muted &&
-      this.musicElement &&
-      this.musicElement.paused
-    ) {
-      this.musicElement.play().catch(() => {
-        /* ignore — will retry on next user interaction */
-      });
     }
   }
 
@@ -145,12 +126,18 @@ export class AudioManager {
   /**
    * Plays a one-shot sound effect. No-ops silently if the sound is
    * not in the current pack, if audio is muted, or if initialization fails.
+   *
+   * This is the primary entry point for user-gesture-driven audio.
+   * It creates the AudioContext (if needed) and starts any deferred music.
    */
   play(event: SoundEvent): void {
     if (this.settings.muted) return;
 
     const nodes = this.ensureContext();
     if (!nodes) return;
+
+    // Start deferred music now that we have a running context
+    this.startPendingMusic(nodes);
 
     const buffer = this.sfxBuffers.get(event);
     if (!buffer) return;
@@ -174,31 +161,50 @@ export class AudioManager {
   // -------------------------------------------------------------------------
 
   /**
-   * Starts playing a music track. If the requested track is already playing,
-   * this is a no-op (preserving continuity across screen transitions).
+   * Requests a music track. If no AudioContext exists yet (typical on first
+   * load, since this is called from a React effect rather than a user gesture),
+   * the track is deferred and started when play() creates the context.
    */
   playMusic(track: MusicTrack): void {
-    // Same track already playing -- do nothing (continuity)
+    // Same track already playing — preserve continuity
     if (this.currentMusicTrack === track && this.musicElement && !this.musicElement.paused) {
       return;
     }
 
-    if (this.settings.muted) {
-      this.currentMusicTrack = track;
+    // Always record the desired track (for muted/deferred cases)
+    this.currentMusicTrack = track;
+
+    if (this.settings.muted) return;
+
+    // No running context yet — defer until a user gesture triggers play()
+    if (!this.nodes || this.nodes.context.state === 'suspended') {
+      this.pendingMusicTrack = track;
       return;
     }
 
-    const nodes = this.ensureContext();
-    if (!nodes) return;
+    this.startMusicTrack(track, this.nodes);
+  }
 
+  /** Starts deferred music after the AudioContext becomes available. */
+  private startPendingMusic(nodes: AudioNodes): void {
+    if (!this.pendingMusicTrack || this.settings.muted) return;
+    const track = this.pendingMusicTrack;
+    this.pendingMusicTrack = null;
+    this.startMusicTrack(track, nodes);
+  }
+
+  /** Creates an HTMLAudioElement and routes it through the Web Audio graph. */
+  private startMusicTrack(track: MusicTrack, nodes: AudioNodes): void {
     const asset = this.pack.music[track];
     if (!asset) return;
 
     this.stopMusicInternal();
 
-    const audio = new Audio(asset.url);
-    audio.loop = true;
+    // Set crossOrigin before src so the browser makes a CORS-ready request
+    const audio = new Audio();
     audio.crossOrigin = 'anonymous';
+    audio.loop = true;
+    audio.src = asset.url;
 
     const source = nodes.context.createMediaElementSource(audio);
     const assetGain = nodes.context.createGain();
@@ -219,6 +225,7 @@ export class AudioManager {
   stopMusic(): void {
     this.stopMusicInternal();
     this.currentMusicTrack = null;
+    this.pendingMusicTrack = null;
   }
 
   private stopMusicInternal(): void {
@@ -252,18 +259,19 @@ export class AudioManager {
     nodes.sfxGain.gain.setValueAtTime(this.settings.sfxVolume, nodes.context.currentTime);
     nodes.musicGain.gain.setValueAtTime(this.settings.musicVolume, nodes.context.currentTime);
 
-    // If muted, pause music element to save resources; resume on unmute
+    // If muted, pause music element to save resources
     if (this.settings.muted && this.musicElement && !this.musicElement.paused) {
       this.musicElement.pause();
-    } else if (
-      !this.settings.muted &&
-      this.musicElement &&
-      this.musicElement.paused &&
-      this.currentMusicTrack
-    ) {
-      this.musicElement.play().catch(() => {
-        /* ignore */
-      });
+    } else if (!this.settings.muted && this.currentMusicTrack) {
+      if (this.musicElement && this.musicElement.paused) {
+        // Resume existing paused music element
+        this.musicElement.play().catch(() => {
+          /* ignore */
+        });
+      } else if (!this.musicElement && nodes.context.state === 'running') {
+        // No element yet (was muted when playMusic was called) — start now
+        this.startMusicTrack(this.currentMusicTrack, nodes);
+      }
     }
   }
 
