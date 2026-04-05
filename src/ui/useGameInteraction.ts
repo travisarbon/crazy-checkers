@@ -7,10 +7,11 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import type { BoardState, GameState, Move, Square, SquareState } from '../engine/types';
-import { GameStatus } from '../engine/types';
+import type { ActiveEvent, BoardState, GameState, Move, Square, SquareState } from '../engine/types';
+import { CrazyEvent, GameStatus } from '../engine/types';
 import { getBoardSquare } from '../engine/board';
 import { getMovesToSquare, getJumpsForPiece } from '../engine/moves';
+import { getFlyingJumps } from '../engine/flyingMoves';
 import { makeMove, getCurrentLegalMoves, getEffectiveBoard } from '../engine/game';
 
 // ---------------------------------------------------------------------------
@@ -87,6 +88,22 @@ function applyPartialHop(
 }
 
 /**
+ * Returns continuation jumps for a piece during a multi-jump chain.
+ * Uses flying jump logic when Up in the Air is active, standard otherwise.
+ */
+function getContinuationJumps(
+  board: BoardState,
+  sq: Square,
+  activeEvents: readonly ActiveEvent[],
+): Move[] {
+  const upInTheAir = activeEvents.some(e => e.type === CrazyEvent.UpInTheAir);
+  if (upInTheAir) {
+    return getFlyingJumps(board, sq);
+  }
+  return getJumpsForPiece(board, sq);
+}
+
+/**
  * Find the captured square for a hop from `from` to `to` by looking at the
  * legal moves' first path entry.
  */
@@ -150,9 +167,9 @@ export function useGameInteraction({
     if (selectedSquare === null) return [];
 
     if (intermediateBoard !== null) {
-      // Mid-multi-jump: continuation jumps from the current landing
-      // TODO: route through ruleSet for event-aware jump generation if needed
-      return getJumpsForPiece(intermediateBoard, selectedSquare);
+      // Mid-multi-jump: continuation jumps from the current landing.
+      // Uses flying jumps when Up in the Air is active.
+      return getContinuationJumps(intermediateBoard, selectedSquare, gameState.activeEvents);
     }
 
     // Use getCurrentLegalMoves (routes through CompositeEventRuleSet) and filter
@@ -215,7 +232,7 @@ export function useGameInteraction({
           const newCaptured = [...multiJumpProgress.capturedSoFar, captured];
 
           // Check for continuations from the new landing
-          const continuations = getJumpsForPiece(newBoard, sq);
+          const continuations = getContinuationJumps(newBoard, sq, gameState.activeEvents);
 
           if (continuations.length > 0) {
             // More jumps available — stay in mid-multi-jump
@@ -280,7 +297,7 @@ export function useGameInteraction({
 
           const applyFirstHop = () => {
             const newBoard = applyPartialHop(effectiveBoard, selectedSquare, sq, captured);
-            const continuations = getJumpsForPiece(newBoard, sq);
+            const continuations = getContinuationJumps(newBoard, sq, gameState.activeEvents);
 
             if (continuations.length > 0) {
               // Multi-jump: enter mid-multi-jump phase
