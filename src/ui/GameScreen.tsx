@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { BREAKPOINT } from './breakpoints';
 import type { ActiveEvent, GameState, PlayerSetup, RuleSet } from '../engine/types';
-import { GameMode, GameStatus, GameResultType, GameEndReason, PieceColor, PlayerType } from '../engine/types';
+import { GameMode, GameStatus, GameResultType, GameEndReason, PieceColor, PieceType, PlayerType } from '../engine/types';
 import type { TimeControlConfig } from '../engine/clock';
 import { createNewGame, makeMove, canUndo as engineCanUndo, resign, getEffectiveBoard } from '../engine/game';
 import { requestAIMove } from '../ai/workerClient';
@@ -28,9 +28,10 @@ import GameOverDialog from './dialogs/GameOverDialog';
 import EventAnnouncement from './EventAnnouncement';
 import ActiveEventsIndicator from './ActiveEventsIndicator';
 import { useGameInteraction } from './useGameInteraction';
+import type { HopDetails } from './useGameInteraction';
 import { useGameClock } from './useGameClock';
 import type { AnimationStep } from './useAnimationQueue';
-import { useAnimationQueue, buildAnimationSequence } from './useAnimationQueue';
+import { useAnimationQueue, buildAnimationSequence, ANIM_DURATION, ANIM_EASING } from './useAnimationQueue';
 import { useEventAnimations } from './useEventAnimations';
 import { useEventOverlays } from './useEventOverlays';
 import { useAudioManager } from '../audio/useAudioManager';
@@ -312,9 +313,49 @@ export default function GameScreen({
     }
   }, [gameClock.whiteLowTime, gameClock.blackLowTime, audioManager]);
 
+  // --- Per-hop animation handler (Bug Fix B) ---
+  const handleHopComplete = useCallback(
+    (hop: HopDetails) => {
+      const hopSteps: AnimationStep[] = [
+        {
+          type: 'slide',
+          fromSquare: hop.from,
+          toSquare: hop.to,
+          durationMs: ANIM_DURATION.MULTI_JUMP_HOP,
+          easing: ANIM_EASING.MULTI_JUMP_HOP,
+        },
+        {
+          type: 'fadeOut',
+          square: hop.captured,
+          durationMs: ANIM_DURATION.CAPTURE_FADE,
+          easing: ANIM_EASING.CAPTURE_FADE,
+        },
+      ];
+
+      // Use the board before this hop for the animation base.
+      // Reconstruct it: the hop.boardAfter has the piece at hop.to with
+      // hop.from vacated and hop.captured removed. The board before is
+      // what we'd get by reversing those changes, but it's simpler to
+      // use the current displayBoard which still shows pre-hop state.
+      const boardBeforeHop = [...hop.boardAfter] as typeof hop.boardAfter;
+      // Restore: put piece back at from, clear to, restore captured piece
+      const piece = hop.boardAfter[(hop.to as number) - 1];
+      (boardBeforeHop as Array<unknown>)[(hop.to as number) - 1] = null;
+      (boardBeforeHop as Array<unknown>)[(hop.from as number) - 1] = piece;
+      // We don't know the captured piece details, but the fadeOut will handle it
+      // visually. The captured square is already null in boardAfter.
+
+      animationQueue.enqueue(hopSteps, boardBeforeHop, gameState.activeColor);
+
+      // Capture SFX for each hop
+      audioManager?.play(SoundEvent.Capture);
+    },
+    [animationQueue, gameState.activeColor, audioManager],
+  );
+
   // --- Move handler ---
   const handleMove = useCallback(
-    (newState: GameState) => {
+    (newState: GameState, options?: { skipMoveAnimation?: boolean }) => {
       // Record pre-move time for undo support
       gameClock.onMoveComplete();
 
@@ -325,7 +366,10 @@ export default function GameScreen({
       const expired = getNewlyExpiredEvents(gameState.activeEvents, newState.activeEvents);
 
       if (triggered.length > 0) {
-        setAnnouncementEvents(triggered);
+        // Merge into existing announcement if one is already visible (rapid triggers)
+        setAnnouncementEvents((prev) =>
+          prev.length > 0 ? [...prev, ...triggered] : triggered,
+        );
         audioManager?.play(SoundEvent.EventTrigger);
       }
 
@@ -335,8 +379,8 @@ export default function GameScreen({
         return;
       }
 
-      // SFX: capture or move sound
-      if (audioManager) {
+      // SFX: capture or move sound (skip for interactive multi-jumps — already played per hop)
+      if (audioManager && !options?.skipMoveAnimation) {
         if (move.captured.length > 0) {
           audioManager.play(SoundEvent.Capture);
         } else {
@@ -369,8 +413,31 @@ export default function GameScreen({
         );
       }
 
-      // 2. Move animations
-      allSteps = allSteps.concat(buildAnimationSequence(move, boardBefore, newState.board));
+      // 2. Move animations (skip for interactive multi-jumps — already animated per hop)
+      if (!options?.skipMoveAnimation) {
+        allSteps = allSteps.concat(buildAnimationSequence(move, boardBefore, newState.board));
+      } else {
+        // For skipped interactive multi-jumps, still detect and animate kinging
+        const finalDest = move.path[move.path.length - 1];
+        if (finalDest !== undefined) {
+          const pieceBefore = boardBefore[move.from];
+          const pieceAfter = newState.board[finalDest];
+          if (
+            pieceBefore &&
+            pieceAfter &&
+            pieceBefore.type === PieceType.Pawn &&
+            pieceAfter.type === PieceType.King
+          ) {
+            allSteps.push({
+              type: 'kingPulse',
+              square: finalDest,
+              durationMs: ANIM_DURATION.KING_PULSE,
+              easingUp: ANIM_EASING.KING_PULSE_UP,
+              easingDown: ANIM_EASING.KING_PULSE_DOWN,
+            });
+          }
+        }
+      }
 
       // 3. Mid-move effects (detonations, color swaps from expired events)
       if (expired.length > 0) {
@@ -387,8 +454,13 @@ export default function GameScreen({
       }
 
       // 5. Enqueue and set pending state
-      pendingStateRef.current = newState;
-      animationQueue.enqueue(allSteps, boardBefore, gameState.activeColor);
+      if (allSteps.length > 0) {
+        pendingStateRef.current = newState;
+        animationQueue.enqueue(allSteps, boardBefore, gameState.activeColor);
+      } else {
+        // No animations to play (e.g., skipped multi-jump with no events)
+        setGameState(newState);
+      }
     },
     [gameState, animationQueue, eventAnimations, audioManager, gameClock],
   );
@@ -464,6 +536,7 @@ export default function GameScreen({
   const interaction = useGameInteraction({
     gameState,
     onMove: handleMove,
+    onHopComplete: handleHopComplete,
     isAnimating: animationQueue.isAnimating,
     isDisabled: isAIThinking,
     moveConfirmation,
@@ -687,6 +760,7 @@ export default function GameScreen({
       {announcementEvents.length > 0 && (
         <EventAnnouncement
           events={announcementEvents}
+          isAnimating={animationQueue.isAnimating}
           onDismiss={() => {
             setAnnouncementEvents([]);
           }}

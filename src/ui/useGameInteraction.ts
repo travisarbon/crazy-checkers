@@ -18,12 +18,27 @@ import { makeMove, getCurrentLegalMoves, getEffectiveBoard } from '../engine/gam
 // Types
 // ---------------------------------------------------------------------------
 
+/** Details for a single hop in a multi-jump chain. */
+export interface HopDetails {
+  /** Square the piece jumped from. */
+  from: Square;
+  /** Square the piece landed on. */
+  to: Square;
+  /** Square of the captured piece. */
+  captured: Square;
+  /** Board state after this hop (with piece moved and capture removed). */
+  boardAfter: BoardState;
+}
+
 interface UseGameInteractionOptions {
   /** The current game state. */
   gameState: GameState;
 
   /** Callback invoked when a complete move is executed. Receives the new GameState. */
-  onMove: (newState: GameState) => void;
+  onMove: (newState: GameState, options?: { skipMoveAnimation?: boolean }) => void;
+
+  /** Callback invoked after each intermediate or final hop during an interactive multi-jump. */
+  onHopComplete?: (hop: HopDetails) => void;
 
   /** Whether an animation is currently playing (suppresses input). */
   isAnimating?: boolean;
@@ -123,6 +138,7 @@ function findCapturedForHop(_from: Square, to: Square, legalMoves: Move[]): Squa
 export function useGameInteraction({
   gameState,
   onMove,
+  onHopComplete,
   isAnimating = false,
   isDisabled = false,
   moveConfirmation = false,
@@ -234,6 +250,9 @@ export function useGameInteraction({
           // Check for continuations from the new landing
           const continuations = getContinuationJumps(newBoard, sq, gameState.activeEvents);
 
+          // Notify about this hop for per-hop animation
+          onHopComplete?.({ from: selectedSquare, to: sq, captured, boardAfter: newBoard });
+
           if (continuations.length > 0) {
             // More jumps available — stay in mid-multi-jump
             setSelectedSquare(sq);
@@ -252,7 +271,7 @@ export function useGameInteraction({
             };
             clearSelection();
             const newState = makeMove(gameState, completeMove);
-            onMove(newState);
+            onMove(newState, { skipMoveAnimation: true });
           }
         };
 
@@ -301,6 +320,8 @@ export function useGameInteraction({
 
             if (continuations.length > 0) {
               // Multi-jump: enter mid-multi-jump phase
+              // Notify about first hop for per-hop animation
+              onHopComplete?.({ from: selectedSquare, to: sq, captured, boardAfter: newBoard });
               setSelectedSquare(sq);
               setIntermediateBoard(newBoard);
               setMultiJumpProgress({
@@ -362,6 +383,7 @@ export function useGameInteraction({
       pendingConfirmSquare,
       moveConfirmation,
       onMove,
+      onHopComplete,
       clearSelection,
       isAnimating,
       isDisabled,

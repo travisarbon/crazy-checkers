@@ -37,13 +37,21 @@ describe('EventAnnouncement', () => {
     expect(screen.getByText('For one round everyone wears the crown!')).toBeInTheDocument();
   });
 
-  it('auto-dismisses after the specified delay', () => {
+  it('auto-dismisses after minimum display time and dismiss delay', () => {
     const onDismiss = vi.fn();
     render(<EventAnnouncement events={[makeEvent(CrazyEvent.LiveGrenade)]} onDismiss={onDismiss} dismissDelay={2000} />);
     expect(onDismiss).not.toHaveBeenCalled();
 
+    // Minimum display time is 1500ms; dismiss delay is 2000ms.
+    // After 1500ms the min-time guard lifts, then the dismiss delay timer starts.
+    // With fake timers, Date.now() also advances, so remaining ≈ max(0, 2000 - 1500) = 500ms.
+    // Total: 1500 + 500 = 2000ms. But need to advance in two steps so the
+    // effect can react to the minTimeElapsed state change.
     act(() => {
-      vi.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(1500);
+    });
+    act(() => {
+      vi.advanceTimersByTime(500);
     });
 
     expect(onDismiss).toHaveBeenCalledOnce();
@@ -65,6 +73,30 @@ describe('EventAnnouncement', () => {
       vi.advanceTimersByTime(2000);
     });
 
+    expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
+  it('waits for isAnimating to become false before auto-dismissing', () => {
+    const onDismiss = vi.fn();
+    const { rerender } = render(
+      <EventAnnouncement events={[makeEvent(CrazyEvent.LiveGrenade)]} onDismiss={onDismiss} isAnimating={true} dismissDelay={2000} />,
+    );
+
+    // Advance past both min display and dismiss delay
+    act(() => {
+      vi.advanceTimersByTime(4000);
+    });
+    expect(onDismiss).not.toHaveBeenCalled();
+
+    // Now animation finishes
+    rerender(
+      <EventAnnouncement events={[makeEvent(CrazyEvent.LiveGrenade)]} onDismiss={onDismiss} isAnimating={false} dismissDelay={2000} />,
+    );
+
+    // After remaining delay, should dismiss
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
     expect(onDismiss).toHaveBeenCalledOnce();
   });
 

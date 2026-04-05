@@ -8,15 +8,9 @@ import { useCallback } from 'react';
 import type { ActiveEvent, BoardState, Move, Square } from '../engine/types';
 import { CrazyEvent, PieceColor, PieceType, square } from '../engine/types';
 import { getBoardSquare, squareToGrid, gridToSquare } from '../engine/board';
-import { EVENT_DISPLAY_NAMES } from '../engine/events';
 import type { AnimationStep } from './useAnimationQueue';
 import { EVENT_ANIM_DURATION, ANIM_DURATION, ANIM_EASING } from './useAnimationQueue';
 
-// Computed totals from granular constants
-const OVERLAY_TOTAL =
-  EVENT_ANIM_DURATION.OVERLAY_FADE_IN +
-  EVENT_ANIM_DURATION.OVERLAY_HOLD +
-  EVENT_ANIM_DURATION.OVERLAY_FADE_OUT;
 const SHUFFLE_TOTAL =
   EVENT_ANIM_DURATION.SHUFFLE_LIFT +
   EVENT_ANIM_DURATION.SHUFFLE_SCATTER +
@@ -93,12 +87,6 @@ function buildKingForADayActivation(
 
   return [
     {
-      type: 'overlay',
-      text: 'King for a Day!',
-      icon: 'crown',
-      durationMs: OVERLAY_TOTAL,
-    },
-    {
       type: 'flash',
       squares: pawnSquares,
       color: 'var(--ui-accent)',
@@ -109,29 +97,11 @@ function buildKingForADayActivation(
 }
 
 function buildLiveGrenadeActivation(): AnimationStep[] {
-  return [
-    {
-      type: 'overlay',
-      text: 'Live Grenade!',
-      icon: 'bomb',
-      durationMs: OVERLAY_TOTAL,
-    },
-  ];
+  return [];
 }
 
 function buildHotPotatoActivation(): AnimationStep[] {
-  return [
-    {
-      type: 'overlay',
-      text: 'Hot Potato!',
-      icon: 'swap',
-      durationMs: OVERLAY_TOTAL,
-    },
-    {
-      type: 'pause',
-      durationMs: 200,
-    },
-  ];
+  return [];
 }
 
 function buildChecksMixActivation(
@@ -154,12 +124,6 @@ function buildChecksMixActivation(
 
   return [
     {
-      type: 'overlay',
-      text: 'Checks Mix!',
-      icon: 'shuffle',
-      durationMs: OVERLAY_TOTAL,
-    },
-    {
       type: 'shuffle',
       fromPositions,
       toPositions,
@@ -172,12 +136,6 @@ function buildOppositeDayActivation(board: BoardState): AnimationStep[] {
   const occupiedSquares = getAllOccupiedSquares(board);
 
   return [
-    {
-      type: 'overlay',
-      text: 'Opposite Day!',
-      icon: 'invert',
-      durationMs: OVERLAY_TOTAL,
-    },
     {
       type: 'flash',
       squares: occupiedSquares,
@@ -193,12 +151,6 @@ function buildUpInTheAirActivation(board: BoardState): AnimationStep[] {
 
   return [
     {
-      type: 'overlay',
-      text: 'Up in the Air!',
-      icon: 'fly',
-      durationMs: OVERLAY_TOTAL,
-    },
-    {
       type: 'flash',
       squares: allPieceSquares,
       color: 'var(--ui-accent)',
@@ -212,12 +164,6 @@ function buildNoTouchingActivation(board: BoardState): AnimationStep[] {
   const kingSquares = getAllKingSquares(board);
 
   return [
-    {
-      type: 'overlay',
-      text: 'No Touching!',
-      icon: 'shield',
-      durationMs: OVERLAY_TOTAL,
-    },
     {
       type: 'flash',
       squares: kingSquares,
@@ -359,14 +305,8 @@ function buildActivationForEvent(
     case CrazyEvent.NoTouching:
       return buildNoTouchingActivation(board);
     default:
-      // Future events (8–40): generic overlay-only animation
-      return [
-        {
-          type: 'overlay',
-          text: EVENT_DISPLAY_NAMES[event.type],
-          durationMs: OVERLAY_TOTAL,
-        },
-      ];
+      // Future events (8–40): no in-board animation (HTML announcement handles notification)
+      return [];
   }
 }
 

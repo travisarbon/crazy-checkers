@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  { ignores: ['dist', 'e2e', 'coverage', 'vitest.config.ts', 'vitest.perf.config.ts', 'playwright.config.ts', 'src/ai/validation/runValidation.ts'] },
+  { ignores: ['dist', 'e2e', 'coverage', 'vitest.config.ts', 'vitest.ai.config.ts', 'vitest.perf.config.ts', 'playwright.config.ts', 'src/ai/validation/runValidation.ts'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

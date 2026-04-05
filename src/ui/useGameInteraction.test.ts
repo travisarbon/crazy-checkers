@@ -245,7 +245,7 @@ describe('useGameInteraction', () => {
     }
   });
 
-  it('12. multi-jump: second hop completes the chain', () => {
+  it('12. multi-jump: second hop completes the chain with skipMoveAnimation', () => {
     let board = emptyBoard();
     board = placePiece(board, 22, PieceColor.White);
     board = placePiece(board, 18, PieceColor.Black);
@@ -275,7 +275,46 @@ describe('useGameInteraction', () => {
 
       expect(result.current.isMidMultiJump).toBe(false);
       expect(onMove).toHaveBeenCalledTimes(1);
+      // Multi-jump completion passes skipMoveAnimation flag
+      expect(onMove).toHaveBeenCalledWith(expect.anything(), { skipMoveAnimation: true });
       expect(result.current.selectedSquare).toBeNull();
+    }
+  });
+
+  it('12b. multi-jump: onHopComplete fires for each hop', () => {
+    let board = emptyBoard();
+    board = placePiece(board, 22, PieceColor.White);
+    board = placePiece(board, 18, PieceColor.Black);
+    board = placePiece(board, 11, PieceColor.Black);
+    const gs = gameWithBoard(board);
+    const onMove = vi.fn();
+    const onHopComplete = vi.fn();
+
+    const { result } = renderHook(() =>
+      useGameInteraction({ gameState: gs, onMove, onHopComplete }),
+    );
+
+    const jumps = getJumpsForPiece(gs.board, square(22));
+    const multiJump = jumps.find((j) => j.path.length > 1);
+
+    if (multiJump) {
+      act(() => {
+        result.current.handleSquareClick(square(22));
+      });
+      // First hop
+      act(() => {
+        result.current.handleSquareClick(multiJump.path[0] as Square);
+      });
+      expect(onHopComplete).toHaveBeenCalledTimes(1);
+      expect(onHopComplete).toHaveBeenCalledWith(
+        expect.objectContaining({ from: square(22), to: multiJump.path[0] }),
+      );
+
+      // Second hop (final)
+      act(() => {
+        result.current.handleSquareClick(multiJump.path[1] as Square);
+      });
+      expect(onHopComplete).toHaveBeenCalledTimes(2);
     }
   });
 

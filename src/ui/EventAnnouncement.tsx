@@ -1,14 +1,25 @@
 /**
  * Event announcement overlay displayed when a new Crazy mode event triggers.
  *
- * Shows the event name and flavor text, then auto-dismisses after a delay.
- * Clicking or tapping anywhere dismisses immediately.
+ * Shows the event name and flavor text, then auto-dismisses after animations
+ * complete and a minimum display time has elapsed. Clicking or tapping
+ * anywhere dismisses immediately.
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ActiveEvent } from '../engine/types';
 import { EVENT_DISPLAY_NAMES, EVENT_FLAVOR_TEXT } from '../engine/events';
 import styles from './EventAnnouncement.module.css';
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/** Minimum time the announcement stays visible (ms). */
+const MIN_DISPLAY_MS = 1500;
+
+/** Auto-dismiss delay after all conditions are met (ms). */
+const DEFAULT_DISMISS_DELAY = 2000;
 
 // ---------------------------------------------------------------------------
 // Props
@@ -19,6 +30,8 @@ interface EventAnnouncementProps {
   events: readonly ActiveEvent[];
   /** Called when the announcement completes (auto-dismiss or user click). */
   onDismiss: () => void;
+  /** Whether an animation is currently playing on the board. */
+  isAnimating?: boolean;
   /** Auto-dismiss delay in milliseconds. Default: 2000. */
   dismissDelay?: number;
 }
@@ -30,10 +43,13 @@ interface EventAnnouncementProps {
 export default function EventAnnouncement({
   events,
   onDismiss,
-  dismissDelay = 2000,
+  isAnimating = false,
+  dismissDelay = DEFAULT_DISMISS_DELAY,
 }: EventAnnouncementProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dismissedRef = useRef(false);
+  const [mountedAt] = useState(() => Date.now());
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   const handleDismiss = useCallback(() => {
     if (dismissedRef.current) return;
@@ -45,15 +61,32 @@ export default function EventAnnouncement({
     onDismiss();
   }, [onDismiss]);
 
+  // Track minimum display time
   useEffect(() => {
-    timerRef.current = setTimeout(handleDismiss, dismissDelay);
+    const timer = setTimeout(() => {
+      setMinTimeElapsed(true);
+    }, MIN_DISPLAY_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
+
+  // Auto-dismiss: start countdown only when animation is done AND min time has elapsed
+  useEffect(() => {
+    if (isAnimating || !minTimeElapsed) return;
+
+    // Calculate remaining dismiss delay after min display time
+    const elapsed = Date.now() - mountedAt;
+    const remaining = Math.max(0, dismissDelay - elapsed);
+
+    timerRef.current = setTimeout(handleDismiss, remaining);
     return () => {
       if (timerRef.current !== null) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
     };
-  }, [handleDismiss, dismissDelay]);
+  }, [isAnimating, minTimeElapsed, handleDismiss, dismissDelay, mountedAt]);
 
   return (
     <div

@@ -8,7 +8,8 @@
 
 import { useState } from 'react';
 import type { TimeControlConfig } from '../../engine/clock';
-import TimeControlSection, { describeConfig } from '../TimeControlSection';
+import TimeControlSection from '../TimeControlSection';
+import { describeConfig } from '../timeControlPresets';
 import styles from './GameSetupDialog.module.css';
 
 interface TimeControlOverrideProps {

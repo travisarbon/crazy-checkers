@@ -152,7 +152,7 @@ describe('getDiagonalNeighbors', () => {
 
 describe('buildActivationSequence', () => {
   describe('King for a Day', () => {
-    it('produces overlay + flash on pawn squares', () => {
+    it('produces flash on pawn squares (no overlay)', () => {
       const hook = getHook();
       const board = boardWith([
         { sq: 1, color: PieceColor.White, type: PieceType.Pawn },
@@ -163,25 +163,19 @@ describe('buildActivationSequence', () => {
       const event = makeActiveEvent(CrazyEvent.KingForADay);
       const steps = hook.buildActivationSequence([event], board);
 
-      expect(steps).toHaveLength(2);
+      expect(steps).toHaveLength(1);
       expect(steps[0]).toMatchObject({
-        type: 'overlay',
-        text: 'King for a Day!',
-        icon: 'crown',
-        durationMs: EVENT_ANIM_DURATION.OVERLAY_FADE_IN + EVENT_ANIM_DURATION.OVERLAY_HOLD + EVENT_ANIM_DURATION.OVERLAY_FADE_OUT,
-      });
-      expect(steps[1]).toMatchObject({
         type: 'flash',
         color: 'var(--ui-accent)',
         durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 3,
         pulses: 3,
       });
       // Flash should target 3 pawns, not the king
-      const flash = steps[1] as AnimationStep & { type: 'flash'; squares: readonly unknown[] };
+      const flash = steps[0] as AnimationStep & { type: 'flash'; squares: readonly unknown[] };
       expect(flash.squares).toHaveLength(3);
     });
 
-    it('produces overlay + empty flash when all pieces are kings', () => {
+    it('produces empty flash when all pieces are kings', () => {
       const hook = getHook();
       const board = boardWith([
         { sq: 1, color: PieceColor.White, type: PieceType.King },
@@ -190,42 +184,34 @@ describe('buildActivationSequence', () => {
       const event = makeActiveEvent(CrazyEvent.KingForADay);
       const steps = hook.buildActivationSequence([event], board);
 
-      expect(steps).toHaveLength(2);
-      const flash = steps[1] as AnimationStep & { type: 'flash'; squares: readonly unknown[] };
+      expect(steps).toHaveLength(1);
+      const flash = steps[0] as AnimationStep & { type: 'flash'; squares: readonly unknown[] };
       expect(flash.squares).toHaveLength(0);
     });
   });
 
   describe('Live Grenade', () => {
-    it('produces overlay only', () => {
+    it('produces empty steps (no overlay)', () => {
       const hook = getHook();
       const event = makeActiveEvent(CrazyEvent.LiveGrenade);
       const steps = hook.buildActivationSequence([event], emptyBoard());
 
-      expect(steps).toHaveLength(1);
-      expect(steps[0]).toMatchObject({
-        type: 'overlay',
-        text: 'Live Grenade!',
-        icon: 'bomb',
-        durationMs: EVENT_ANIM_DURATION.OVERLAY_FADE_IN + EVENT_ANIM_DURATION.OVERLAY_HOLD + EVENT_ANIM_DURATION.OVERLAY_FADE_OUT,
-      });
+      expect(steps).toHaveLength(0);
     });
   });
 
   describe('Hot Potato', () => {
-    it('produces overlay + pause', () => {
+    it('produces empty steps (no overlay)', () => {
       const hook = getHook();
       const event = makeActiveEvent(CrazyEvent.HotPotato);
       const steps = hook.buildActivationSequence([event], emptyBoard());
 
-      expect(steps).toHaveLength(2);
-      expect(steps[0]).toMatchObject({ type: 'overlay', text: 'Hot Potato!' });
-      expect(steps[1]).toMatchObject({ type: 'pause', durationMs: 200 });
+      expect(steps).toHaveLength(0);
     });
   });
 
   describe('Checks Mix', () => {
-    it('produces overlay + shuffle with correct position maps', () => {
+    it('produces shuffle with correct position maps (no overlay)', () => {
       const hook = getHook();
       const boardBefore = boardWith([
         { sq: 1, color: PieceColor.White, type: PieceType.Pawn },
@@ -240,10 +226,9 @@ describe('buildActivationSequence', () => {
       const event = makeActiveEvent(CrazyEvent.ChecksMix);
       const steps = hook.buildActivationSequence([event], boardBefore, boardAfter);
 
-      expect(steps).toHaveLength(2);
-      expect(steps[0]).toMatchObject({ type: 'overlay', text: 'Checks Mix!', icon: 'shuffle' });
+      expect(steps).toHaveLength(1);
 
-      const shuffle = steps[1] as AnimationStep & {
+      const shuffle = steps[0] as AnimationStep & {
         type: 'shuffle';
         fromPositions: ReadonlyMap<number, unknown>;
         toPositions: ReadonlyMap<number, unknown>;
@@ -265,7 +250,7 @@ describe('buildActivationSequence', () => {
   });
 
   describe('Opposite Day', () => {
-    it('produces overlay + flash on all occupied squares with danger color', () => {
+    it('produces flash on all occupied squares with danger color (no overlay)', () => {
       const hook = getHook();
       const board = boardWith([
         { sq: 1, color: PieceColor.White, type: PieceType.Pawn },
@@ -275,9 +260,8 @@ describe('buildActivationSequence', () => {
       const event = makeActiveEvent(CrazyEvent.OppositeDay);
       const steps = hook.buildActivationSequence([event], board);
 
-      expect(steps).toHaveLength(2);
-      expect(steps[0]).toMatchObject({ type: 'overlay', text: 'Opposite Day!', icon: 'invert' });
-      const flash = steps[1] as AnimationStep & { type: 'flash'; squares: readonly unknown[]; color: string };
+      expect(steps).toHaveLength(1);
+      const flash = steps[0] as AnimationStep & { type: 'flash'; squares: readonly unknown[]; color: string };
       expect(flash.squares).toHaveLength(3);
       expect(flash.color).toBe('var(--ui-danger)');
       expect(flash.pulses).toBe(2);
@@ -285,7 +269,7 @@ describe('buildActivationSequence', () => {
   });
 
   describe('Up in the Air', () => {
-    it('produces overlay + flash on all pieces with accent color', () => {
+    it('produces flash on all pieces with accent color (no overlay)', () => {
       const hook = getHook();
       const board = boardWith([
         { sq: 1, color: PieceColor.White, type: PieceType.Pawn },
@@ -294,16 +278,15 @@ describe('buildActivationSequence', () => {
       const event = makeActiveEvent(CrazyEvent.UpInTheAir);
       const steps = hook.buildActivationSequence([event], board);
 
-      expect(steps).toHaveLength(2);
-      expect(steps[0]).toMatchObject({ type: 'overlay', text: 'Up in the Air!', icon: 'fly' });
-      const flash = steps[1] as AnimationStep & { type: 'flash'; squares: readonly unknown[]; color: string };
+      expect(steps).toHaveLength(1);
+      const flash = steps[0] as AnimationStep & { type: 'flash'; squares: readonly unknown[]; color: string };
       expect(flash.squares).toHaveLength(2);
       expect(flash.color).toBe('var(--ui-accent)');
     });
   });
 
   describe('No Touching!', () => {
-    it('produces overlay + flash on king squares only', () => {
+    it('produces flash on king squares only (no overlay)', () => {
       const hook = getHook();
       const board = boardWith([
         { sq: 1, color: PieceColor.White, type: PieceType.Pawn },
@@ -314,14 +297,13 @@ describe('buildActivationSequence', () => {
       const event = makeActiveEvent(CrazyEvent.NoTouching);
       const steps = hook.buildActivationSequence([event], board);
 
-      expect(steps).toHaveLength(2);
-      expect(steps[0]).toMatchObject({ type: 'overlay', text: 'No Touching!', icon: 'shield' });
-      const flash = steps[1] as AnimationStep & { type: 'flash'; squares: readonly unknown[] };
+      expect(steps).toHaveLength(1);
+      const flash = steps[0] as AnimationStep & { type: 'flash'; squares: readonly unknown[] };
       expect(flash.squares).toHaveLength(2);
       expect(flash.color).toBe('var(--ui-accent)');
     });
 
-    it('produces overlay + empty flash when no kings exist', () => {
+    it('produces empty flash when no kings exist (no overlay)', () => {
       const hook = getHook();
       const board = boardWith([
         { sq: 1, color: PieceColor.White, type: PieceType.Pawn },
@@ -329,7 +311,8 @@ describe('buildActivationSequence', () => {
       const event = makeActiveEvent(CrazyEvent.NoTouching);
       const steps = hook.buildActivationSequence([event], board);
 
-      const flash = steps[1] as AnimationStep & { type: 'flash'; squares: readonly unknown[] };
+      expect(steps).toHaveLength(1);
+      const flash = steps[0] as AnimationStep & { type: 'flash'; squares: readonly unknown[] };
       expect(flash.squares).toHaveLength(0);
     });
   });
@@ -349,27 +332,20 @@ describe('buildActivationSequence', () => {
         board,
       );
 
-      // KingForADay: overlay + flash, OppositeDay: overlay + flash = 4 steps
-      expect(steps).toHaveLength(4);
-      expect(steps[0]).toMatchObject({ type: 'overlay', text: 'King for a Day!' });
+      // KingForADay: flash, OppositeDay: flash = 2 steps (no overlays)
+      expect(steps).toHaveLength(2);
+      expect(steps[0]).toMatchObject({ type: 'flash' });
       expect(steps[1]).toMatchObject({ type: 'flash' });
-      expect(steps[2]).toMatchObject({ type: 'overlay', text: 'Opposite Day!' });
-      expect(steps[3]).toMatchObject({ type: 'flash' });
     });
   });
 
   describe('Unknown/future event', () => {
-    it('produces a generic overlay for unrecognized event types', () => {
+    it('produces empty steps for unrecognized event types (HTML announcement handles display)', () => {
       const hook = getHook();
       const event = makeActiveEvent(CrazyEvent.StepBack);
       const steps = hook.buildActivationSequence([event], emptyBoard());
 
-      expect(steps).toHaveLength(1);
-      expect(steps[0]).toMatchObject({
-        type: 'overlay',
-        text: 'Step-Back',
-        durationMs: EVENT_ANIM_DURATION.OVERLAY_FADE_IN + EVENT_ANIM_DURATION.OVERLAY_HOLD + EVENT_ANIM_DURATION.OVERLAY_FADE_OUT,
-      });
+      expect(steps).toHaveLength(0);
     });
   });
 });
