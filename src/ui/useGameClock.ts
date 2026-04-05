@@ -12,6 +12,7 @@ import { PieceColor as PC, PlayerType } from '../engine/types';
 import type { ClockState, TimeControlConfig } from '../engine/clock';
 import {
   createClock,
+  restoreClock,
   startTurn,
   endTurn,
   tick,
@@ -35,6 +36,10 @@ interface UseGameClockOptions {
   isAIThinking: boolean;
   players: PlayerSetup;
   plyCount: number;
+  /** Saved remaining time for White (ms). When provided with config, restores clock state. */
+  initialRemainingWhiteMs?: number;
+  /** Saved remaining time for Black (ms). When provided with config, restores clock state. */
+  initialRemainingBlackMs?: number;
 }
 
 interface UseGameClockReturn {
@@ -67,11 +72,17 @@ export function useGameClock({
   isAIThinking,
   players,
   plyCount,
+  initialRemainingWhiteMs,
+  initialRemainingBlackMs,
 }: UseGameClockOptions): UseGameClockReturn {
   // --- Clock state ---
-  const [clockState, setClockState] = useState<ClockState | null>(() =>
-    config ? createClock(config) : null,
-  );
+  const [clockState, setClockState] = useState<ClockState | null>(() => {
+    if (!config) return null;
+    if (initialRemainingWhiteMs !== undefined && initialRemainingBlackMs !== undefined) {
+      return restoreClock(config, initialRemainingWhiteMs, initialRemainingBlackMs);
+    }
+    return createClock(config);
+  });
 
   // --- Refs ---
   const rafRef = useRef(0);

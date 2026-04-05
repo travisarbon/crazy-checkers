@@ -104,6 +104,13 @@ function landingOf(m: Move): ReturnType<typeof square> {
 }
 
 /** Finds a capture move from the given square in the legal moves, throwing if none. */
+function findMoveFrom(state: GameState, fromSq: number): Move {
+  const moves = getCurrentLegalMoves(state);
+  const found = moves.find(m => (m.from as number) === fromSq);
+  if (found === undefined) throw new Error('No move from sq ' + String(fromSq));
+  return found;
+}
+
 function findCapture(state: GameState, fromSq: number): Move {
   const moves = getCurrentLegalMoves(state);
   const found = moves.find(
@@ -499,8 +506,9 @@ describe('HotPotatoDecorator', () => {
       const hpEvent = createHPEvent(W, 0);
       let state = crazyStateWithBoard(board, B, [lgEvent, hpEvent], 1);
 
-      // Black moves (intervening)
-      state = makeMove(state, firstMove(state));
+      // Black moves king at sq 4 (must be deterministic — moving the pawn
+      // at sq 19 would remove the grenade collateral and change the outcome)
+      state = makeMove(state, findMoveFrom(state, 4));
 
       // White captures: 14 → 23 over 18
       const captureMove = findCapture(state, 14);

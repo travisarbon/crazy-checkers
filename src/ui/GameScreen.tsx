@@ -53,6 +53,10 @@ interface GameScreenProps {
   gameStartedAt?: number;
   /** Time control config for this game, or null/undefined for untimed. */
   timeControl?: TimeControlConfig | null;
+  /** Saved remaining time for White (ms). When provided with timeControl, restores clock state. */
+  initialRemainingWhiteMs?: number;
+  /** Saved remaining time for Black (ms). When provided with timeControl, restores clock state. */
+  initialRemainingBlackMs?: number;
   onNewGame: () => void;
   onMainMenu?: () => void;
 }
@@ -174,6 +178,8 @@ export default function GameScreen({
   initialGameState,
   gameStartedAt: gameStartedAtProp,
   timeControl,
+  initialRemainingWhiteMs,
+  initialRemainingBlackMs,
   onNewGame,
   onMainMenu,
 }: GameScreenProps) {
@@ -227,12 +233,21 @@ export default function GameScreen({
     isAIThinking,
     players,
     plyCount: gameState.plyCount,
+    initialRemainingWhiteMs,
+    initialRemainingBlackMs,
   });
 
   // --- Auto-save on every state change ---
   useEffect(() => {
-    saveGame(gameState, gameState.mode, flipped);
-  }, [gameState, flipped]);
+    saveGame(
+      gameState,
+      gameState.mode,
+      flipped,
+      timeControl ?? null,
+      gameClock.clockState?.remainingWhiteMs,
+      gameClock.clockState?.remainingBlackMs,
+    );
+  }, [gameState, flipped, timeControl, gameClock.clockState]);
 
   // --- Clear auto-save and record game on completion ---
   useEffect(() => {

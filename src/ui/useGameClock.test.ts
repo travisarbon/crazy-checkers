@@ -30,7 +30,7 @@ function delay(totalMs = 300_000, delayMs = 5000): TimeControlConfig {
 function defaultOpts(overrides: Record<string, unknown> = {}) {
   return {
     config: suddenDeath() as TimeControlConfig | null,
-    activeColor: PieceColor.White,
+    activeColor: PieceColor.White as PieceColor,
     isGameOver: false,
     isAnimating: false,
     isAIThinking: false,
@@ -208,5 +208,121 @@ describe('useGameClock', () => {
     expect(result.current.clockState).not.toBeNull();
     // After endTurn + startTurn, the clock should still have valid state
     expect(result.current.blackTimeDisplay).toBeTruthy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Clock restoration tests (Item 2 — saved clock state on resume)
+  // ---------------------------------------------------------------------------
+
+  describe('clock restoration from saved state', () => {
+    it('restores clock with saved remaining times instead of full allocation', () => {
+      const { result } = renderHook(() =>
+        useGameClock(
+          defaultOpts({
+            config: suddenDeath(300_000), // 5 min total
+            initialRemainingWhiteMs: 120_000, // 2 min remaining
+            initialRemainingBlackMs: 180_000, // 3 min remaining
+          }),
+        ),
+      );
+      expect(result.current.clockState).not.toBeNull();
+      expect(result.current.whiteTimeDisplay).toBe('02:00');
+      expect(result.current.blackTimeDisplay).toBe('03:00');
+    });
+
+    it('restores clock with increment mode preserving saved times', () => {
+      const { result } = renderHook(() =>
+        useGameClock(
+          defaultOpts({
+            config: increment(600_000, 3000), // 10 min + 3s increment
+            initialRemainingWhiteMs: 450_000, // 7:30
+            initialRemainingBlackMs: 500_000, // 8:20
+          }),
+        ),
+      );
+      expect(result.current.clockState).not.toBeNull();
+      expect(result.current.whiteTimeDisplay).toBe('07:30');
+      expect(result.current.blackTimeDisplay).toBe('08:20');
+    });
+
+    it('restores clock with per-move mode', () => {
+      const { result } = renderHook(() =>
+        useGameClock(
+          defaultOpts({
+            config: perMove(30_000), // 30s per move
+            initialRemainingWhiteMs: 15_000, // 15s remaining
+            initialRemainingBlackMs: 30_000, // full 30s
+          }),
+        ),
+      );
+      expect(result.current.clockState).not.toBeNull();
+      expect(result.current.whiteTimeDisplay).toBe('15.0');
+      expect(result.current.blackTimeDisplay).toBe('00:30');
+    });
+
+    it('restores clock with delay mode', () => {
+      const { result } = renderHook(() =>
+        useGameClock(
+          defaultOpts({
+            config: delay(300_000, 5000),
+            initialRemainingWhiteMs: 200_000,
+            initialRemainingBlackMs: 250_000,
+          }),
+        ),
+      );
+      expect(result.current.clockState).not.toBeNull();
+      expect(result.current.whiteTimeDisplay).toBe('03:20');
+      expect(result.current.blackTimeDisplay).toBe('04:10');
+    });
+
+    it('uses createClock (full time) when no saved remaining times provided', () => {
+      const { result } = renderHook(() =>
+        useGameClock(defaultOpts({ config: suddenDeath(300_000) })),
+      );
+      expect(result.current.whiteTimeDisplay).toBe('05:00');
+      expect(result.current.blackTimeDisplay).toBe('05:00');
+    });
+
+    it('ignores partial saved times (only white provided)', () => {
+      const { result } = renderHook(() =>
+        useGameClock(
+          defaultOpts({
+            config: suddenDeath(300_000),
+            initialRemainingWhiteMs: 120_000,
+            // initialRemainingBlackMs not provided
+          }),
+        ),
+      );
+      // Should fall back to createClock (full time)
+      expect(result.current.whiteTimeDisplay).toBe('05:00');
+      expect(result.current.blackTimeDisplay).toBe('05:00');
+    });
+
+    it('returns null clockState when config is null even with saved times', () => {
+      const { result } = renderHook(() =>
+        useGameClock(
+          defaultOpts({
+            config: null,
+            initialRemainingWhiteMs: 120_000,
+            initialRemainingBlackMs: 180_000,
+          }),
+        ),
+      );
+      expect(result.current.clockState).toBeNull();
+    });
+
+    it('detects low-time on restored clock with low remaining time', () => {
+      const { result } = renderHook(() =>
+        useGameClock(
+          defaultOpts({
+            config: suddenDeath(300_000),
+            initialRemainingWhiteMs: 15_000, // below 30s threshold
+            initialRemainingBlackMs: 200_000,
+          }),
+        ),
+      );
+      expect(result.current.whiteLowTime).toBe(true);
+      expect(result.current.blackLowTime).toBe(false);
+    });
   });
 });

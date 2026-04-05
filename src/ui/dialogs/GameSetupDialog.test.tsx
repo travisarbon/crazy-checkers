@@ -20,7 +20,7 @@ function renderDialog(
   return {
     onConfirm,
     onCancel,
-    ...render(<GameSetupDialog mode={mode} onConfirm={onConfirm} onCancel={onCancel} />),
+    ...render(<GameSetupDialog mode={mode} defaultTimeControl={null} onConfirm={onConfirm} onCancel={onCancel} />),
   };
 }
 
@@ -75,6 +75,7 @@ describe('GameSetupDialog', () => {
       { white: PlayerType.Human, black: PlayerType.Human },
       false,
       GameMode.Classic,
+      null,
     );
   });
 
@@ -87,6 +88,7 @@ describe('GameSetupDialog', () => {
       { white: PlayerType.Human, black: PlayerType.Human },
       true,
       GameMode.Classic,
+      null,
     );
   });
 
@@ -99,6 +101,7 @@ describe('GameSetupDialog', () => {
       { white: PlayerType.Human, black: PlayerType.CpuEasy },
       false,
       GameMode.Classic,
+      null,
     );
   });
 
@@ -113,6 +116,7 @@ describe('GameSetupDialog', () => {
       { white: PlayerType.CpuHard, black: PlayerType.Human },
       true,
       GameMode.Classic,
+      null,
     );
   });
 
@@ -164,6 +168,7 @@ describe('GameSetupDialog', () => {
       { white: PlayerType.Human, black: PlayerType.Human },
       false,
       GameMode.Crazy,
+      null,
     );
   });
 });

@@ -5,6 +5,7 @@
  */
 
 import { DEFAULT_THEME_ID } from '../themes/theme';
+import type { TimeControlConfig } from '../engine/clock';
 
 export interface Settings {
   readonly themeId: 'crazy' | 'cork' | 'current' | 'classic' | 'contrast';
@@ -21,6 +22,9 @@ export interface Settings {
   readonly musicVolume: number; // 0.0–1.0
   readonly muted: boolean;
   readonly audioPackId: string; // 'default' | 'silent'
+
+  /** Default time control for new games. null = untimed. */
+  readonly timeControl: TimeControlConfig | null;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -34,4 +38,7 @@ export const DEFAULT_SETTINGS: Settings = {
   musicVolume: 0.5,
   muted: false,
   audioPackId: 'default',
+
+  // Time control default
+  timeControl: null,
 };

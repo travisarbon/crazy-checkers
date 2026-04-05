@@ -7,6 +7,7 @@
 
 import type { Settings } from '../ui/settings';
 import { DEFAULT_SETTINGS } from '../ui/settings';
+import type { TimeControlConfig } from '../engine/clock';
 import type { GameState } from '../engine/types';
 import type { SerializedGameState } from './serialization';
 import { serializeGameState } from './serialization';
@@ -16,7 +17,7 @@ import { serializeGameState } from './serialization';
 // ---------------------------------------------------------------------------
 
 const SETTINGS_KEY = 'crazy-checkers-settings';
-const SETTINGS_VERSION = 2;
+const SETTINGS_VERSION = 3;
 
 interface PersistedSettingsEnvelope {
   version: number;
@@ -53,8 +54,8 @@ export function loadSettings(): Settings {
     const envelope: unknown = JSON.parse(raw);
     if (!isValidEnvelope(envelope)) return DEFAULT_SETTINGS;
 
-    // Accept current version and previous version (v1 -> v2 migration)
-    if (envelope.version !== SETTINGS_VERSION && envelope.version !== SETTINGS_VERSION - 1) {
+    // Accept current version and up to two previous versions (v1 → v2 → v3 migration)
+    if (envelope.version < SETTINGS_VERSION - 2 || envelope.version > SETTINGS_VERSION) {
       return DEFAULT_SETTINGS;
     }
 
@@ -115,6 +116,11 @@ function mergeWithDefaults(data: unknown): Settings {
       ? obj.audioPackId
       : DEFAULT_SETTINGS.audioPackId;
 
+  // Time control field (new in v3, defaults to null = untimed for v1/v2 upgrades)
+  const timeControl = isValidTimeControl(obj.timeControl)
+    ? obj.timeControl
+    : null;
+
   return {
     themeId,
     animationSpeed,
@@ -124,6 +130,7 @@ function mergeWithDefaults(data: unknown): Settings {
     musicVolume,
     muted,
     audioPackId,
+    timeControl,
   };
 }
 
@@ -159,6 +166,33 @@ function isValidVolume(value: unknown): value is number {
   return typeof value === 'number' && value >= 0.0 && value <= 1.0;
 }
 
+function isValidTimeControl(value: unknown): value is TimeControlConfig {
+  if (value === null || value === undefined) return false;
+  if (typeof value !== 'object') return false;
+  const obj = value as Record<string, unknown>;
+  const validModes = ['perMove', 'suddenDeath', 'increment', 'delay'];
+  if (!validModes.includes(obj.mode as string)) return false;
+
+  switch (obj.mode) {
+    case 'perMove':
+      return typeof obj.perMoveTimeMs === 'number' && obj.perMoveTimeMs > 0;
+    case 'suddenDeath':
+      return typeof obj.totalTimeMs === 'number' && obj.totalTimeMs > 0;
+    case 'increment':
+      return (
+        typeof obj.totalTimeMs === 'number' && obj.totalTimeMs > 0 &&
+        typeof obj.incrementMs === 'number' && obj.incrementMs >= 0
+      );
+    case 'delay':
+      return (
+        typeof obj.totalTimeMs === 'number' && obj.totalTimeMs > 0 &&
+        typeof obj.delayMs === 'number' && obj.delayMs >= 0
+      );
+    default:
+      return false;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // In-progress game auto-save
 // ---------------------------------------------------------------------------
@@ -176,16 +210,27 @@ export interface SavedGame {
   };
   flipped: boolean;
   timestamp: number;
+  // Time control fields (added in v2, optional for backward compatibility)
+  timeControl?: TimeControlConfig | null;
+  remainingTimeWhiteMs?: number;
+  remainingTimeBlackMs?: number;
 }
 
 const SAVED_GAME_KEY = 'crazy-checkers-saved-game';
-const SAVED_GAME_VERSION = 1;
+const SAVED_GAME_VERSION = 2;
 
 /**
  * Auto-saves the current game state to localStorage.
  * Only saves games that are IN_PROGRESS.
  */
-export function saveGame(state: GameState, mode: string, flipped: boolean): void {
+export function saveGame(
+  state: GameState,
+  mode: string,
+  flipped: boolean,
+  timeControl?: TimeControlConfig | null,
+  remainingTimeWhiteMs?: number,
+  remainingTimeBlackMs?: number,
+): void {
   if (state.status !== 'IN_PROGRESS') return;
 
   try {
@@ -199,6 +244,9 @@ export function saveGame(state: GameState, mode: string, flipped: boolean): void
       },
       flipped,
       timestamp: Date.now(),
+      ...(timeControl !== undefined ? { timeControl } : {}),
+      ...(remainingTimeWhiteMs !== undefined ? { remainingTimeWhiteMs } : {}),
+      ...(remainingTimeBlackMs !== undefined ? { remainingTimeBlackMs } : {}),
     };
     localStorage.setItem(SAVED_GAME_KEY, JSON.stringify(saved));
   } catch {
@@ -218,7 +266,10 @@ export function loadSavedGame(): SavedGame | null {
 
     const parsed: unknown = JSON.parse(raw);
     if (!isValidSavedGame(parsed)) return null;
-    if (parsed.version !== SAVED_GAME_VERSION) return null;
+    // Accept v1 (Phase 1, no time control) and v2 (Phase 2, with time control)
+    if (parsed.version !== SAVED_GAME_VERSION && parsed.version !== SAVED_GAME_VERSION - 1) {
+      return null;
+    }
 
     return parsed;
   } catch {

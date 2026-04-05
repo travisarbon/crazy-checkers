@@ -10,6 +10,7 @@ import { applyTheme, THEMES } from '../themes/theme';
 import { createAmericanRules } from '../engine/rules';
 import type { GameState, PlayerSetup, RuleSet } from '../engine/types';
 import { GameMode } from '../engine/types';
+import type { TimeControlConfig } from '../engine/clock';
 import { loadSettings, saveSettings, loadSavedGame, clearSavedGame } from '../persistence/settings';
 import type { SavedGame } from '../persistence/settings';
 import { deserializeGameState } from '../persistence/serialization';
@@ -35,6 +36,9 @@ type Screen =
       readonly ruleSet: RuleSet;
       readonly flipped: boolean;
       readonly mode: GameMode;
+      readonly timeControl: TimeControlConfig | null;
+      readonly remainingTimeWhiteMs?: number;
+      readonly remainingTimeBlackMs?: number;
     }
   | { readonly kind: 'config' };
 
@@ -132,13 +136,14 @@ export default function App() {
     setScreen({ kind: 'menu' });
   }, []);
 
-  const navigateToGame = useCallback((players: PlayerSetup, flipped: boolean, mode: GameMode = GameMode.Classic) => {
+  const navigateToGame = useCallback((players: PlayerSetup, flipped: boolean, mode: GameMode = GameMode.Classic, timeControl: TimeControlConfig | null = null) => {
     setScreen({
       kind: 'game',
       players,
       ruleSet: createAmericanRules(),
       flipped,
       mode,
+      timeControl,
     });
     setGameKey((prev) => prev + 1);
     setGameStartedAt(Date.now());
@@ -160,6 +165,9 @@ export default function App() {
         ruleSet: gameState.ruleSet,
         flipped: pendingResume.flipped,
         mode: gameState.mode,
+        timeControl: pendingResume.timeControl ?? null,
+        remainingTimeWhiteMs: pendingResume.remainingTimeWhiteMs,
+        remainingTimeBlackMs: pendingResume.remainingTimeBlackMs,
       });
       setResumedGameState(gameState);
       setGameStartedAt(pendingResume.timestamp);
@@ -184,7 +192,7 @@ export default function App() {
     case 'menu':
       content = (
         <>
-          <MenuScreen onStartGame={navigateToGame} onConfigure={navigateToConfig} />
+          <MenuScreen onStartGame={navigateToGame} onConfigure={navigateToConfig} defaultTimeControl={settings.timeControl} />
           {pendingResume !== null && (
             <ResumeGameDialog
               savedGame={pendingResume}
@@ -209,9 +217,12 @@ export default function App() {
           pieceShadow={THEMES[settings.themeId]?.pieceShadow ?? false}
           initialGameState={resumedGameState ?? undefined}
           gameStartedAt={gameStartedAt}
+          timeControl={screen.timeControl}
+          initialRemainingWhiteMs={screen.remainingTimeWhiteMs}
+          initialRemainingBlackMs={screen.remainingTimeBlackMs}
           onNewGame={() => {
             setResumedGameState(null);
-            navigateToGame(screen.players, screen.flipped, screen.mode);
+            navigateToGame(screen.players, screen.flipped, screen.mode, screen.timeControl);
           }}
           onMainMenu={() => {
             setResumedGameState(null);

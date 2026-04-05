@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import type { PlayerSetup } from '../engine/types';
 import { GameMode } from '../engine/types';
+import type { TimeControlConfig } from '../engine/clock';
 import { useAudioManager } from '../audio/useAudioManager';
 import { SoundEvent } from '../audio/types';
 import GameSetupDialog from './dialogs/GameSetupDialog';
@@ -19,8 +20,9 @@ import styles from './MenuScreen.module.css';
 // ---------------------------------------------------------------------------
 
 interface MenuScreenProps {
-  onStartGame: (players: PlayerSetup, flipped: boolean, mode: GameMode) => void;
+  onStartGame: (players: PlayerSetup, flipped: boolean, mode: GameMode, timeControl: TimeControlConfig | null) => void;
   onConfigure: () => void;
+  defaultTimeControl: TimeControlConfig | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -85,7 +87,7 @@ const MODES: readonly ModeEntry[] = [
 // Component
 // ---------------------------------------------------------------------------
 
-export default function MenuScreen({ onStartGame, onConfigure }: MenuScreenProps) {
+export default function MenuScreen({ onStartGame, onConfigure, defaultTimeControl }: MenuScreenProps) {
   const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>(GameMode.Classic);
   const audioManager = useAudioManager();
@@ -100,9 +102,9 @@ export default function MenuScreen({ onStartGame, onConfigure }: MenuScreenProps
     }
   }
 
-  function handleSetupConfirm(players: PlayerSetup, flipped: boolean, mode: GameMode): void {
+  function handleSetupConfirm(players: PlayerSetup, flipped: boolean, mode: GameMode, timeControl: TimeControlConfig | null): void {
     setShowSetupDialog(false);
-    onStartGame(players, flipped, mode);
+    onStartGame(players, flipped, mode, timeControl);
   }
 
   function handleSetupCancel(): void {
@@ -135,7 +137,7 @@ export default function MenuScreen({ onStartGame, onConfigure }: MenuScreenProps
       </nav>
 
       {showSetupDialog && (
-        <GameSetupDialog mode={selectedMode} onConfirm={handleSetupConfirm} onCancel={handleSetupCancel} />
+        <GameSetupDialog mode={selectedMode} defaultTimeControl={defaultTimeControl} onConfirm={handleSetupConfirm} onCancel={handleSetupCancel} />
       )}
     </div>
   );

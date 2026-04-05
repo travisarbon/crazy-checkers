@@ -55,7 +55,7 @@ describe('saveSettings', () => {
     const raw = localStorage.getItem('crazy-checkers-settings');
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw as string) as { version: number; data: Settings };
-    expect(parsed.version).toBe(2);
+    expect(parsed.version).toBe(3);
     expect(parsed.data).toEqual(DEFAULT_SETTINGS);
   });
 
@@ -80,6 +80,7 @@ describe('loadSettings', () => {
       musicVolume: 0.6,
       muted: true,
       audioPackId: 'silent',
+      timeControl: null,
     };
     saveSettings(custom);
     expect(loadSettings()).toEqual(custom);

@@ -63,7 +63,7 @@ describe.each(VIEWPORTS)('Responsive layout at $name ($width×$height)', ({ widt
   });
 
   it('MenuScreen renders without error', () => {
-    render(<MenuScreen onStartGame={vi.fn()} onConfigure={vi.fn()} />);
+    render(<MenuScreen onStartGame={vi.fn()} onConfigure={vi.fn()} defaultTimeControl={null} />);
     expect(screen.getByText('Crazy Checkers')).toBeTruthy();
   });
 });

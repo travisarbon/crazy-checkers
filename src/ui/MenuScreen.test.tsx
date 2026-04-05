@@ -17,7 +17,7 @@ function renderMenu(
   return {
     onStartGame,
     onConfigure,
-    ...render(<MenuScreen onStartGame={onStartGame} onConfigure={onConfigure} />),
+    ...render(<MenuScreen onStartGame={onStartGame} onConfigure={onConfigure} defaultTimeControl={null} />),
   };
 }
 

@@ -10,6 +10,7 @@ import { THEMES } from '../themes/theme';
 import { useAudioManager } from '../audio/useAudioManager';
 import { SoundEvent } from '../audio/types';
 import BoardPreview from './BoardPreview';
+import TimeControlSection from './TimeControlSection';
 import styles from './ConfigScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -381,6 +382,13 @@ export default function ConfigScreen({ settings, onSettingsChange, onBack }: Con
         <AnimationSpeedSection speed={settings.animationSpeed} onChange={setAnimationSpeed} />
 
         <SoundSection settings={settings} onChange={onSettingsChange} audioManager={audioManager} />
+
+        <div className={styles.section}>
+          <TimeControlSection
+            value={settings.timeControl}
+            onChange={(tc) => { onSettingsChange({ ...settings, timeControl: tc }); }}
+          />
+        </div>
 
         <MoveConfirmationSection
           enabled={settings.moveConfirmation}

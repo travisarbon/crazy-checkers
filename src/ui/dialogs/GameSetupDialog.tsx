@@ -11,6 +11,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { PlayerType, GameMode } from '../../engine/types';
 import type { PlayerSetup } from '../../engine/types';
+import type { TimeControlConfig } from '../../engine/clock';
+import TimeControlOverride from './TimeControlOverride';
 import styles from './GameSetupDialog.module.css';
 
 // ---------------------------------------------------------------------------
@@ -19,7 +21,8 @@ import styles from './GameSetupDialog.module.css';
 
 interface GameSetupDialogProps {
   mode: GameMode;
-  onConfirm: (players: PlayerSetup, flipped: boolean, mode: GameMode) => void;
+  defaultTimeControl: TimeControlConfig | null;
+  onConfirm: (players: PlayerSetup, flipped: boolean, mode: GameMode, timeControl: TimeControlConfig | null) => void;
   onCancel: () => void;
 }
 
@@ -35,10 +38,11 @@ type DifficultyChoice = 'easy' | 'hard';
 // Component
 // ---------------------------------------------------------------------------
 
-export default function GameSetupDialog({ mode, onConfirm, onCancel }: GameSetupDialogProps) {
+export default function GameSetupDialog({ mode, defaultTimeControl, onConfirm, onCancel }: GameSetupDialogProps) {
   const [gameType, setGameType] = useState<GameType>('pass-around');
   const [colorChoice, setColorChoice] = useState<ColorChoice>('white');
   const [difficultyChoice, setDifficultyChoice] = useState<DifficultyChoice>('easy');
+  const [timeControl, setTimeControl] = useState(defaultTimeControl);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +118,7 @@ export default function GameSetupDialog({ mode, onConfirm, onCancel }: GameSetup
       }
     }
 
-    onConfirm(players, flipped, mode);
+    onConfirm(players, flipped, mode, timeControl);
   }
 
   return (
@@ -229,6 +233,16 @@ export default function GameSetupDialog({ mode, onConfirm, onCancel }: GameSetup
             </label>
           </fieldset>
         )}
+
+        {/* Time Control */}
+        <fieldset className={styles.fieldset}>
+          <legend className={styles.legend}>Time Control</legend>
+          <TimeControlOverride
+            defaultConfig={defaultTimeControl}
+            onChange={setTimeControl}
+            isVsCpu={gameType === 'vs-cpu'}
+          />
+        </fieldset>
 
         {/* Footer */}
         <div className={styles.dialogFooter}>
