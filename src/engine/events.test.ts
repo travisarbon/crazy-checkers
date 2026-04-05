@@ -458,4 +458,23 @@ describe('checkEventTrigger', () => {
   it('returns null in Classic mode regardless of jump count', () => {
     expect(checkEventTrigger(multiJumpMove, GameMode.Classic)).toBeNull();
   });
+
+  it('triggers on single-capture jumps in Chaos mode', () => {
+    const result = checkEventTrigger(singleJumpMove, GameMode.Chaos, () => 0.5);
+    expect(result).not.toBeNull();
+    expect(Array.isArray(result)).toBe(true);
+    if (result !== null) {
+      for (const event of result) {
+        expect(IMPLEMENTED_EVENTS).toContain(event);
+      }
+    }
+  });
+
+  it('does not trigger in Chaos mode on simple moves (0 captures)', () => {
+    expect(checkEventTrigger(simpleMove, GameMode.Chaos)).toBeNull();
+  });
+
+  it('returns null in Choice mode (events are permanent, not triggered by jumps)', () => {
+    expect(checkEventTrigger(multiJumpMove, GameMode.Choice)).toBeNull();
+  });
 });

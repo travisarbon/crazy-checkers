@@ -483,9 +483,18 @@ export function checkEventTrigger(
   mode: GameMode,
   randomFn: () => number = Math.random,
 ): CrazyEvent[] | null {
-  if (mode !== GameMode.Crazy) return null;
-  if (!isMultiJump(move)) return null;
-  return selectRandomEvent(randomFn);
+  if (mode === GameMode.Crazy) {
+    // Crazy mode: trigger on multi-jumps (2+ captures)
+    if (!isMultiJump(move)) return null;
+    return selectRandomEvent(randomFn);
+  }
+  if (mode === GameMode.Chaos) {
+    // Chaos mode: trigger on any jump (1+ captures).
+    // In Phase 3+, Chaos always forces Double Trouble (two events per trigger).
+    if (move.captured.length < 1) return null;
+    return selectRandomEvent(randomFn);
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------

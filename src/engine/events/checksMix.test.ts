@@ -87,25 +87,16 @@ function crazyStateWithBoard(
   };
 }
 
-/** Creates a Checks Mix ActiveEvent with pre-computed placement metadata. */
+/** Creates a Checks Mix ActiveEvent with seed-only metadata (lazy computation). */
 function createChecksMixEvent(
-  board: BoardState,
-  activeColor: PieceColor,
+  _board: BoardState,
+  _activeColor: PieceColor,
   triggeredBy: PieceColor = PieceColor.White,
   seed?: number,
 ): ActiveEvent {
   const usedSeed = seed ?? Math.floor(Math.random() * 0xffffffff);
-  const shuffledBoard = shuffleBoard(board, activeColor, usedSeed, (b, c) =>
-    getLegalMoves(b, c),
-  );
-  const placement: Record<number, { color: PieceColor; type: PieceType }> = {};
-  for (let i = 0; i < shuffledBoard.length; i++) {
-    const piece = shuffledBoard[i];
-    if (piece != null) {
-      placement[i + 1] = { color: piece.color, type: piece.type };
-    }
-  }
-  return createActiveEvent(CrazyEvent.ChecksMix, triggeredBy, 0, { seed: usedSeed, placement });
+  // Metadata stores only the seed — shuffle is computed lazily in onTurnStart
+  return createActiveEvent(CrazyEvent.ChecksMix, triggeredBy, 0, { seed: usedSeed });
 }
 
 /** Counts pieces on a board grouped by color and type. */
@@ -397,7 +388,7 @@ describe('ChecksMixDecorator', () => {
       expect(different).toBe(true);
     });
 
-    it('placement metadata enables exact replay', () => {
+    it('seed-only metadata enables deterministic replay via lazy computation', () => {
       const board = buildBoard([
         { sq: 5, color: W, type: P },
         { sq: 10, color: W, type: K },
@@ -406,31 +397,49 @@ describe('ChecksMixDecorator', () => {
       ]);
 
       const seed = 42424;
-      const shuffled = shuffleBoard(board, W, seed, (b, c) => getLegalMoves(b, c));
-
-      // Build placement from shuffled board
-      const placement = new Map<number, { color: PieceColor; type: PieceType }>();
-      for (let i = 0; i < shuffled.length; i++) {
-        const piece = shuffled[i];
-        if (piece != null) {
-          placement.set(i + 1, { color: piece.color, type: piece.type });
-        }
-      }
-
-      // Reconstruct from placement
-      const reconstructed = buildBoardFromPlacement(placement);
+      // Same seed + same board state → same shuffle result
+      const shuffled1 = shuffleBoard(board, W, seed, (b, c) => getLegalMoves(b, c));
+      const shuffled2 = shuffleBoard(board, W, seed, (b, c) => getLegalMoves(b, c));
 
       for (let i = 0; i < BOARD_SIZE; i++) {
-        const orig = shuffled[i];
-        const recon = reconstructed[i];
-        if (orig == null) {
-          expect(recon ?? null).toBeNull();
+        const s1 = shuffled1[i];
+        const s2 = shuffled2[i];
+        if (s1 == null) {
+          expect(s2 ?? null).toBeNull();
         } else {
-          expect(recon).not.toBeNull();
-          expect(recon?.color).toBe(orig.color);
-          expect(recon?.type).toBe(orig.type);
+          expect(s2).not.toBeNull();
+          expect(s2?.color).toBe(s1.color);
+          expect(s2?.type).toBe(s1.type);
         }
       }
+    });
+
+    it('lazy computation uses live board state, not stale placement', () => {
+      // Board A: original board at event creation time (4 pieces)
+      const boardA = buildBoard([
+        { sq: 5, color: W, type: P },
+        { sq: 10, color: W, type: K },
+        { sq: 20, color: B, type: P },
+        { sq: 25, color: B, type: K },
+      ]);
+
+      // Board B: modified board — a capture removed a piece (3 pieces)
+      // This simulates another event or move changing the board between
+      // Checks Mix creation and application.
+      const boardB = buildBoard([
+        { sq: 5, color: W, type: P },
+        { sq: 10, color: W, type: K },
+        { sq: 25, color: B, type: K },
+      ]);
+
+      const seed = 42424;
+      const shuffleFromA = shuffleBoard(boardA, W, seed, (b, c) => getLegalMoves(b, c));
+      const shuffleFromB = shuffleBoard(boardB, W, seed, (b, c) => getLegalMoves(b, c));
+
+      // Different piece counts → different shuffle results
+      const countA = shuffleFromA.filter((sq) => sq != null).length;
+      const countB = shuffleFromB.filter((sq) => sq != null).length;
+      expect(countA).not.toBe(countB);
     });
   });
 

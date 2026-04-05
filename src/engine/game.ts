@@ -45,7 +45,9 @@ export function createNewGame(
   const initialHash = computeZobristHash(board, activeColor);
 
   const effectiveRuleSet =
-    mode === GameMode.Crazy ? createCompositeRuleSet(ruleSet) : ruleSet;
+    mode === GameMode.Crazy || mode === GameMode.Choice || mode === GameMode.Chaos
+      ? createCompositeRuleSet(ruleSet)
+      : ruleSet;
 
   return {
     board,
@@ -253,14 +255,14 @@ export function makeMove(state: GameState, move: Move): GameState {
     result = { type: GameResultType.Draw, reason: GameEndReason.FortyMoveRule };
   }
 
-  // ── Tick existing event durations (Crazy mode only) ─────────────────
-  if (state.mode === GameMode.Crazy && updatedEvents.length > 0) {
+  // ── Tick existing event durations (any mode with active events) ─────
+  if (updatedEvents.length > 0) {
     updatedEvents = tickAllEvents(updatedEvents);
     updatedEvents = resolveConflicts(updatedEvents);
   }
 
-  // ── Event trigger on multi-jump (Crazy mode only) ──────────────────
-  if (state.mode === GameMode.Crazy) {
+  // ── Event trigger on multi-jump (Crazy and Chaos modes) ────────────
+  if (state.mode === GameMode.Crazy || state.mode === GameMode.Chaos) {
     const triggeredEvents = checkEventTrigger(move, state.mode);
     if (triggeredEvents !== null) {
       const newEvents: ActiveEvent[] = [];

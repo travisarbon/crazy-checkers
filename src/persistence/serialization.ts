@@ -42,7 +42,7 @@ export interface SerializedGameState {
   activeEvents?: SerializedActiveEvent[];
 }
 
-interface SerializedActiveEvent {
+export interface SerializedActiveEvent {
   type: string;
   remainingPlies: number;
   triggeredBy: string;
@@ -140,7 +140,7 @@ export function deserializeGameState(data: SerializedGameState): GameState {
     }));
 
   const ruleSet =
-    mode === GameMode.Crazy
+    mode === GameMode.Crazy || mode === GameMode.Choice || mode === GameMode.Chaos
       ? createCompositeRuleSet(createAmericanRules())
       : createAmericanRules();
 

@@ -1128,6 +1128,85 @@ describe('makeMove — event duration ticking', () => {
 });
 
 // ===========================================================================
+// Choice and Chaos mode — createNewGame
+// ===========================================================================
+
+describe('createNewGame — Choice and Chaos modes', () => {
+  it('uses CompositeEventRuleSet for Choice mode', () => {
+    const state = createNewGame(createAmericanRules(), HUMAN_VS_HUMAN, GameMode.Choice);
+    expect(state.mode).toBe(GameMode.Choice);
+    expect('setActiveEvents' in state.ruleSet).toBe(true);
+    expect(state.activeEvents).toEqual([]);
+  });
+
+  it('uses CompositeEventRuleSet for Chaos mode', () => {
+    const state = createNewGame(createAmericanRules(), HUMAN_VS_HUMAN, GameMode.Chaos);
+    expect(state.mode).toBe(GameMode.Chaos);
+    expect('setActiveEvents' in state.ruleSet).toBe(true);
+    expect(state.activeEvents).toEqual([]);
+  });
+});
+
+// ===========================================================================
+// Event ticking in Choice mode
+// ===========================================================================
+
+describe('makeMove — event ticking in Choice mode', () => {
+  it('ticks active events in Choice mode games', () => {
+    const activeEvents: ActiveEvent[] = [
+      {
+        type: CrazyEvent.KingForADay,
+        remainingPlies: 2,
+        triggeredBy: PieceColor.White,
+        triggeredAtPly: 0,
+      },
+    ];
+
+    const state = stateWithBoard(createInitialBoard(), PieceColor.White, {
+      mode: GameMode.Choice,
+      ruleSet: createCompositeRuleSet(createAmericanRules()),
+      activeEvents,
+    });
+
+    const move = firstLegalMove(state);
+    const newState = makeMove(state, move);
+
+    expect(newState.activeEvents.length).toBe(1);
+    expect(newState.activeEvents[0]?.remainingPlies).toBe(1);
+  });
+});
+
+// ===========================================================================
+// Chaos mode — event trigger on single jump
+// ===========================================================================
+
+describe('makeMove — Chaos mode event trigger', () => {
+  it('triggers events on single-capture jumps in Chaos mode', () => {
+    // White king at 1 can jump over black pawn at 5
+    const board = buildBoard([
+      { sq: 1, color: W, type: K },
+      { sq: 5, color: B, type: P },
+      { sq: 32, color: B, type: P }, // Keep black alive
+      { sq: 29, color: W, type: P }, // Keep white alive
+    ]);
+
+    const state = stateWithBoard(board, PieceColor.White, {
+      mode: GameMode.Chaos,
+      ruleSet: createCompositeRuleSet(createAmericanRules()),
+    });
+
+    const legalMoves = getCurrentLegalMoves(state);
+    const singleJump = legalMoves.find((m) => m.captured.length === 1);
+
+    if (singleJump) {
+      const newState = makeMove(state, singleJump);
+      // A single jump should trigger an event in Chaos mode
+      expect(newState.activeEvents.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+});
+
+// ===========================================================================
 // Classic mode — regression
 // ===========================================================================
 

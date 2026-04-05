@@ -7,6 +7,7 @@
 
 import { openDB, type IDBPDatabase } from 'idb';
 import type { GameState } from '../engine/types';
+import type { SerializedActiveEvent } from './serialization';
 import { createInitialBoard } from '../engine/board';
 import { createAmericanRules } from '../engine/rules';
 import { moveToString } from '../utils/notation';
@@ -17,7 +18,7 @@ import { serializeBoard } from './serialization';
 // ---------------------------------------------------------------------------
 
 const DB_NAME = 'crazy-checkers';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const GAMES_STORE = 'games';
 
 // ---------------------------------------------------------------------------
@@ -39,6 +40,12 @@ export interface GameRecord {
   boardStates: string[];
   startedAt: number;
   completedAt: number;
+
+  /** Per-ply active event snapshots (index 0 = initial, index N = after move N-1). */
+  activeEventsPerPly?: SerializedActiveEvent[][];
+
+  /** Log of event triggers: which event fired on which ply. */
+  eventTriggerLog?: Array<{ ply: number; event: string; triggeredBy: string }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -47,13 +54,16 @@ export interface GameRecord {
 
 function getDb(): Promise<IDBPDatabase> {
   return openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains(GAMES_STORE)) {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
         const store = db.createObjectStore(GAMES_STORE, { keyPath: 'id' });
         store.createIndex('by-mode', 'mode');
         store.createIndex('by-completedAt', 'completedAt');
         store.createIndex('by-result', 'result');
       }
+      // Version 2: added optional activeEventsPerPly and eventTriggerLog
+      // fields to GameRecord. No schema migration needed — new fields are
+      // optional and existing records load without them.
     },
   });
 }
@@ -68,12 +78,19 @@ function getDb(): Promise<IDBPDatabase> {
  * @param finalState - The GameState at game-over.
  * @param mode - The game mode (e.g., 'classic').
  * @param startedAt - Timestamp when the game began.
+ * @param preBuiltSnapshots - Optional pre-built board state snapshots captured
+ *   during gameplay. Required for Crazy/Choice/Chaos modes where events modify
+ *   the board in ways that can't be reconstructed from move history alone.
+ *   If omitted, snapshots are reconstructed from moves (Classic mode fallback).
  * @returns The generated record ID.
  */
 export async function recordGame(
   finalState: GameState,
   mode: string,
   startedAt: number,
+  preBuiltSnapshots?: string[],
+  activeEventsPerPly?: SerializedActiveEvent[][],
+  eventTriggerLog?: Array<{ ply: number; event: string; triggeredBy: string }>,
 ): Promise<string> {
   if (finalState.result === null) {
     throw new Error('Cannot record a game that has no result.');
@@ -87,9 +104,11 @@ export async function recordGame(
     result: finalState.result.type,
     reason: finalState.result.reason,
     moves: finalState.moveHistory.map((m) => moveToString(m)),
-    boardStates: buildBoardStateSnapshots(finalState),
+    boardStates: preBuiltSnapshots ?? buildBoardStateSnapshots(finalState),
     startedAt,
     completedAt: Date.now(),
+    ...(activeEventsPerPly ? { activeEventsPerPly } : {}),
+    ...(eventTriggerLog ? { eventTriggerLog } : {}),
   };
 
   const db = await getDb();

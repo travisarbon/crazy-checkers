@@ -227,6 +227,46 @@ describe('Crazy mode serialization', () => {
     expect(restored.mode).toBe(GameMode.Classic);
   });
 
+  it('round-trips a Choice mode game with CompositeEventRuleSet', () => {
+    const state = createNewGame(
+      createAmericanRules(),
+      { white: PlayerType.Human, black: PlayerType.Human },
+      GameMode.Choice,
+    );
+    const stateWithEvent: GameState = {
+      ...state,
+      activeEvents: [
+        {
+          type: CrazyEvent.OppositeDay,
+          remainingPlies: 16,
+          triggeredBy: PieceColor.White,
+          triggeredAtPly: 0,
+        },
+      ],
+    };
+
+    const serialized = serializeGameState(stateWithEvent);
+    const restored = deserializeGameState(serialized);
+
+    expect(restored.mode).toBe(GameMode.Choice);
+    expect(restored.activeEvents.length).toBe(1);
+    expect('setActiveEvents' in restored.ruleSet).toBe(true);
+  });
+
+  it('round-trips a Chaos mode game with CompositeEventRuleSet', () => {
+    const state = createNewGame(
+      createAmericanRules(),
+      { white: PlayerType.Human, black: PlayerType.Human },
+      GameMode.Chaos,
+    );
+
+    const serialized = serializeGameState(state);
+    const restored = deserializeGameState(serialized);
+
+    expect(restored.mode).toBe(GameMode.Chaos);
+    expect('setActiveEvents' in restored.ruleSet).toBe(true);
+  });
+
   it('filters out malformed event entries during deserialization', () => {
     const state = createNewGame(
       createAmericanRules(),

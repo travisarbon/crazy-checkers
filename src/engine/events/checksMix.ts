@@ -14,17 +14,7 @@
 import type { BoardState, Move, PieceColor, RuleSet, SquareState } from '../types';
 import { CrazyEvent, PieceType, square } from '../types';
 import { BOARD_SIZE, isPromotionSquare } from '../board';
-import { getLegalMoves } from '../moves';
 import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } from '../events';
-
-// ---------------------------------------------------------------------------
-// Metadata type
-// ---------------------------------------------------------------------------
-
-export interface ChecksMixMetadata {
-  readonly seed: number;
-  readonly placement: Readonly<Record<number, { color: PieceColor; type: PieceType }>>;
-}
 
 // ---------------------------------------------------------------------------
 // Seeded PRNG — Mulberry32
@@ -254,22 +244,15 @@ export class ChecksMixDecorator extends EventDecorator {
 
     let result = board;
     for (const entry of checksMixEntries) {
-      const metadata = entry.metadata as unknown as ChecksMixMetadata | undefined;
+      const metadata = entry.metadata as unknown as { seed: number } | undefined;
       if (metadata === undefined) continue;
 
-      if (Object.keys(metadata.placement).length > 0) {
-        result = buildBoardFromPlacement(
-          new Map(
-            Object.entries(metadata.placement).map(
-              ([sq, piece]) => [Number(sq), piece] as const,
-            ),
-          ),
-        );
-      } else {
-        result = shuffleBoard(result, activeColor, metadata.seed, (b, c) =>
-          this.inner.getLegalMoves(b, c),
-        );
-      }
+      // Always compute the shuffle from the live board state using the seed.
+      // This prevents stale placement when another event modifies the board
+      // between Checks Mix creation and application.
+      result = shuffleBoard(result, activeColor, metadata.seed, (b, c) =>
+        this.inner.getLegalMoves(b, c),
+      );
     }
     return result;
   }
@@ -291,21 +274,13 @@ EVENT_DECORATOR_REGISTRY.set(
 
 EVENT_METADATA_FACTORIES.set(
   CrazyEvent.ChecksMix,
-  (board: BoardState, activeColor: PieceColor, randomFn?: () => number): Record<string, unknown> => {
+  (_board: BoardState, _activeColor: PieceColor, randomFn?: () => number): Record<string, unknown> => {
     const rng = randomFn ?? Math.random;
     const seed = Math.floor(rng() * 0xffffffff);
 
-    // Pre-compute the placement for deterministic replay
-    const shuffledBoard = shuffleBoard(board, activeColor, seed, (b, c) => getLegalMoves(b, c));
-
-    const placement: Record<number, { color: PieceColor; type: PieceType }> = {};
-    for (let i = 0; i < shuffledBoard.length; i++) {
-      const piece = shuffledBoard[i];
-      if (piece !== null && piece !== undefined) {
-        placement[i + 1] = { color: piece.color, type: piece.type };
-      }
-    }
-
-    return { seed, placement };
+    // Store only the seed — the shuffle is computed lazily in onTurnStart
+    // using the live board state. This prevents stale placement when another
+    // event modifies the board between creation and application.
+    return { seed };
   },
 );
