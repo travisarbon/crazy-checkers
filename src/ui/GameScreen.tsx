@@ -26,7 +26,9 @@ import GameOverDialog from './dialogs/GameOverDialog';
 import EventAnnouncement from './EventAnnouncement';
 import ActiveEventsIndicator from './ActiveEventsIndicator';
 import { useGameInteraction } from './useGameInteraction';
+import type { AnimationStep } from './useAnimationQueue';
 import { useAnimationQueue, buildAnimationSequence } from './useAnimationQueue';
+import { useEventAnimations } from './useEventAnimations';
 import styles from './GameScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -141,6 +143,14 @@ function getNewlyTriggeredEvents(
   return nextEvents.filter((e) => !prevKeys.has(`${e.type}:${String(e.triggeredAtPly)}`));
 }
 
+function getNewlyExpiredEvents(
+  prevEvents: readonly ActiveEvent[],
+  nextEvents: readonly ActiveEvent[],
+): readonly ActiveEvent[] {
+  const nextKeys = new Set(nextEvents.map((e) => `${e.type}:${String(e.triggeredAtPly)}`));
+  return prevEvents.filter((e) => !nextKeys.has(`${e.type}:${String(e.triggeredAtPly)}`));
+}
+
 // ---------------------------------------------------------------------------
 // GameScreen component
 // ---------------------------------------------------------------------------
@@ -193,6 +203,9 @@ export default function GameScreen({
     },
   });
 
+  // --- Event animation hook ---
+  const eventAnimations = useEventAnimations({ flipped });
+
   // --- Auto-save on every state change ---
   useEffect(() => {
     saveGame(gameState, gameState.mode, flipped);
@@ -213,8 +226,10 @@ export default function GameScreen({
     (newState: GameState) => {
       setUndoStack((prev) => [...prev, gameState]);
 
-      // Detect newly triggered events
+      // Detect newly triggered and expired events
       const triggered = getNewlyTriggeredEvents(gameState.activeEvents, newState.activeEvents);
+      const expired = getNewlyExpiredEvents(gameState.activeEvents, newState.activeEvents);
+
       if (triggered.length > 0) {
         setAnnouncementEvents(triggered);
       }
@@ -224,14 +239,41 @@ export default function GameScreen({
         setGameState(newState);
         return;
       }
+
       // Use the effective board (after onTurnStart, e.g. Checks Mix shuffle)
       // so the animation starts from the board the player actually sees.
       const boardBefore = getEffectiveBoard(gameState);
-      const steps = buildAnimationSequence(move, boardBefore, newState.board);
+      let allSteps: AnimationStep[] = [];
+
+      // 1. Event activation animations (play first)
+      if (triggered.length > 0) {
+        allSteps = allSteps.concat(
+          eventAnimations.buildActivationSequence(triggered, boardBefore, newState.board),
+        );
+      }
+
+      // 2. Move animations
+      allSteps = allSteps.concat(buildAnimationSequence(move, boardBefore, newState.board));
+
+      // 3. Mid-move effects (detonations, color swaps from expired events)
+      if (expired.length > 0) {
+        allSteps = allSteps.concat(
+          eventAnimations.buildMidMoveEffects(move, expired, boardBefore, newState.board),
+        );
+      }
+
+      // 4. Event expiration animations
+      if (expired.length > 0) {
+        allSteps = allSteps.concat(
+          eventAnimations.buildExpirationSequence(expired, newState.board),
+        );
+      }
+
+      // 5. Enqueue and set pending state
       pendingStateRef.current = newState;
-      animationQueue.enqueue(steps, boardBefore, gameState.activeColor);
+      animationQueue.enqueue(allSteps, boardBefore, gameState.activeColor);
     },
-    [gameState, animationQueue],
+    [gameState, animationQueue, eventAnimations],
   );
 
   // --- Keep gameStateRef in sync (ref must not be written during render) ---
