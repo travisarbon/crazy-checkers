@@ -240,6 +240,7 @@ function SoundSection({
           onClick={() => {
             onChange({ ...settings, muted: !settings.muted });
           }}
+          data-testid="sound-toggle"
         >
           <span className={styles.toggleKnob} />
         </button>

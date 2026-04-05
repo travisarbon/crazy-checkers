@@ -99,3 +99,76 @@ export async function clearAppStorage(page: Page): Promise<void> {
     localStorage.removeItem('crazy-checkers-game-history');
   });
 }
+
+// ---------------------------------------------------------------------------
+// Crazy mode helpers (Task 14.2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Start a Crazy mode Pass Around game.
+ */
+export async function startCrazyPassAroundGame(page: Page): Promise<void> {
+  await page.goto('/');
+  const resumeDiscard = page.getByTestId('resume-discard');
+  if (await resumeDiscard.isVisible({ timeout: 500 }).catch(() => false)) {
+    await resumeDiscard.click();
+  }
+  await page.getByRole('button', { name: 'Crazy' }).click();
+  await page.getByTestId('game-setup-dialog').waitFor();
+  // Pass Around is the default game type
+  await page.getByTestId('setup-start').click();
+  await page.getByTestId('game-screen').waitFor();
+}
+
+/**
+ * Start a Crazy mode game vs CPU at the given difficulty.
+ */
+export async function startCrazyCpuGame(
+  page: Page,
+  difficulty: 'easy' | 'hard' = 'easy',
+): Promise<void> {
+  await page.goto('/');
+  const resumeDiscard = page.getByTestId('resume-discard');
+  if (await resumeDiscard.isVisible({ timeout: 500 }).catch(() => false)) {
+    await resumeDiscard.click();
+  }
+  await page.getByRole('button', { name: 'Crazy' }).click();
+  await page.getByTestId('game-setup-dialog').waitFor();
+  await page.getByLabel('vs. CPU').check();
+  await page.getByTestId('difficulty-fieldset').waitFor();
+  if (difficulty === 'hard') {
+    await page.getByLabel('Hard').check();
+  }
+  await page.getByTestId('setup-start').click();
+  await page.getByTestId('game-screen').waitFor();
+}
+
+/**
+ * Force-trigger a specific event via the browser console (test-only).
+ * Requires the app to expose a __TEST_TRIGGER_EVENT hook when
+ * running in dev mode.
+ */
+export async function forceEvent(
+  page: Page,
+  eventName: string,
+): Promise<void> {
+  await page.evaluate((name) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__TEST_TRIGGER_EVENT?.(name);
+  }, eventName);
+}
+
+/**
+ * Wait for event announcement to appear and optionally verify its text.
+ */
+export async function waitForEventAnnouncement(
+  page: Page,
+  expectedName?: string,
+): Promise<void> {
+  const announcement = page.getByTestId('event-announcement');
+  await announcement.waitFor({ state: 'visible', timeout: 10000 });
+  if (expectedName) {
+    const nameEl = page.getByTestId('event-announcement-name');
+    await nameEl.waitFor({ state: 'visible', timeout: 5000 });
+  }
+}

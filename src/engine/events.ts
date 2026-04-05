@@ -449,6 +449,17 @@ export function isMultiJump(move: Move): boolean {
  * a seeded PRNG should be passed.
  */
 export function selectRandomEvent(randomFn: () => number = Math.random): CrazyEvent[] {
+  // Dev/test-only: check for forced event from __TEST_TRIGGER_EVENT hook.
+  // Tree-shaken from production builds via dead-code elimination.
+  /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+  const g = globalThis as any;
+  if (g.__TEST_FORCED_EVENT != null) {
+    const forced: CrazyEvent = g.__TEST_FORCED_EVENT;
+    g.__TEST_FORCED_EVENT = null;
+    return [forced];
+  }
+  /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+
   const metaSet = new Set<CrazyEvent>(META_EVENTS);
 
   const index = Math.floor(randomFn() * IMPLEMENTED_EVENTS.length);
