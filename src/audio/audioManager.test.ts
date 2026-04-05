@@ -125,7 +125,7 @@ describe('AudioManager', () => {
 
     // masterGain should have setValueAtTime called
     const masterGain = mockGainNodes[0];
-    expect(masterGain).toBeDefined();
+    if (!masterGain) throw new Error('Expected masterGain to be defined');
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(masterGain.gain.setValueAtTime).toHaveBeenCalled();
   });
