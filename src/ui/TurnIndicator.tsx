@@ -28,6 +28,7 @@ function formatGameResult(result: GameResult): string {
     [GameEndReason.Repetition]: 'threefold repetition',
     [GameEndReason.FortyMoveRule]: '40-move rule',
     [GameEndReason.Resignation]: 'resignation',
+    [GameEndReason.Time]: 'lost on time',
   };
 
   const reason = reasonText[result.reason] ?? 'unknown';

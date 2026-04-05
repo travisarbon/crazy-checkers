@@ -68,6 +68,15 @@
   line-height: 1.4;
 }
 
+/* ── Clock times (timed game result) ──────────────────────── */
+
+.clockTimes {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  margin: -0.5rem 0 1.25rem;
+  opacity: 0.85;
+}
+
 /* ── Active events at game end ─────────────────────────────── */
 
 .activeEventsNote {

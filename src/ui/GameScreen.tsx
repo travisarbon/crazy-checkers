@@ -10,7 +10,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { BREAKPOINT } from './breakpoints';
 import type { ActiveEvent, GameState, PlayerSetup, RuleSet } from '../engine/types';
-import { GameMode, GameStatus, PieceColor, PlayerType } from '../engine/types';
+import { GameMode, GameStatus, GameResultType, GameEndReason, PieceColor, PlayerType } from '../engine/types';
+import type { TimeControlConfig } from '../engine/clock';
 import { createNewGame, makeMove, canUndo as engineCanUndo, resign, getEffectiveBoard } from '../engine/game';
 import { requestAIMove } from '../ai/workerClient';
 import type { Difficulty } from '../ai/difficulty';
@@ -22,10 +23,12 @@ import CapturedPieces from './CapturedPieces';
 import MoveHistory from './MoveHistory';
 import GameControls from './GameControls';
 import GameAnnouncer from './GameAnnouncer';
+import GameClock from './GameClock';
 import GameOverDialog from './dialogs/GameOverDialog';
 import EventAnnouncement from './EventAnnouncement';
 import ActiveEventsIndicator from './ActiveEventsIndicator';
 import { useGameInteraction } from './useGameInteraction';
+import { useGameClock } from './useGameClock';
 import type { AnimationStep } from './useAnimationQueue';
 import { useAnimationQueue, buildAnimationSequence } from './useAnimationQueue';
 import { useEventAnimations } from './useEventAnimations';
@@ -48,6 +51,8 @@ interface GameScreenProps {
   pieceShadow?: boolean;
   initialGameState?: GameState;
   gameStartedAt?: number;
+  /** Time control config for this game, or null/undefined for untimed. */
+  timeControl?: TimeControlConfig | null;
   onNewGame: () => void;
   onMainMenu?: () => void;
 }
@@ -168,6 +173,7 @@ export default function GameScreen({
   pieceShadow = false,
   initialGameState,
   gameStartedAt: gameStartedAtProp,
+  timeControl,
   onNewGame,
   onMainMenu,
 }: GameScreenProps) {
@@ -212,6 +218,17 @@ export default function GameScreen({
   // --- Audio manager ---
   const audioManager = useAudioManager();
 
+  // --- Game clock ---
+  const gameClock = useGameClock({
+    config: timeControl ?? null,
+    activeColor: gameState.activeColor,
+    isGameOver: gameState.status === GameStatus.GameOver,
+    isAnimating: animationQueue.isAnimating,
+    isAIThinking,
+    players,
+    plyCount: gameState.plyCount,
+  });
+
   // --- Auto-save on every state change ---
   useEffect(() => {
     saveGame(gameState, gameState.mode, flipped);
@@ -248,9 +265,44 @@ export default function GameScreen({
     }
   }, [gameState.status, gameState, gameStartedAt, audioManager, players]);
 
+  // --- Time forfeit detection ---
+  useEffect(() => {
+    if (gameClock.expiredColor && gameState.status === GameStatus.InProgress) {
+      const loser = gameClock.expiredColor;
+      // Use microtask to avoid synchronous setState in effect body
+      void Promise.resolve().then(() => {
+        setGameState((prev) => ({
+          ...prev,
+          status: GameStatus.GameOver,
+          result: {
+            type: loser === PieceColor.White ? GameResultType.BlackWin : GameResultType.WhiteWin,
+            reason: GameEndReason.Time,
+          },
+        }));
+      });
+    }
+  }, [gameClock.expiredColor, gameState.status]);
+
+  // --- Low-time warning SFX ---
+  const lowTimeWhiteFiredRef = useRef(false);
+  const lowTimeBlackFiredRef = useRef(false);
+  useEffect(() => {
+    if (gameClock.whiteLowTime && !lowTimeWhiteFiredRef.current) {
+      lowTimeWhiteFiredRef.current = true;
+      audioManager?.play(SoundEvent.LowTimeWarning);
+    }
+    if (gameClock.blackLowTime && !lowTimeBlackFiredRef.current) {
+      lowTimeBlackFiredRef.current = true;
+      audioManager?.play(SoundEvent.LowTimeWarning);
+    }
+  }, [gameClock.whiteLowTime, gameClock.blackLowTime, audioManager]);
+
   // --- Move handler ---
   const handleMove = useCallback(
     (newState: GameState) => {
+      // Record pre-move time for undo support
+      gameClock.onMoveComplete();
+
       setUndoStack((prev) => [...prev, gameState]);
 
       // Detect newly triggered and expired events
@@ -323,7 +375,7 @@ export default function GameScreen({
       pendingStateRef.current = newState;
       animationQueue.enqueue(allSteps, boardBefore, gameState.activeColor);
     },
-    [gameState, animationQueue, eventAnimations, audioManager],
+    [gameState, animationQueue, eventAnimations, audioManager, gameClock],
   );
 
   // --- Keep gameStateRef in sync (ref must not be written during render) ---
@@ -436,6 +488,7 @@ export default function GameScreen({
     setAnnouncementEvents([]);
 
     const isCpuGame = players.white !== PlayerType.Human || players.black !== PlayerType.Human;
+    const movesUndone = isCpuGame ? 2 : 1;
 
     if (isCpuGame && undoStack.length >= 2) {
       const twoMovesBack = undoStack[undoStack.length - 2];
@@ -451,10 +504,13 @@ export default function GameScreen({
       }
     }
 
+    // Restore time for undone moves
+    gameClock.onUndo(movesUndone);
+
     if (takebacksRemaining > 0) {
       setTakebacksRemaining((prev) => prev - 1);
     }
-  }, [undoStack, takebacksRemaining, players, animationQueue.isAnimating]);
+  }, [undoStack, takebacksRemaining, players, animationQueue.isAnimating, gameClock]);
 
   // --- Resign handler ---
   const handleResign = useCallback(() => {
@@ -490,10 +546,36 @@ export default function GameScreen({
   }, [gameState.moveHistory]);
   const isMobile = useIsMobile();
 
+  // --- Clock display helpers ---
+  const modeIndicatorText = useMemo(() => {
+    if (!timeControl) return null;
+    switch (timeControl.mode) {
+      case 'increment': return `+${String(Math.round((timeControl.incrementMs ?? 0) / 1000))}s`;
+      case 'delay': return `delay ${String(Math.round((timeControl.delayMs ?? 0) / 1000))}s`;
+      default: return null;
+    }
+  }, [timeControl]);
+
+  const isCpuColor = useCallback((color: PieceColor): boolean => {
+    if (color === PieceColor.White) return players.white !== PlayerType.Human;
+    return players.black !== PlayerType.Human;
+  }, [players]);
+
   // --- Render ---
   return (
     <div className={styles.gameScreen} data-testid="game-screen" role="main">
       <GameAnnouncer gameState={gameState} isAnimating={animationQueue.isAnimating} />
+      {/* Mobile: clock above board (Black, or White when flipped) */}
+      {isMobile && gameClock.clockState && (
+        <GameClock
+          color={flipped ? PieceColor.White : PieceColor.Black}
+          timeDisplay={flipped ? gameClock.whiteTimeDisplay : gameClock.blackTimeDisplay}
+          isActive={gameClock.isTicking && gameState.activeColor === (flipped ? PieceColor.White : PieceColor.Black)}
+          isLowTime={flipped ? gameClock.whiteLowTime : gameClock.blackLowTime}
+          modeIndicator={modeIndicatorText}
+          hidden={isCpuColor(flipped ? PieceColor.White : PieceColor.Black)}
+        />
+      )}
       <div className={styles.boardArea}>
         {interaction.isMidMultiJump && !animationQueue.isAnimating && (
           <div className={styles.multiJumpBanner} role="status" aria-live="polite">
@@ -522,8 +604,30 @@ export default function GameScreen({
           eventOverlayState={eventOverlayState}
         />
       </div>
+      {/* Mobile: clock below board (White, or Black when flipped) */}
+      {isMobile && gameClock.clockState && (
+        <GameClock
+          color={flipped ? PieceColor.Black : PieceColor.White}
+          timeDisplay={flipped ? gameClock.blackTimeDisplay : gameClock.whiteTimeDisplay}
+          isActive={gameClock.isTicking && gameState.activeColor === (flipped ? PieceColor.Black : PieceColor.White)}
+          isLowTime={flipped ? gameClock.blackLowTime : gameClock.whiteLowTime}
+          modeIndicator={modeIndicatorText}
+          hidden={isCpuColor(flipped ? PieceColor.Black : PieceColor.White)}
+        />
+      )}
 
       <aside className={styles.sidebar} aria-label="Game information">
+        {/* Desktop: Black's clock at top (White when flipped) */}
+        {!isMobile && gameClock.clockState && (
+          <GameClock
+            color={flipped ? PieceColor.White : PieceColor.Black}
+            timeDisplay={flipped ? gameClock.whiteTimeDisplay : gameClock.blackTimeDisplay}
+            isActive={gameClock.isTicking && gameState.activeColor === (flipped ? PieceColor.White : PieceColor.Black)}
+            isLowTime={flipped ? gameClock.whiteLowTime : gameClock.blackLowTime}
+            modeIndicator={modeIndicatorText}
+            hidden={isCpuColor(flipped ? PieceColor.White : PieceColor.Black)}
+          />
+        )}
         <TurnIndicator
           activeColor={gameState.activeColor}
           isGameOver={isGameOver}
@@ -552,6 +656,17 @@ export default function GameScreen({
           onResign={handleResign}
           onMainMenu={onMainMenu}
         />
+        {/* Desktop: White's clock at bottom (Black when flipped) */}
+        {!isMobile && gameClock.clockState && (
+          <GameClock
+            color={flipped ? PieceColor.Black : PieceColor.White}
+            timeDisplay={flipped ? gameClock.blackTimeDisplay : gameClock.whiteTimeDisplay}
+            isActive={gameClock.isTicking && gameState.activeColor === (flipped ? PieceColor.Black : PieceColor.White)}
+            isLowTime={flipped ? gameClock.blackLowTime : gameClock.whiteLowTime}
+            modeIndicator={modeIndicatorText}
+            hidden={isCpuColor(flipped ? PieceColor.Black : PieceColor.White)}
+          />
+        )}
       </aside>
 
       {announcementEvents.length > 0 && (
@@ -569,6 +684,7 @@ export default function GameScreen({
           lastActiveColor={gameState.activeColor}
           mode={gameState.mode}
           activeEvents={gameState.activeEvents}
+          clockState={gameClock.clockState}
           onNewGame={onNewGame}
           onMainMenu={onMainMenu}
         />

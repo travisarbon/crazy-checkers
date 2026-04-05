@@ -1,0 +1,100 @@
+/* ── Game Clock — timer display widget ─────────────────────── */
+
+.clockContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 6px;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  min-height: 2.5rem;
+  width: 100%;
+}
+
+.clockActive {
+  opacity: 1;
+  background-color: color-mix(in srgb, var(--ui-accent) 8%, transparent);
+  border-left: 3px solid var(--ui-accent);
+}
+
+.clockInactive {
+  opacity: 0.5;
+  border-left: 3px solid transparent;
+}
+
+/* ── Player label ──────────────────────────────────────────── */
+
+.playerLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ui-text);
+  flex: 1;
+}
+
+/* ── Mode indicator ────────────────────────────────────────── */
+
+.modeIndicator {
+  font-size: 0.7rem;
+  opacity: 0.6;
+  color: var(--ui-text);
+  white-space: nowrap;
+}
+
+/* ── Time display ──────────────────────────────────────────── */
+
+.timeDisplay {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ui-text);
+  min-width: 4.5ch;
+  text-align: right;
+}
+
+.timeLow {
+  color: var(--ui-danger);
+  animation: clockPulse 0.6s ease-in-out infinite;
+}
+
+.timeExpired {
+  color: var(--ui-danger);
+}
+
+/* ── Pulse animation ───────────────────────────────────────── */
+
+@keyframes clockPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeLow {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* ── Mobile ────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .clockContainer {
+    padding: 0.25rem 0.5rem;
+    min-height: 2rem;
+  }
+
+  .timeDisplay {
+    font-size: 1rem;
+  }
+}
+
+/* ── Small phone ───────────────────────────────────────────── */
+
+@media (max-width: 479px) {
+  .timeDisplay {
+    font-size: 0.9rem;
+  }
+
+  .modeIndicator {
+    display: none;
+  }
+}

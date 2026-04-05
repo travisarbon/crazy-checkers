@@ -23,6 +23,8 @@ export const SoundEvent = {
   GameOverDraw: 'gameOverDraw',
   /** A menu button or UI control is clicked. */
   MenuClick: 'menuClick',
+  /** A player's clock drops below the low-time warning threshold. */
+  LowTimeWarning: 'lowTimeWarning',
 } as const;
 
 export type SoundEvent = (typeof SoundEvent)[keyof typeof SoundEvent];

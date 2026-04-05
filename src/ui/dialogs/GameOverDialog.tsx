@@ -10,6 +10,8 @@
 import { useEffect, useRef } from 'react';
 import type { ActiveEvent, GameResult, PieceColor } from '../../engine/types';
 import { GameMode, GameResultType, GameEndReason, PieceColor as PC } from '../../engine/types';
+import type { ClockState } from '../../engine/clock';
+import { getRemainingTime, formatTime } from '../../engine/clock';
 import { EVENT_DISPLAY_NAMES } from '../../engine/events';
 import styles from './GameOverDialog.module.css';
 
@@ -22,6 +24,8 @@ interface GameOverDialogProps {
   lastActiveColor: PieceColor;
   mode?: GameMode;
   activeEvents?: readonly ActiveEvent[];
+  /** Final clock state for timed games. */
+  clockState?: ClockState | null;
   onNewGame: () => void;
   onReview?: () => void;
   onMainMenu?: () => void;
@@ -128,6 +132,7 @@ export default function GameOverDialog({
   lastActiveColor,
   mode,
   activeEvents,
+  clockState,
   onNewGame,
   onMainMenu,
 }: GameOverDialogProps) {
@@ -202,6 +207,17 @@ export default function GameOverDialog({
         <p id="game-over-reason" className={styles.reason}>
           {getReasonDescription(result, lastActiveColor)}
         </p>
+        {clockState && result.reason === GameEndReason.Time && (
+          <p className={styles.clockTimes} data-testid="game-over-clock-times">
+            <span style={{ color: 'var(--ui-text)' }}>
+              White: {formatTime(getRemainingTime(clockState, PC.White))}
+            </span>
+            {' \u2014 '}
+            <span style={{ color: 'var(--ui-text)' }}>
+              Black: {formatTime(getRemainingTime(clockState, PC.Black))}
+            </span>
+          </p>
+        )}
         {mode === GameMode.Crazy && activeEvents && activeEvents.length > 0 && (
           <p className={styles.activeEventsNote} data-testid="game-over-active-events">
             Events active at game end: {activeEvents.map((e) => EVENT_DISPLAY_NAMES[e.type]).join(', ')}

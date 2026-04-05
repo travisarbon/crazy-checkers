@@ -49,7 +49,7 @@
 @media (max-width: 767px) {
   .gameScreen {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto auto auto; /* topClock, board, bottomClock, sidebar */
     gap: 0.5rem;
     padding: 0.5rem;
     min-height: auto;
