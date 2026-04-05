@@ -2,11 +2,17 @@ import type { AudioPack, AudioAsset } from './types';
 import { SoundEvent, MusicTrack } from './types';
 
 // ---------------------------------------------------------------------------
+// Base URL (respects Vite's `base` config for correct asset paths)
+// ---------------------------------------------------------------------------
+
+const BASE = import.meta.env.BASE_URL;
+
+// ---------------------------------------------------------------------------
 // SFX assets
 // ---------------------------------------------------------------------------
 
 const sfx = (filename: string, volume = 1.0): AudioAsset => ({
-  url: `/audio/sfx/${filename}`,
+  url: `${BASE}audio/sfx/${filename}`,
   volume,
 });
 
@@ -15,7 +21,7 @@ const sfx = (filename: string, volume = 1.0): AudioAsset => ({
 // ---------------------------------------------------------------------------
 
 const music = (filename: string, volume = 1.0): AudioAsset => ({
-  url: `/audio/music/${filename}`,
+  url: `${BASE}audio/music/${filename}`,
   volume,
 });
 
