@@ -326,7 +326,7 @@ export const EVENT_EVAL_WEIGHTS_REGISTRY: ReadonlyMap<CrazyEvent, EventEvalWeigh
     CrazyEvent.SafeHaven,
     {
       scoreAdjuster: (weightedScore, board, color) => {
-        const SAFE_SQUARES = [5, 8, 25, 28];
+        const SAFE_SQUARES = [6, 8, 25, 27];
         let bonus = 0;
         for (const sq of SAFE_SQUARES) {
           const piece = board[sq - 1];

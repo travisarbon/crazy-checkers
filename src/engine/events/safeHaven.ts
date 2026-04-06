@@ -1,7 +1,7 @@
 /**
  * Safe Haven — production event decorator (Event 20).
  *
- * Pieces on four fixed near-corner squares (5, 8, 25, 28) cannot be
+ * Pieces on four fixed near-corner squares (6, 8, 25, 27) cannot be
  * captured for 2 rounds (4 plies). Jump chains that capture any piece
  * on a safe haven square are invalid.
  *
@@ -16,12 +16,12 @@ import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } fr
 
 /**
  * The four fixed safe haven squares (near-corner positions):
- * - 5: row 1, col 0 (top-left)
- * - 8: row 1, col 6 (top-right)
- * - 25: row 6, col 1 (bottom-left)
- * - 28: row 6, col 7 (bottom-right)
+ * - 6: row 1, col 2 (top-left area)
+ * - 8: row 1, col 6 (top-right area)
+ * - 25: row 6, col 1 (bottom-left area)
+ * - 27: row 6, col 5 (bottom-right area)
  */
-export const SAFE_HAVEN_SQUARES: ReadonlySet<number> = new Set([5, 8, 25, 28]);
+export const SAFE_HAVEN_SQUARES: ReadonlySet<number> = new Set([6, 8, 25, 27]);
 
 /**
  * Filters out jump moves that capture any piece on a safe haven square.

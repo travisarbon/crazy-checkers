@@ -86,12 +86,12 @@ function firstMove(state: GameState): Move {
 // ===========================================================================
 
 describe('SAFE_HAVEN_SQUARES', () => {
-  it('contains exactly squares 5, 8, 25, 28', () => {
+  it('contains exactly squares 6, 8, 25, 27', () => {
     expect(SAFE_HAVEN_SQUARES.size).toBe(4);
-    expect(SAFE_HAVEN_SQUARES.has(5)).toBe(true);
+    expect(SAFE_HAVEN_SQUARES.has(6)).toBe(true);
     expect(SAFE_HAVEN_SQUARES.has(8)).toBe(true);
     expect(SAFE_HAVEN_SQUARES.has(25)).toBe(true);
-    expect(SAFE_HAVEN_SQUARES.has(28)).toBe(true);
+    expect(SAFE_HAVEN_SQUARES.has(27)).toBe(true);
   });
 });
 
@@ -101,17 +101,14 @@ describe('SAFE_HAVEN_SQUARES', () => {
 
 describe('filterSafeHavenCaptures', () => {
   it('jump capturing piece on safe haven square is blocked', () => {
-    // Black pawn at sq 5 (safe haven). White pawn at 9 jumps to 2 capturing 5.
-    // sq 9 (row 2, col 0), sq 5 (row 1, col 0), sq 2 (row 0, col 1)?
-    // Actually: sq 9 forward-left -> row 1, col -1 = off board.
-    // sq 9 forward-right -> sq 5? Let's check: sq 9 (row 2, col 0). Forward-right = row 1, col 1 = sq 5.
-    // Jump target = row 0, col 2 = sq 2. So jump: 9 → 2 capturing 5.
+    // Black pawn at sq 25 (safe haven, row 6, col 1).
+    // White king at 22 (row 5, col 2) can jump backward-left over 25 to 29.
     const board = buildBoard([
-      { sq: 9, color: W, type: P },
-      { sq: 5, color: B, type: P },
+      { sq: 22, color: W, type: K },
+      { sq: 25, color: B, type: P },
       { sq: 30, color: B, type: P },
     ]);
-    const moves: Move[] = [move(9, [2], [5])];
+    const moves: Move[] = [move(22, [29], [25])];
     const result = filterSafeHavenCaptures(board, moves, W);
     // Jump capturing safe haven piece should be blocked
     expect(result.every(m => m.captured.length === 0)).toBe(true);
