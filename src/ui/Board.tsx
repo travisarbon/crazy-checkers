@@ -499,6 +499,7 @@ function Board({
             flipped={flipped}
             overlayState={eventOverlayState}
             speedMultiplier={animSpeedMultiplier}
+            board={board}
           />
         )}
 

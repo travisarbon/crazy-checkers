@@ -342,7 +342,8 @@ describe('buildActivationSequence', () => {
   describe('Unknown/future event', () => {
     it('produces empty steps for unrecognized event types (HTML announcement handles display)', () => {
       const hook = getHook();
-      const event = makeActiveEvent(CrazyEvent.StepBack);
+      // Use an event type that has no animation builder yet (Tier 2+)
+      const event = makeActiveEvent(CrazyEvent.Conscription);
       const steps = hook.buildActivationSequence([event], emptyBoard());
 
       expect(steps).toHaveLength(0);

@@ -7,6 +7,7 @@
 
 import type { ActiveEvent, BoardState, GameResult, GameState, Move, Piece, PlayerSetup, RuleSet, Square } from './types';
 import {
+  CrazyEvent,
   GameEndReason,
   GameMode,
   GameResultType,
@@ -102,6 +103,29 @@ function isCompositeRuleSet(ruleSet: RuleSet): ruleSet is CompositeEventRuleSet 
   );
 }
 
+/**
+ * Applies pending metadata updates to the active events list.
+ * For each update, replaces the metadata of the newest matching event entry.
+ */
+function applyMetadataUpdates(
+  events: readonly ActiveEvent[],
+  updates: ReadonlyArray<{ type: CrazyEvent; metadata: Readonly<Record<string, unknown>> }>,
+): readonly ActiveEvent[] {
+  if (updates.length === 0) return events;
+  const result = [...events];
+  for (const { type, metadata } of updates) {
+    // Update the newest (last) matching entry
+    for (let i = result.length - 1; i >= 0; i--) {
+      const entry = result[i];
+      if (entry !== undefined && entry.type === type) {
+        result[i] = { ...entry, metadata };
+        break;
+      }
+    }
+  }
+  return result;
+}
+
 // ---------------------------------------------------------------------------
 // Core turn-advance function
 // ---------------------------------------------------------------------------
@@ -192,6 +216,9 @@ export function makeMove(state: GameState, move: Move): GameState {
     for (const type of removals) {
       updatedEvents = removeEventsByType(updatedEvents, type);
     }
+    // ── Apply pending metadata updates after onTurnEnd ────────────────
+    const metadataUpdates = state.ruleSet.drainPendingMetadataUpdates();
+    updatedEvents = applyMetadataUpdates(updatedEvents, metadataUpdates);
   }
 
   // ── Determine the landing piece (for Zobrist update) ────────────────

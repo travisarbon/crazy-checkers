@@ -12,9 +12,11 @@
 
 import { useMemo } from 'react';
 import type { ActiveEvent, BoardState, Square } from '../engine/types';
-import { CrazyEvent, PieceType, square } from '../engine/types';
-import { getBoardSquare, squareToGrid, gridToSquare } from '../engine/board';
+import { CrazyEvent, PieceColor, PieceType, opponentColor, square } from '../engine/types';
+import { getAllAdjacentSquares, getBoardSquare, getSquaresWithColor, squareToGrid, gridToSquare } from '../engine/board';
 import type { KingForADayMetadata } from '../engine/events/kingForADay';
+import { getGuardedKings } from '../engine/events/bodyguard';
+import { getMostAdvancedPieceSquare } from '../engine/events/forcedMarch';
 
 // ---------------------------------------------------------------------------
 // Public interface
@@ -41,6 +43,32 @@ export interface EventOverlayState {
 
   /** Squares where capture indicators should be dimmed (No Touching!). */
   readonly restrictedCaptureSquares: ReadonlySet<number>;
+
+  // -- Phase 3 Tier 1 overlay state --
+
+  /** Squares of guarded kings (Bodyguard). */
+  readonly guardedKingSquares: ReadonlySet<number>;
+
+  /** Whether Quicksand event is active. */
+  readonly quicksandActive: boolean;
+
+  /** Whether Frozen Assets event is active. */
+  readonly frozenAssetsActive: boolean;
+
+  /** Whether Safe Haven event is active. */
+  readonly safeHavenActive: boolean;
+
+  /** Whether Promotion Party event is active. */
+  readonly promotionPartyActive: boolean;
+
+  /** Square of the forced piece (Forced March), or null. */
+  readonly forcedMarchSquare: number | null;
+
+  /** Whether Royal Decree event is active. */
+  readonly royalDecreeActive: boolean;
+
+  /** Lines from kings to pinned pawns (Sentry). */
+  readonly sentryPinLines: ReadonlyArray<{ from: number; to: number }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -145,6 +173,7 @@ export function useEventOverlays(
   activeEvents: readonly ActiveEvent[],
   board: BoardState,
   selectedSquare: Square | null,
+  activeColor?: PieceColor,
 ): EventOverlayState {
   const temporaryKingSquares = useMemo(
     () => computeTemporaryKingSquares(activeEvents, board),
@@ -181,6 +210,67 @@ export function useEventOverlays(
     [activeEvents, board, selectedSquare],
   );
 
+  // -- Phase 3 Tier 1 overlays --
+
+  const guardedKingSquares = useMemo(() => {
+    if (!activeEvents.some(e => e.type === CrazyEvent.Bodyguard)) return EMPTY_SET;
+    return getGuardedKings(board);
+  }, [activeEvents, board]);
+
+  const quicksandActive = useMemo(
+    () => activeEvents.some(e => e.type === CrazyEvent.Quicksand),
+    [activeEvents],
+  );
+
+  const frozenAssetsActive = useMemo(
+    () => activeEvents.some(e => e.type === CrazyEvent.FrozenAssets),
+    [activeEvents],
+  );
+
+  const safeHavenActive = useMemo(
+    () => activeEvents.some(e => e.type === CrazyEvent.SafeHaven),
+    [activeEvents],
+  );
+
+  const promotionPartyActive = useMemo(
+    () => activeEvents.some(e => e.type === CrazyEvent.PromotionParty),
+    [activeEvents],
+  );
+
+  const forcedMarchSquare = useMemo(() => {
+    if (!activeEvents.some(e => e.type === CrazyEvent.ForcedMarch)) return null;
+    if (activeColor === undefined) return null;
+    const sq = getMostAdvancedPieceSquare(board, activeColor);
+    return sq !== null ? (sq as number) : null;
+  }, [activeEvents, board, activeColor]);
+
+  const royalDecreeActive = useMemo(
+    () => activeEvents.some(e => e.type === CrazyEvent.RoyalDecree),
+    [activeEvents],
+  );
+
+  const sentryPinLines = useMemo(() => {
+    if (!activeEvents.some(e => e.type === CrazyEvent.Sentry)) return [];
+    if (activeColor === undefined) return [];
+    // Compute pin lines: opponent kings → active player's pinned pawns
+    const oppColor = opponentColor(activeColor);
+    const oppKings = getSquaresWithColor(board, oppColor).filter(sq => {
+      const p = getBoardSquare(board, sq);
+      return p !== null && p.type === PieceType.King;
+    });
+    const lines: Array<{ from: number; to: number }> = [];
+    for (const kingSq of oppKings) {
+      const adjacents = getAllAdjacentSquares(kingSq);
+      for (const { adjacent } of adjacents) {
+        const p = getBoardSquare(board, adjacent);
+        if (p !== null && p.color === activeColor && p.type === PieceType.Pawn) {
+          lines.push({ from: kingSq as number, to: adjacent as number });
+        }
+      }
+    }
+    return lines;
+  }, [activeEvents, board, activeColor]);
+
   return {
     temporaryKingSquares,
     liveGrenadeActive,
@@ -189,5 +279,13 @@ export function useEventOverlays(
     upInTheAirActive,
     noTouchingActive,
     restrictedCaptureSquares,
+    guardedKingSquares,
+    quicksandActive,
+    frozenAssetsActive,
+    safeHavenActive,
+    promotionPartyActive,
+    forcedMarchSquare,
+    royalDecreeActive,
+    sentryPinLines,
   };
 }

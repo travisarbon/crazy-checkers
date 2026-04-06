@@ -233,6 +233,31 @@ export abstract class EventDecorator implements RuleSet {
   }
 
   /**
+   * Pending metadata update requests accumulated during hook execution.
+   * Collected by CompositeEventRuleSet after hook chains complete.
+   */
+  private _pendingMetadataUpdates: Array<{ type: CrazyEvent; metadata: Readonly<Record<string, unknown>> }> = [];
+
+  /**
+   * Called by subclasses to request a metadata update for an active event.
+   * Used by events like Dealer's Choice (skip tracking) and Quicksand
+   * (exempt square tracking) that need to mutate metadata during gameplay.
+   */
+  protected requestMetadataUpdate(type: CrazyEvent, metadata: Readonly<Record<string, unknown>>): void {
+    this._pendingMetadataUpdates.push({ type, metadata });
+  }
+
+  /**
+   * Returns and clears all pending metadata update requests.
+   * Called by CompositeEventRuleSet to drain updates from active decorators.
+   */
+  drainPendingMetadataUpdates(): Array<{ type: CrazyEvent; metadata: Readonly<Record<string, unknown>> }> {
+    const updates = this._pendingMetadataUpdates;
+    this._pendingMetadataUpdates = [];
+    return updates;
+  }
+
+  /**
    * The active events context, set by CompositeEventRuleSet when building
    * the decorator chain. Allows decorators to read metadata from their
    * ActiveEvent entries without instance state.
@@ -412,6 +437,22 @@ export const IMPLEMENTED_EVENTS: readonly CrazyEvent[] = [
   CrazyEvent.ChecksMix,
   CrazyEvent.OppositeDay,
   CrazyEvent.UpInTheAir,
+  // Phase 3 — Task 15.1 (Tier 1 Batch 1)
+  CrazyEvent.StepBack,
+  CrazyEvent.DealersChoice,
+  CrazyEvent.Bodyguard,
+  CrazyEvent.Quicksand,
+  CrazyEvent.FrozenAssets,
+  CrazyEvent.SafeHaven,
+  // Phase 3 — Task 15.2 (Tier 1 Batch 2)
+  CrazyEvent.PromotionParty,
+  CrazyEvent.Demotion,
+  CrazyEvent.ForcedMarch,
+  CrazyEvent.RoyalDecree,
+  CrazyEvent.Sentry,
+  CrazyEvent.RushHour,
+  // Phase 3 — Task 15.3 (Double Trouble meta-event)
+  CrazyEvent.DoubleTrouble,
 ];
 
 /**
@@ -431,6 +472,28 @@ export const META_EVENTS: readonly CrazyEvent[] = [CrazyEvent.DoubleTrouble] as 
  */
 export function isMultiJump(move: Move): boolean {
   return move.captured.length >= 2;
+}
+
+/**
+ * Selects two distinct non-meta events from the regular event pool.
+ * Used by the Double Trouble re-roll path and by Chaos mode (which
+ * forces Double Trouble on every capture).
+ *
+ * Returns a two-element array of distinct CrazyEvent types, or a
+ * single-element array if the regular pool has fewer than 2 events.
+ */
+export function selectDoubleTroubleEvents(randomFn: () => number = Math.random): CrazyEvent[] {
+  const metaSet = new Set<CrazyEvent>(META_EVENTS);
+  const regularPool = IMPLEMENTED_EVENTS.filter((e) => !metaSet.has(e));
+  if (regularPool.length === 0) return []; // Defensive: no regular events
+  const firstIndex = Math.floor(randomFn() * regularPool.length);
+  const first = regularPool[firstIndex] as CrazyEvent;
+  if (regularPool.length === 1) return [first]; // Only one regular event
+  // Pick second from remaining pool (excluding first) to guarantee termination
+  const secondOffset = Math.floor(randomFn() * (regularPool.length - 1));
+  const secondIndex = secondOffset >= firstIndex ? secondOffset + 1 : secondOffset;
+  const second = regularPool[secondIndex] as CrazyEvent;
+  return [first, second];
 }
 
 /**
@@ -468,15 +531,7 @@ export function selectRandomEvent(randomFn: () => number = Math.random): CrazyEv
   // If a meta-event (e.g., DoubleTrouble) is drawn, re-roll twice from the
   // regular pool (excluding meta-events), ensuring the two results differ.
   if (metaSet.has(drawn)) {
-    const regularPool = IMPLEMENTED_EVENTS.filter((e) => !metaSet.has(e));
-    if (regularPool.length === 0) return [drawn]; // Defensive: no regular events available
-    const first = regularPool[Math.floor(randomFn() * regularPool.length)] as CrazyEvent;
-    if (regularPool.length === 1) return [first]; // Only one regular event — can't pick two distinct
-    let second: CrazyEvent;
-    do {
-      second = regularPool[Math.floor(randomFn() * regularPool.length)] as CrazyEvent;
-    } while (second === first);
-    return [first, second];
+    return selectDoubleTroubleEvents(randomFn);
   }
 
   return [drawn];
@@ -501,9 +556,9 @@ export function checkEventTrigger(
   }
   if (mode === GameMode.Chaos) {
     // Chaos mode: trigger on any jump (1+ captures).
-    // In Phase 3+, Chaos always forces Double Trouble (two events per trigger).
+    // Always forces Double Trouble (two events per trigger).
     if (move.captured.length < 1) return null;
-    return selectRandomEvent(randomFn);
+    return selectDoubleTroubleEvents(randomFn);
   }
   return null;
 }

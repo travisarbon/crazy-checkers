@@ -92,6 +92,135 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Bodyguard — shield pulse on guarded kings
+ * --------------------------------------------------------------------------- */
+
+.bodyguardShield {
+  pointer-events: none;
+  animation: shieldPulse var(--shield-duration, 1500ms) ease-in-out infinite;
+}
+
+@keyframes shieldPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Quicksand — dim circles on stuck edge pieces
+ * --------------------------------------------------------------------------- */
+
+.quicksandCircle {
+  pointer-events: none;
+  animation: quicksandPulse var(--quicksand-duration, 2000ms) ease-in-out infinite;
+}
+
+@keyframes quicksandPulse {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.35; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Frozen Assets — snowflake on frozen kings
+ * --------------------------------------------------------------------------- */
+
+.frozenAssetsStar {
+  pointer-events: none;
+  animation: frozenSpin var(--frozen-duration, 4000ms) linear infinite,
+             frozenPulse 2000ms ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes frozenSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes frozenPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Safe Haven — glow rings on corner-adjacent squares
+ * --------------------------------------------------------------------------- */
+
+.safeHavenRing {
+  pointer-events: none;
+  animation: safeHavenGlow var(--haven-duration, 1800ms) ease-in-out infinite;
+}
+
+@keyframes safeHavenGlow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Promotion Party — dashed zone border
+ * --------------------------------------------------------------------------- */
+
+.promotionPartyZone {
+  pointer-events: none;
+  animation: promotionPulse var(--promo-duration, 2000ms) ease-in-out infinite;
+}
+
+@keyframes promotionPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Forced March — arrow on forced piece
+ * --------------------------------------------------------------------------- */
+
+.forcedMarchArrow {
+  pointer-events: none;
+  animation: arrowPulse var(--arrow-duration, 1200ms) ease-in-out infinite;
+}
+
+@keyframes arrowPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Royal Decree — crown and lock icons
+ * --------------------------------------------------------------------------- */
+
+.royalDecreeCrown {
+  pointer-events: none;
+  animation: royalCrownPulse 1500ms ease-in-out infinite;
+}
+
+@keyframes royalCrownPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
+}
+
+.royalDecreeLock {
+  pointer-events: none;
+  animation: royalLockPulse 1800ms ease-in-out infinite;
+}
+
+@keyframes royalLockPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Sentry — dashed pin lines from kings to pawns
+ * --------------------------------------------------------------------------- */
+
+.sentryLine {
+  pointer-events: none;
+  animation: sentryPulse var(--sentry-duration, 1500ms) ease-in-out infinite;
+}
+
+@keyframes sentryPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+
+/* ---------------------------------------------------------------------------
  * Reduced motion overrides
  * --------------------------------------------------------------------------- */
 
@@ -126,5 +255,50 @@
   .restrictedCapture {
     animation: none;
     opacity: 0.3;
+  }
+
+  .bodyguardShield {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .quicksandCircle {
+    animation: none;
+    opacity: 0.25;
+  }
+
+  .frozenAssetsStar {
+    animation: none;
+    opacity: 0.65;
+  }
+
+  .safeHavenRing {
+    animation: none;
+    opacity: 0.45;
+  }
+
+  .promotionPartyZone {
+    animation: none;
+    opacity: 0.4;
+  }
+
+  .forcedMarchArrow {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .royalDecreeCrown {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .royalDecreeLock {
+    animation: none;
+    opacity: 0.45;
+  }
+
+  .sentryLine {
+    animation: none;
+    opacity: 0.4;
   }
 }

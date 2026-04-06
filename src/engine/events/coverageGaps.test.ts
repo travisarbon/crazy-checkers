@@ -157,10 +157,11 @@ describe('selectRandomEvent — meta-event re-roll', () => {
     }
   });
 
-  it('always returns a single-element array in Phase 2', () => {
+  it('returns 1 or 2 elements (2 when DoubleTrouble drawn)', () => {
     for (let i = 0; i < 50; i++) {
       const events = selectRandomEvent();
-      expect(events).toHaveLength(1);
+      expect(events.length).toBeGreaterThanOrEqual(1);
+      expect(events.length).toBeLessThanOrEqual(2);
     }
   });
 

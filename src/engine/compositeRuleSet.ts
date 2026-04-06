@@ -99,6 +99,19 @@ export class CompositeEventRuleSet implements RuleSet {
   }
 
   /**
+   * Collects and clears pending metadata update requests from all active decorators.
+   * Called by game.ts after hook chains (onTurnEnd) that may request
+   * metadata updates for active events (e.g., Dealer's Choice skip tracking).
+   */
+  drainPendingMetadataUpdates(): Array<{ type: CrazyEvent; metadata: Readonly<Record<string, unknown>> }> {
+    const updates: Array<{ type: CrazyEvent; metadata: Readonly<Record<string, unknown>> }> = [];
+    for (const decorator of this.activeChainDecorators) {
+      updates.push(...decorator.drainPendingMetadataUpdates());
+    }
+    return updates;
+  }
+
+  /**
    * Returns the EventDecorator instances that are currently active,
    * based on the provided active events list.
    * Order: matches the order of events in the activeEvents array (oldest first).

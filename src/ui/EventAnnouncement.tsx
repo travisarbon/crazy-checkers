@@ -21,6 +21,9 @@ const MIN_DISPLAY_MS = 1500;
 /** Auto-dismiss delay after all conditions are met (ms). */
 const DEFAULT_DISMISS_DELAY = 2000;
 
+/** Extended dismiss delay for Double Trouble (ms). */
+const DOUBLE_TROUBLE_DISMISS_DELAY = 3500;
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -44,8 +47,10 @@ export default function EventAnnouncement({
   events,
   onDismiss,
   isAnimating = false,
-  dismissDelay = DEFAULT_DISMISS_DELAY,
+  dismissDelay,
 }: EventAnnouncementProps) {
+  const isDoubleTrouble = events.length >= 2;
+  const effectiveDismissDelay = dismissDelay ?? (isDoubleTrouble ? DOUBLE_TROUBLE_DISMISS_DELAY : DEFAULT_DISMISS_DELAY);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dismissedRef = useRef(false);
   const [mountedAt] = useState(() => Date.now());
@@ -77,7 +82,7 @@ export default function EventAnnouncement({
 
     // Calculate remaining dismiss delay after min display time
     const elapsed = Date.now() - mountedAt;
-    const remaining = Math.max(0, dismissDelay - elapsed);
+    const remaining = Math.max(0, effectiveDismissDelay - elapsed);
 
     timerRef.current = setTimeout(handleDismiss, remaining);
     return () => {
@@ -86,7 +91,7 @@ export default function EventAnnouncement({
         timerRef.current = null;
       }
     };
-  }, [isAnimating, minTimeElapsed, handleDismiss, dismissDelay, mountedAt]);
+  }, [isAnimating, minTimeElapsed, handleDismiss, effectiveDismissDelay, mountedAt]);
 
   return (
     <div
@@ -97,6 +102,11 @@ export default function EventAnnouncement({
       data-testid="event-announcement"
     >
       <div className={styles.content}>
+        {isDoubleTrouble && (
+          <p className={styles.doubleTroubleTitle} data-testid="double-trouble-title">
+            DOUBLE TROUBLE!
+          </p>
+        )}
         {events.map((event, index) => (
           <div key={`${event.type}-${String(event.triggeredAtPly)}`} className={styles.eventBlock}>
             {index > 0 && <hr />}

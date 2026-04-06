@@ -239,6 +239,182 @@ export const EVENT_EVAL_WEIGHTS_REGISTRY: ReadonlyMap<CrazyEvent, EventEvalWeigh
       },
     },
   ],
+
+  // Event 8: Step-Back — pawns can capture backwards
+  [
+    CrazyEvent.StepBack,
+    {
+      multipliers: {
+        mobilityPerMove: 1.5,
+        backRowBonus: 0.3,
+        advancementPerRow: 0.7,
+      },
+    },
+  ],
+
+  // Event 11: Dealer's Choice — skip mandatory capture once per player
+  [
+    CrazyEvent.DealersChoice,
+    {
+      multipliers: {
+        mobilityPerMove: 1.3,
+      },
+    },
+  ],
+
+  // Event 12: Bodyguard — kings adjacent to friendly pawns can't be captured
+  [
+    CrazyEvent.Bodyguard,
+    {
+      multipliers: {
+        kingValue: 1.4,
+        endgameKingValue: 1.3,
+        trappedKingPenalty: 0.3,
+        semiTrappedKingPenalty: 0.3,
+      },
+      scoreAdjuster: (weightedScore, board, color) => {
+        // Bonus for having king-pawn adjacency pairs (guarded formation)
+        const mySquares = getSquaresWithColor(board, color);
+        let guardedCount = 0;
+        for (const sq of mySquares) {
+          const piece = getBoardSquare(board, sq);
+          if (piece !== null && piece.type === PieceType.King) {
+            for (const { adjacent } of getAllAdjacentSquares(sq)) {
+              const adj = getBoardSquare(board, adjacent);
+              if (adj !== null && adj.color === color && adj.type === PieceType.Pawn) {
+                guardedCount++;
+                break;
+              }
+            }
+          }
+        }
+        return weightedScore + guardedCount * 12;
+      },
+    },
+  ],
+
+  // Event 13: Quicksand — edge pieces are stuck
+  [
+    CrazyEvent.Quicksand,
+    {
+      multipliers: {
+        centerBonus: 2.0,
+        expandedCenterBonus: 1.5,
+        backRowBonus: 0.0,
+      },
+    },
+  ],
+
+  // Event 18: Frozen Assets — all kings frozen
+  [
+    CrazyEvent.FrozenAssets,
+    {
+      multipliers: {
+        pawnValue: 1.5,
+        kingValue: 0.3,
+        endgameKingValue: 0.3,
+        advancementPerRow: 1.5,
+        endgameAdvancementPerRow: 1.5,
+        trappedKingPenalty: 0.0,
+        semiTrappedKingPenalty: 0.0,
+      },
+    },
+  ],
+
+  // Event 20: Safe Haven — pieces on near-corner squares can't be captured
+  [
+    CrazyEvent.SafeHaven,
+    {
+      scoreAdjuster: (weightedScore, board, color) => {
+        const SAFE_SQUARES = [5, 8, 25, 28];
+        let bonus = 0;
+        for (const sq of SAFE_SQUARES) {
+          const piece = board[sq - 1];
+          if (piece == null) continue;
+          if (piece.color === color) bonus += 15;
+          else bonus -= 15;
+        }
+        return weightedScore + bonus;
+      },
+    },
+  ],
+
+  // Event 22: Promotion Party — expanded promotion zone
+  [
+    CrazyEvent.PromotionParty,
+    {
+      multipliers: {
+        advancementPerRow: 2.0,
+        endgameAdvancementPerRow: 2.0,
+        pawnValue: 1.2,
+      },
+    },
+  ],
+
+  // Event 25: Demotion — all kings demoted to pawns
+  [
+    CrazyEvent.Demotion,
+    {
+      multipliers: {
+        kingValue: 0.2,
+        endgameKingValue: 0.2,
+        pawnValue: 1.3,
+        advancementPerRow: 1.8,
+        endgameAdvancementPerRow: 1.8,
+        trappedKingPenalty: 0.0,
+        semiTrappedKingPenalty: 0.0,
+      },
+    },
+  ],
+
+  // Event 27: Forced March — must move most advanced piece
+  [
+    CrazyEvent.ForcedMarch,
+    {
+      multipliers: {
+        advancementPerRow: 0.5,
+        mobilityPerMove: 0.7,
+      },
+    },
+  ],
+
+  // Event 33: Royal Decree — only kings may move
+  [
+    CrazyEvent.RoyalDecree,
+    {
+      multipliers: {
+        kingValue: 2.0,
+        endgameKingValue: 1.8,
+        pawnValue: 0.5,
+        trappedKingPenalty: 2.0,
+        semiTrappedKingPenalty: 1.5,
+      },
+    },
+  ],
+
+  // Event 35: Sentry — kings pin adjacent enemy pawns
+  [
+    CrazyEvent.Sentry,
+    {
+      multipliers: {
+        kingValue: 1.5,
+        endgameKingValue: 1.4,
+        mobilityPerMove: 1.3,
+      },
+    },
+  ],
+
+  // Event 36: Rush Hour — pawns can double-step forward
+  [
+    CrazyEvent.RushHour,
+    {
+      multipliers: {
+        mobilityPerMove: 1.5,
+        advancementPerRow: 1.3,
+        endgameAdvancementPerRow: 1.3,
+      },
+    },
+  ],
 ]);
 
 // ---------------------------------------------------------------------------

@@ -365,11 +365,9 @@ describe('META_EVENTS', () => {
     expect(META_EVENTS).toContain(CrazyEvent.DoubleTrouble);
   });
 
-  it('does not overlap with IMPLEMENTED_EVENTS in Phase 2', () => {
+  it('DoubleTrouble is in IMPLEMENTED_EVENTS (Task 15.3)', () => {
     const implementedSet = new Set<string>(IMPLEMENTED_EVENTS);
-    for (const meta of META_EVENTS) {
-      expect(implementedSet.has(meta)).toBe(false);
-    }
+    expect(implementedSet.has(CrazyEvent.DoubleTrouble)).toBe(true);
   });
 });
 
@@ -386,9 +384,11 @@ describe('selectRandomEvent', () => {
     }
   });
 
-  it('returns a single-element array in Phase 2 (no meta-events in pool)', () => {
+  it('returns 1 or 2 elements depending on whether DoubleTrouble is drawn', () => {
+    // With a fixed random, ensure deterministic behavior
     const events = selectRandomEvent(() => 0.5);
-    expect(events).toHaveLength(1);
+    expect(events.length).toBeGreaterThanOrEqual(1);
+    expect(events.length).toBeLessThanOrEqual(2);
   });
 
   it('is deterministic with seeded random', () => {
@@ -404,8 +404,13 @@ describe('selectRandomEvent', () => {
   });
 
   it('selects last implemented event when random returns just under 1', () => {
+    // Last event is DoubleTrouble — triggers re-roll, returns 2 non-meta events
     const events = selectRandomEvent(() => 0.999);
-    expect(events[0]).toBe(IMPLEMENTED_EVENTS[IMPLEMENTED_EVENTS.length - 1]);
+    expect(events).toHaveLength(2);
+    const metaSet = new Set<CrazyEvent>(META_EVENTS);
+    for (const e of events) {
+      expect(metaSet.has(e)).toBe(false);
+    }
   });
 
   it('only draws from IMPLEMENTED_EVENTS, not the full enum', () => {
@@ -459,13 +464,17 @@ describe('checkEventTrigger', () => {
     expect(checkEventTrigger(multiJumpMove, GameMode.Classic)).toBeNull();
   });
 
-  it('triggers on single-capture jumps in Chaos mode', () => {
+  it('triggers Double Trouble (2 events) on any capture in Chaos mode', () => {
     const result = checkEventTrigger(singleJumpMove, GameMode.Chaos, () => 0.5);
     expect(result).not.toBeNull();
     expect(Array.isArray(result)).toBe(true);
     if (result !== null) {
+      expect(result).toHaveLength(2);
+      expect(result[0]).not.toBe(result[1]);
+      const metaSet = new Set<CrazyEvent>(META_EVENTS);
       for (const event of result) {
         expect(IMPLEMENTED_EVENTS).toContain(event);
+        expect(metaSet.has(event)).toBe(false);
       }
     }
   });

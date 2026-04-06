@@ -23,6 +23,14 @@ const EMPTY_STATE: EventOverlayState = {
   upInTheAirActive: false,
   noTouchingActive: false,
   restrictedCaptureSquares: new Set(),
+  guardedKingSquares: new Set(),
+  quicksandActive: false,
+  frozenAssetsActive: false,
+  safeHavenActive: false,
+  promotionPartyActive: false,
+  forcedMarchSquare: null,
+  royalDecreeActive: false,
+  sentryPinLines: [],
 };
 
 function renderOverlays(overlayState: Partial<EventOverlayState> = {}) {

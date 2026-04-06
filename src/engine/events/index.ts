@@ -13,3 +13,17 @@ import './hotPotato';
 import './checksMix';
 import './oppositeDay';
 import './upInTheAir';
+// Phase 3 — Task 15.1 (Tier 1 Batch 1)
+import './stepBack';
+import './dealersChoice';
+import './bodyguard';
+import './quicksand';
+import './frozenAssets';
+import './safeHaven';
+// Phase 3 — Task 15.2 (Tier 1 Batch 2)
+import './promotionParty';
+import './demotion';
+import './forcedMarch';
+import './royalDecree';
+import './sentry';
+import './rushHour';

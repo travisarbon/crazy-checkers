@@ -612,6 +612,7 @@ export default function GameScreen({
     gameState.activeEvents,
     animationQueue.animationBoard ?? interaction.displayBoard,
     animationQueue.isAnimating ? null : interaction.selectedSquare,
+    gameState.activeColor,
   );
 
   // --- Derived state ---
