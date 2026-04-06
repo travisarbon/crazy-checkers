@@ -105,29 +105,30 @@ describe('useEventOverlays — temporaryKingSquares', () => {
 // Hot Piece Detection (Hot Potato)
 // ===========================================================================
 
-describe('useEventOverlays — hotPieceSquare', () => {
-  it('returns null when no HotPotato active', () => {
+describe('useEventOverlays — hotPotatoSquares', () => {
+  it('returns empty set when no HotPotato active', () => {
     const board = buildBoard([{ sq: 14, color: W, type: P }]);
     const state = hook([], board);
-    expect(state.hotPieceSquare).toBeNull();
+    expect(state.hotPotatoSquares.size).toBe(0);
   });
 
-  it('returns square when HotPotato active with metadata', () => {
-    const board = buildBoard([{ sq: 14, color: W, type: P }]);
+  it('returns all triggeredBy player squares when HotPotato active', () => {
+    const board = buildBoard([
+      { sq: 14, color: W, type: P },
+      { sq: 22, color: W, type: P },
+      { sq: 3, color: B, type: P },
+    ]);
     const state = hook([hpEvent(14)], board);
-    expect(state.hotPieceSquare).toBe(square(14));
+    // White triggered — all White pieces highlighted
+    expect(state.hotPotatoSquares.has(14)).toBe(true);
+    expect(state.hotPotatoSquares.has(22)).toBe(true);
+    expect(state.hotPotatoSquares.has(3)).toBe(false);
   });
 
-  it('returns null when hot piece was captured', () => {
-    const board = buildBoard([]); // sq 14 is empty
-    const state = hook([hpEvent(14)], board);
-    expect(state.hotPieceSquare).toBeNull();
-  });
-
-  it('returns null when no metadata', () => {
-    const board = buildBoard([{ sq: 14, color: W, type: P }]);
-    const state = hook([hpEvent()], board);
-    expect(state.hotPieceSquare).toBeNull();
+  it('returns empty set when triggeredBy player has no pieces', () => {
+    const board = buildBoard([{ sq: 3, color: B, type: P }]); // only Black pieces
+    const state = hook([hpEvent(14)], board); // triggered by White
+    expect(state.hotPotatoSquares.size).toBe(0);
   });
 });
 

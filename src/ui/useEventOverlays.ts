@@ -29,8 +29,8 @@ export interface EventOverlayState {
   /** Whether the Live Grenade event is currently active. */
   readonly liveGrenadeActive: boolean;
 
-  /** The square containing the "hot" piece (Hot Potato), or null. */
-  readonly hotPieceSquare: Square | null;
+  /** Squares of pieces that could switch color next (Hot Potato). */
+  readonly hotPotatoSquares: ReadonlySet<number>;
 
   /** Whether Opposite Day is currently active. */
   readonly oppositeDayActive: boolean;
@@ -102,20 +102,22 @@ function computeTemporaryKingSquares(
   return tempKings.size > 0 ? tempKings : EMPTY_SET;
 }
 
-function computeHotPieceSquare(
+/**
+ * Returns all squares occupied by the triggeredBy player's pieces.
+ * Hot Potato affects whichever piece that player moves next, so all
+ * of their pieces should show the indicator.
+ */
+function computeHotPotatoSquares(
   activeEvents: readonly ActiveEvent[],
   board: BoardState,
-): Square | null {
+): ReadonlySet<number> {
   const hotPotatoEvent = activeEvents.find(e => e.type === CrazyEvent.HotPotato);
-  if (!hotPotatoEvent) return null;
+  if (!hotPotatoEvent) return EMPTY_SET;
 
-  const metadata = hotPotatoEvent.metadata as unknown as { hotSquare?: number } | undefined;
-  const hotSquare = metadata?.hotSquare;
-  if (hotSquare === undefined) return null;
-
-  // Verify piece still exists on that square
-  const piece = getBoardSquare(board, square(hotSquare));
-  return piece ? square(hotSquare) : null;
+  const targetColor = hotPotatoEvent.triggeredBy;
+  const squares = getSquaresWithColor(board, targetColor);
+  if (squares.length === 0) return EMPTY_SET;
+  return new Set(squares.map(s => s as number));
 }
 
 function computeRestrictedCaptureSquares(
@@ -185,8 +187,8 @@ export function useEventOverlays(
     [activeEvents],
   );
 
-  const hotPieceSquare = useMemo(
-    () => computeHotPieceSquare(activeEvents, board),
+  const hotPotatoSquares = useMemo(
+    () => computeHotPotatoSquares(activeEvents, board),
     [activeEvents, board],
   );
 
@@ -274,7 +276,7 @@ export function useEventOverlays(
   return {
     temporaryKingSquares,
     liveGrenadeActive,
-    hotPieceSquare,
+    hotPotatoSquares,
     oppositeDayActive,
     upInTheAirActive,
     noTouchingActive,

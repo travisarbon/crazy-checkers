@@ -9,7 +9,7 @@ import { render } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import EventOverlays from './EventOverlays';
 import type { EventOverlayState } from './useEventOverlays';
-import { square } from '../engine/types';
+
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -18,7 +18,7 @@ import { square } from '../engine/types';
 const EMPTY_STATE: EventOverlayState = {
   temporaryKingSquares: new Set(),
   liveGrenadeActive: false,
-  hotPieceSquare: null,
+  hotPotatoSquares: new Set(),
   oppositeDayActive: false,
   upInTheAirActive: false,
   noTouchingActive: false,
@@ -63,7 +63,7 @@ describe('EventOverlays', () => {
   });
 
   it('renders Hot Potato indicator when active', () => {
-    const { container } = renderOverlays({ hotPieceSquare: square(14) });
+    const { container } = renderOverlays({ hotPotatoSquares: new Set([14]) });
     expect(container.querySelector('[data-testid="hot-potato-indicator"]')).not.toBeNull();
   });
 
@@ -75,7 +75,7 @@ describe('EventOverlays', () => {
   it('renders all three indicators simultaneously', () => {
     const { container } = renderOverlays({
       liveGrenadeActive: true,
-      hotPieceSquare: square(14),
+      hotPotatoSquares: new Set([14]),
       oppositeDayActive: true,
     });
     expect(container.querySelector('[data-testid="live-grenade-indicator"]')).not.toBeNull();
@@ -94,7 +94,7 @@ describe('EventOverlays', () => {
     expect(container.querySelector('[data-testid="live-grenade-indicator"]')).toBeNull();
   });
 
-  it('does not render Hot Potato indicator when hotPieceSquare is null', () => {
+  it('does not render Hot Potato indicator when hotPotatoSquares is empty', () => {
     const { container } = renderOverlays({ liveGrenadeActive: true });
     expect(container.querySelector('[data-testid="hot-potato-indicator"]')).toBeNull();
   });
@@ -118,7 +118,7 @@ describe('EventOverlays', () => {
   });
 
   it('renders Hot Potato indicator at correct square coordinates when flipped', () => {
-    const state = { ...EMPTY_STATE, hotPieceSquare: square(1) };
+    const state = { ...EMPTY_STATE, hotPotatoSquares: new Set([1]) };
     const { container: normalContainer } = render(
       <svg>
         <EventOverlays
@@ -139,8 +139,8 @@ describe('EventOverlays', () => {
         />
       </svg>,
     );
-    const normalCircle = normalContainer.querySelector('[data-testid="hot-potato-indicator"]');
-    const flippedCircle = flippedContainer.querySelector('[data-testid="hot-potato-indicator"]');
+    const normalCircle = normalContainer.querySelector('[data-testid="hot-potato-indicator"] circle');
+    const flippedCircle = flippedContainer.querySelector('[data-testid="hot-potato-indicator"] circle');
     expect(normalCircle).not.toBeNull();
     expect(flippedCircle).not.toBeNull();
     // cx should be the same (same column), cy should differ (flipped row)

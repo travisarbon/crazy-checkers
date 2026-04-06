@@ -11,7 +11,7 @@
  */
 
 import { PieceType, square } from '../engine/types';
-import type { BoardState, Square } from '../engine/types';
+import type { BoardState } from '../engine/types';
 import { getBoardSquare, squareToGrid } from '../engine/board';
 import { squareCenterCoords } from './useAnimationQueue';
 import type { EventOverlayState } from './useEventOverlays';
@@ -80,28 +80,33 @@ function LiveGrenadeIndicator({
 }
 
 function HotPotatoIndicator({
-  hotSquare,
+  hotSquares,
   flipped,
   speedMultiplier,
 }: {
-  hotSquare: Square;
+  hotSquares: ReadonlySet<number>;
   flipped: boolean;
   speedMultiplier: number;
 }) {
-  const { cx, cy } = squareCenterCoords(hotSquare, flipped);
-
   return (
-    <circle
-      cx={cx}
-      cy={cy}
-      r={44}
-      fill="none"
-      stroke="var(--ui-danger)"
-      strokeWidth={3}
-      className={styles.hotPotatoGlow}
-      style={{ '--glow-duration': `${String(900 * speedMultiplier)}ms` } as React.CSSProperties}
-      data-testid="hot-potato-indicator"
-    />
+    <g data-testid="hot-potato-indicator">
+      {[...hotSquares].map(sq => {
+        const { cx, cy } = squareCenterCoords(square(sq), flipped);
+        return (
+          <circle
+            key={sq}
+            cx={cx}
+            cy={cy}
+            r={44}
+            fill="none"
+            stroke="var(--ui-danger)"
+            strokeWidth={3}
+            className={styles.hotPotatoGlow}
+            style={{ '--glow-duration': `${String(900 * speedMultiplier)}ms` } as React.CSSProperties}
+          />
+        );
+      })}
+    </g>
   );
 }
 
@@ -356,7 +361,7 @@ export default function EventOverlays({
 }: EventOverlaysProps) {
   const {
     liveGrenadeActive,
-    hotPieceSquare,
+    hotPotatoSquares,
     oppositeDayActive,
     guardedKingSquares,
     quicksandActive,
@@ -368,7 +373,7 @@ export default function EventOverlays({
     sentryPinLines,
   } = overlayState;
 
-  const hasPhase2 = liveGrenadeActive || hotPieceSquare !== null || oppositeDayActive;
+  const hasPhase2 = liveGrenadeActive || hotPotatoSquares.size > 0 || oppositeDayActive;
   const hasPhase3 =
     guardedKingSquares.size > 0 ||
     (quicksandActive && board !== undefined) ||
@@ -392,9 +397,9 @@ export default function EventOverlays({
           speedMultiplier={speedMultiplier}
         />
       )}
-      {hotPieceSquare !== null && (
+      {hotPotatoSquares.size > 0 && (
         <HotPotatoIndicator
-          hotSquare={hotPieceSquare}
+          hotSquares={hotPotatoSquares}
           flipped={flipped}
           speedMultiplier={speedMultiplier}
         />
