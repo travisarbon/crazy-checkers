@@ -27,3 +27,27 @@ import './forcedMarch';
 import './royalDecree';
 import './sentry';
 import './rushHour';
+// Phase 3 — Task 16.1 (Tier 2 Batch 1)
+import './conscription';
+import './ghostWalk';
+import './landmine';
+import './leapfrog';
+import './doubleTime';
+import './chainReaction';
+// Phase 3 — Task 16.2 (Tier 2 Batch 2)
+import './reinforcements';
+import './wormhole';
+import './timeBomb';
+import './ricochet';
+import './crownThief';
+import './stampede';
+import './tollRoad';
+import './swapMeet';
+// Phase 3 — Task 16.3 (Tier 2 Batch 3)
+import './backfire';
+import './sacrifice';
+// Phase 3 — Task 16.4 (Tier 3)
+import './flippedScript';
+import './marchingOrders';
+import './haunted';
+import './shrinkingBoard';

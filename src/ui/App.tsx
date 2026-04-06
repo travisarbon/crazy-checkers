@@ -11,7 +11,7 @@ import { createAmericanRules } from '../engine/rules';
 import type { GameState, PlayerSetup, RuleSet } from '../engine/types';
 import { GameMode } from '../engine/types';
 import type { TimeControlConfig } from '../engine/clock';
-import { loadSettings, saveSettings, loadSavedGame, clearSavedGame } from '../persistence/settings';
+import { loadSettings, saveSettings, loadSavedGame, clearSavedGame, savedGameExistsForMode } from '../persistence/settings';
 import type { SavedGame } from '../persistence/settings';
 import { deserializeGameState } from '../persistence/serialization';
 import { AudioManager } from '../audio/audioManager';
@@ -22,7 +22,18 @@ import { resolveMusicTrack } from '../audio/musicMapping';
 import GameScreen from './GameScreen';
 import MenuScreen from './MenuScreen';
 import ConfigScreen from './ConfigScreen';
+import ClassicScreen from './ClassicScreen';
+import CrazyScreen from './CrazyScreen';
+import ChaosScreen from './ChaosScreen';
+import ChallengeScreen from './ChallengeScreen';
+import ChoiceGalleryScreen from './ChoiceGalleryScreen';
+import ClassifiedGalleryScreen from './ClassifiedGalleryScreen';
+import CogitateScreen from './CogitateScreen';
+import CareerScreen from './CareerScreen';
+import CodeScreen from './CodeScreen';
+import ModeScreenShell from './ModeScreenShell';
 import ResumeGameDialog from './dialogs/ResumeGameDialog';
+import { useUnlockState } from './hooks/useUnlockState';
 
 // ---------------------------------------------------------------------------
 // Navigation state
@@ -40,7 +51,42 @@ type Screen =
       readonly remainingTimeWhiteMs?: number;
       readonly remainingTimeBlackMs?: number;
     }
-  | { readonly kind: 'config' };
+  | { readonly kind: 'config' }
+  | { readonly kind: 'classic' }
+  | { readonly kind: 'crazy' }
+  | { readonly kind: 'chaos' }
+  | { readonly kind: 'challenge' }
+  | { readonly kind: 'choice' }
+  | { readonly kind: 'choice-detail'; readonly eventId: string }
+  | { readonly kind: 'classified' }
+  | { readonly kind: 'classified-detail'; readonly gameId: number }
+  | { readonly kind: 'cogitate' }
+  | { readonly kind: 'career' }
+  | { readonly kind: 'code' };
+
+type ScreenKind = Screen['kind'];
+
+interface HistoryEntry {
+  screenKind: ScreenKind;
+  parentKind?: ScreenKind;
+}
+
+function buildScreenFromKind(kind: ScreenKind): Screen {
+  switch (kind) {
+    case 'menu': return { kind: 'menu' };
+    case 'classic': return { kind: 'classic' };
+    case 'crazy': return { kind: 'crazy' };
+    case 'chaos': return { kind: 'chaos' };
+    case 'challenge': return { kind: 'challenge' };
+    case 'choice': return { kind: 'choice' };
+    case 'classified': return { kind: 'classified' };
+    case 'cogitate': return { kind: 'cogitate' };
+    case 'career': return { kind: 'career' };
+    case 'code': return { kind: 'code' };
+    case 'config': return { kind: 'config' };
+    default: return { kind: 'menu' };
+  }
+}
 
 // ---------------------------------------------------------------------------
 // App component
@@ -64,6 +110,22 @@ export default function App() {
       muted: settings.muted,
     });
   });
+
+  // Progressive unlock system
+  const {
+    snapshot: unlockSnapshot,
+    newlyUnlocked,
+    markSeen,
+    refreshUnlocks,
+  } = useUnlockState();
+
+  // Refresh unlock state and saved-game check when returning to menu
+  useEffect(() => {
+    if (screen.kind === 'menu') {
+      refreshUnlocks();
+      setPendingResume(loadSavedGame());
+    }
+  }, [screen.kind, refreshUnlocks]);
 
   // Persist settings on every change
   useEffect(() => {
@@ -112,32 +174,69 @@ export default function App() {
   useEffect(() => {
     if (!hasInitializedHistory.current) {
       hasInitializedHistory.current = true;
-      window.history.replaceState({ screen: 'menu' }, '');
+      window.history.replaceState({ screenKind: 'menu' } satisfies HistoryEntry, '');
     }
   }, []);
 
+  // Track previous screen for determining parent in history entries
+  const prevScreenRef = useRef<Screen>({ kind: 'menu' });
+
   useEffect(() => {
-    if (screen.kind !== 'menu') {
-      window.history.pushState({ screen: screen.kind }, '');
+    const prev = prevScreenRef.current;
+    prevScreenRef.current = screen;
+
+    if (screen.kind === 'menu') {
+      return;
     }
 
-    function handlePopState() {
-      setScreen({ kind: 'menu' });
+    // Determine parent based on navigation level
+    let parentKind: ScreenKind | undefined;
+    if (screen.kind === 'choice-detail' || screen.kind === 'classified-detail') {
+      // Level 3: parent is the gallery
+      parentKind = screen.kind === 'choice-detail' ? 'choice' : 'classified';
+    } else if (screen.kind === 'game') {
+      // Game: parent is the mode that launched it
+      parentKind = prev.kind !== 'menu' ? prev.kind : 'menu';
+    } else {
+      // Level 2: parent is menu
+      parentKind = 'menu';
+    }
+
+    const entry: HistoryEntry = { screenKind: screen.kind, parentKind };
+    window.history.pushState(entry, '');
+
+    function handlePopState(event: PopStateEvent) {
+      const state = event.state as HistoryEntry | null;
+      if (state?.parentKind) {
+        setScreen(buildScreenFromKind(state.parentKind));
+      } else {
+        setScreen({ kind: 'menu' });
+      }
     }
 
     window.addEventListener('popstate', handlePopState);
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on screen.kind only; full screen object is captured via prevScreenRef
   }, [screen.kind]);
 
   // Navigation callbacks
-  const navigateToMenu = useCallback(() => {
-    setScreen({ kind: 'menu' });
+  const navigateToScreen = useCallback((target: Screen) => {
+    if (target.kind === 'game') {
+      setGameKey((prev) => prev + 1);
+      setGameStartedAt(Date.now());
+      setResumedGameState(null);
+    }
+    setScreen(target);
   }, []);
 
+  const navigateToMenu = useCallback(() => {
+    navigateToScreen({ kind: 'menu' });
+  }, [navigateToScreen]);
+
   const navigateToGame = useCallback((players: PlayerSetup, flipped: boolean, mode: GameMode = GameMode.Classic, timeControl: TimeControlConfig | null = null) => {
-    setScreen({
+    navigateToScreen({
       kind: 'game',
       players,
       ruleSet: createAmericanRules(),
@@ -145,14 +244,11 @@ export default function App() {
       mode,
       timeControl,
     });
-    setGameKey((prev) => prev + 1);
-    setGameStartedAt(Date.now());
-    setResumedGameState(null);
-  }, []);
+  }, [navigateToScreen]);
 
   const navigateToConfig = useCallback(() => {
-    setScreen({ kind: 'config' });
-  }, []);
+    navigateToScreen({ kind: 'config' });
+  }, [navigateToScreen]);
 
   // Resume/discard handlers
   const handleResume = useCallback(() => {
@@ -192,7 +288,14 @@ export default function App() {
     case 'menu':
       content = (
         <>
-          <MenuScreen onStartGame={navigateToGame} onConfigure={navigateToConfig} defaultTimeControl={settings.timeControl} />
+          <MenuScreen
+            onConfigure={navigateToConfig}
+            onNavigate={(kind) => { navigateToScreen(buildScreenFromKind(kind as ScreenKind)); }}
+            unlockSnapshot={unlockSnapshot}
+            newlyUnlocked={newlyUnlocked}
+            onUnlockAnimationEnd={markSeen}
+            chaosUnlocked={unlockSnapshot.chaosUnlocked}
+          />
           {pendingResume !== null && (
             <ResumeGameDialog
               savedGame={pendingResume}
@@ -236,6 +339,82 @@ export default function App() {
       content = (
         <ConfigScreen settings={settings} onSettingsChange={setSettings} onBack={navigateToMenu} />
       );
+      break;
+
+    case 'classic':
+      content = (
+        <ClassicScreen
+          onBack={navigateToMenu}
+          onStartGame={navigateToGame}
+          defaultTimeControl={settings.timeControl}
+          savedGameExists={savedGameExistsForMode(GameMode.Classic)}
+          onResumeSavedGame={pendingResume?.mode === GameMode.Classic ? handleResume : undefined}
+        />
+      );
+      break;
+
+    case 'crazy':
+      content = (
+        <CrazyScreen
+          onBack={navigateToMenu}
+          onStartGame={navigateToGame}
+          defaultTimeControl={settings.timeControl}
+          savedGameExists={savedGameExistsForMode(GameMode.Crazy)}
+          onResumeSavedGame={pendingResume?.mode === GameMode.Crazy ? handleResume : undefined}
+        />
+      );
+      break;
+
+    case 'chaos':
+      content = (
+        <ChaosScreen
+          onBack={navigateToMenu}
+          onStartGame={navigateToGame}
+          defaultTimeControl={settings.timeControl}
+          savedGameExists={savedGameExistsForMode(GameMode.Chaos)}
+          onResumeSavedGame={pendingResume?.mode === GameMode.Chaos ? handleResume : undefined}
+        />
+      );
+      break;
+
+    case 'challenge':
+      content = <ChallengeScreen onBack={navigateToMenu} />;
+      break;
+
+    case 'choice':
+      content = <ChoiceGalleryScreen onBack={navigateToMenu} />;
+      break;
+
+    case 'choice-detail':
+      content = (
+        <ModeScreenShell title="Choice Detail" onBack={() => { navigateToScreen({ kind: 'choice' }); }}>
+          <p>Choice detail for event: {screen.eventId}</p>
+        </ModeScreenShell>
+      );
+      break;
+
+    case 'classified':
+      content = <ClassifiedGalleryScreen onBack={navigateToMenu} />;
+      break;
+
+    case 'classified-detail':
+      content = (
+        <ModeScreenShell title="Classified Detail" onBack={() => { navigateToScreen({ kind: 'classified' }); }}>
+          <p>Classified detail for game: {screen.gameId}</p>
+        </ModeScreenShell>
+      );
+      break;
+
+    case 'cogitate':
+      content = <CogitateScreen onBack={navigateToMenu} />;
+      break;
+
+    case 'career':
+      content = <CareerScreen onBack={navigateToMenu} />;
+      break;
+
+    case 'code':
+      content = <CodeScreen onBack={navigateToMenu} />;
       break;
   }
 

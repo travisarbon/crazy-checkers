@@ -1,0 +1,22 @@
+/* BoardPreviewLarge — centered board container */
+
+.container {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.container svg {
+  border-radius: 4px;
+}
+
+.fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--board-border, var(--ui-accent));
+  border-radius: 4px;
+  color: var(--ui-text);
+  font-size: 0.85rem;
+  opacity: 0.65;
+}

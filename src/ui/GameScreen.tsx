@@ -691,6 +691,7 @@ export default function GameScreen({
           explosionState={animationQueue.explosionState}
           overlayState={animationQueue.overlayState}
           eventOverlayState={eventOverlayState}
+          marchingOrdersGrid={eventOverlayState.marchingOrdersGrid ?? undefined}
         />
       </div>
       {/* Mobile: clock below board (White, or Black when flipped) */}

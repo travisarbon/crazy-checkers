@@ -69,6 +69,44 @@ export interface EventOverlayState {
 
   /** Lines from kings to pinned pawns (Sentry). */
   readonly sentryPinLines: ReadonlyArray<{ from: number; to: number }>;
+
+  // -- Phase 3 Tier 2/3 overlay state --
+
+  /** Whether Ghost Walk event is active. */
+  readonly ghostWalkActive: boolean;
+
+  /** Landmine squares (center 4 when active), or empty set. */
+  readonly landmineSquares: ReadonlySet<number>;
+
+  /** Whether Double Time event is active. */
+  readonly doubleTimeActive: boolean;
+
+  /** Wormhole square pairs, or empty array. */
+  readonly wormholePortals: ReadonlyArray<{ a: number; b: number }>;
+
+  /** Time Bomb square and remaining countdown, or null. */
+  readonly timeBombState: { square: number; remaining: number } | null;
+
+  /** Whether Backfire event is active. */
+  readonly backfireActive: boolean;
+
+  /** Whether Flipped Script is active (promotion rows swapped). */
+  readonly flippedScriptActive: boolean;
+
+  /** Whether Marching Orders is active (orthogonal movement). */
+  readonly marchingOrdersActive: boolean;
+
+  /** Marching Orders orthogonal grid (64 elements), or null if inactive. */
+  readonly marchingOrdersGrid: readonly ({ color: import('../engine/types').PieceColor; type: import('../engine/types').PieceType } | null)[] | null;
+
+  /** Ghost positions and timers from Haunted event. */
+  readonly hauntedGhosts: ReadonlyArray<{ square: number; remainingPlies: number }>;
+
+  /** Removed squares from Shrinking Board, or empty set. */
+  readonly shrinkingBoardRemovedSquares: ReadonlySet<number>;
+
+  /** Next ring level for Shrinking Board boundary rendering. */
+  readonly shrinkingBoardRingLevel: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -273,6 +311,81 @@ export function useEventOverlays(
     return lines;
   }, [activeEvents, board, activeColor]);
 
+  // -- Phase 3 Tier 2/3 overlay computations --
+
+  const ghostWalkActive = useMemo(
+    () => activeEvents.some(e => e.type === CrazyEvent.GhostWalk),
+    [activeEvents],
+  );
+
+  const landmineSquares = useMemo<ReadonlySet<number>>(() => {
+    if (!activeEvents.some(e => e.type === CrazyEvent.Landmine)) return new Set();
+    return new Set([14, 15, 18, 19]);
+  }, [activeEvents]);
+
+  const doubleTimeActive = useMemo(
+    () => activeEvents.some(e => e.type === CrazyEvent.DoubleTime),
+    [activeEvents],
+  );
+
+  const wormholePortals = useMemo<ReadonlyArray<{ a: number; b: number }>>(() => {
+    const wh = activeEvents.find(e => e.type === CrazyEvent.Wormhole);
+    if (!wh) return [];
+    const meta = wh.metadata as { wormholes?: ReadonlyArray<{ a: number; b: number }> } | undefined;
+    return meta?.wormholes ?? [];
+  }, [activeEvents]);
+
+  const timeBombState = useMemo<{ square: number; remaining: number } | null>(() => {
+    const tb = activeEvents.find(e => e.type === CrazyEvent.TimeBomb);
+    if (!tb) return null;
+    const meta = tb.metadata as { bombSquare?: number; countdown?: number } | undefined;
+    if (!meta?.bombSquare || meta.bombSquare < 0 || !meta.countdown) return null;
+    return { square: meta.bombSquare, remaining: meta.countdown };
+  }, [activeEvents]);
+
+  const backfireActive = useMemo(
+    () => activeEvents.some(e => e.type === CrazyEvent.Backfire),
+    [activeEvents],
+  );
+
+  const flippedScriptActive = useMemo(
+    () => activeEvents.some(e => e.type === CrazyEvent.FlippedScript),
+    [activeEvents],
+  );
+
+  const marchingOrdersActive = useMemo(
+    () => activeEvents.some(e => e.type === CrazyEvent.MarchingOrders),
+    [activeEvents],
+  );
+
+  const marchingOrdersGrid = useMemo<readonly ({ color: PieceColor; type: PieceType } | null)[] | null>(() => {
+    const mo = activeEvents.find(e => e.type === CrazyEvent.MarchingOrders);
+    if (!mo) return null;
+    const meta = mo.metadata as { orthogonalGrid?: readonly ({ color: PieceColor; type: PieceType } | null)[] } | undefined;
+    return meta?.orthogonalGrid ?? null;
+  }, [activeEvents]);
+
+  const hauntedGhosts = useMemo<ReadonlyArray<{ square: number; remainingPlies: number }>>(() => {
+    const h = activeEvents.find(e => e.type === CrazyEvent.Haunted);
+    if (!h) return [];
+    const meta = h.metadata as { ghosts?: ReadonlyArray<{ square: number; remainingPlies: number }> } | undefined;
+    return meta?.ghosts ?? [];
+  }, [activeEvents]);
+
+  const shrinkingBoardRemovedSquares = useMemo<ReadonlySet<number>>(() => {
+    const sb = activeEvents.find(e => e.type === CrazyEvent.ShrinkingBoard);
+    if (!sb) return new Set();
+    const meta = sb.metadata as { removedSquares?: readonly number[] } | undefined;
+    return new Set(meta?.removedSquares ?? []);
+  }, [activeEvents]);
+
+  const shrinkingBoardRingLevel = useMemo(() => {
+    const sb = activeEvents.find(e => e.type === CrazyEvent.ShrinkingBoard);
+    if (!sb) return 0;
+    const meta = sb.metadata as { nextRingLevel?: number } | undefined;
+    return meta?.nextRingLevel ?? 0;
+  }, [activeEvents]);
+
   return {
     temporaryKingSquares,
     liveGrenadeActive,
@@ -289,5 +402,17 @@ export function useEventOverlays(
     forcedMarchSquare,
     royalDecreeActive,
     sentryPinLines,
+    ghostWalkActive,
+    landmineSquares,
+    doubleTimeActive,
+    wormholePortals,
+    timeBombState,
+    backfireActive,
+    flippedScriptActive,
+    marchingOrdersActive,
+    marchingOrdersGrid,
+    hauntedGhosts,
+    shrinkingBoardRemovedSquares,
+    shrinkingBoardRingLevel,
   };
 }

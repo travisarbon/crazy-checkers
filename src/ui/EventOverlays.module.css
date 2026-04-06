@@ -221,6 +221,157 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Phase 3 Tier 2/3 — Ghost Walk shimmer
+ * --------------------------------------------------------------------------- */
+
+.ghostWalkShimmer {
+  pointer-events: none;
+  animation: ghostShimmer var(--shimmer-duration, 2000ms) ease-in-out infinite;
+}
+
+@keyframes ghostShimmer {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.25; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 Tier 2/3 — Landmine mine icon pulse
+ * --------------------------------------------------------------------------- */
+
+.landmineIcon {
+  pointer-events: none;
+  animation: minePulse var(--mine-duration, 1500ms) ease-in-out infinite;
+}
+
+@keyframes minePulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 Tier 2/3 — Double Time double arrow
+ * --------------------------------------------------------------------------- */
+
+.doubleTimeArrow {
+  pointer-events: none;
+  animation: doubleTimePulse var(--double-duration, 1200ms) ease-in-out infinite;
+}
+
+@keyframes doubleTimePulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 Tier 2/3 — Wormhole rotating portal
+ * --------------------------------------------------------------------------- */
+
+.wormholePortal {
+  pointer-events: none;
+  animation: wormholeRotate var(--wormhole-duration, 6000ms) linear infinite,
+             wormholePulse 2000ms ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes wormholeRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes wormholePulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 Tier 2/3 — Time Bomb countdown pulse
+ * --------------------------------------------------------------------------- */
+
+.timeBombCountdown {
+  pointer-events: none;
+  animation: bombTickPulse var(--bomb-speed, 2000ms) ease-in-out infinite;
+}
+
+@keyframes bombTickPulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 Tier 2/3 — Backfire danger glow
+ * --------------------------------------------------------------------------- */
+
+.backfireGlow {
+  pointer-events: none;
+  animation: backfireFlicker var(--backfire-duration, 2000ms) ease-in-out infinite;
+}
+
+@keyframes backfireFlicker {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.25; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 Tier 3 — Flipped Script promotion zone markers
+ * --------------------------------------------------------------------------- */
+
+.flippedScriptZone {
+  pointer-events: none;
+  animation: flippedZonePulse var(--flipped-duration, 2000ms) ease-in-out infinite;
+}
+
+@keyframes flippedZonePulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 Tier 3 — Marching Orders grid lines
+ * --------------------------------------------------------------------------- */
+
+.marchingOrdersGrid {
+  pointer-events: none;
+  opacity: 0.2;
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 Tier 3 — Haunted ghost bob animation
+ * --------------------------------------------------------------------------- */
+
+.hauntedGhost {
+  pointer-events: none;
+  animation: ghostBob 2000ms ease-in-out infinite;
+}
+
+@keyframes ghostBob {
+  0%, 100% { transform: translateY(0); opacity: var(--ghost-opacity, 0.3); }
+  50% { transform: translateY(-3px); opacity: calc(var(--ghost-opacity, 0.3) + 0.1); }
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 Tier 3 — Shrinking Board dead square overlay
+ * --------------------------------------------------------------------------- */
+
+.shrinkingBoardDead {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 Tier 3 — Shrinking Board boundary line
+ * --------------------------------------------------------------------------- */
+
+.shrinkingBoardBoundary {
+  pointer-events: none;
+  animation: boundaryPulse var(--boundary-duration, 2000ms) ease-in-out infinite;
+}
+
+@keyframes boundaryPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* ---------------------------------------------------------------------------
  * Reduced motion overrides
  * --------------------------------------------------------------------------- */
 
@@ -300,5 +451,51 @@
   .sentryLine {
     animation: none;
     opacity: 0.4;
+  }
+
+  .ghostWalkShimmer {
+    animation: none;
+    opacity: 0.15;
+  }
+
+  .landmineIcon {
+    animation: none;
+    opacity: 0.45;
+  }
+
+  .doubleTimeArrow {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .wormholePortal {
+    animation: none;
+    opacity: 0.55;
+  }
+
+  .timeBombCountdown {
+    animation: none;
+    opacity: 0.6;
+    transform: scale(1);
+  }
+
+  .backfireGlow {
+    animation: none;
+    opacity: 0.15;
+  }
+
+  .flippedScriptZone {
+    animation: none;
+    opacity: 0.4;
+  }
+
+  .hauntedGhost {
+    animation: none;
+    transform: translateY(0);
+  }
+
+  .shrinkingBoardBoundary {
+    animation: none;
+    opacity: 0.55;
   }
 }

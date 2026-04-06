@@ -1,0 +1,77 @@
+/* ChaosScreen — mode-specific styling */
+
+.boardSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.boardGlow {
+  border-radius: 4px;
+  animation: chaosPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes chaosPulse {
+  0%, 100% { box-shadow: 0 0 12px color-mix(in srgb, var(--ui-accent) 60%, transparent); }
+  50% { box-shadow: 0 0 30px color-mix(in srgb, var(--ui-accent) 90%, transparent); }
+}
+
+.boardCaption {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  text-align: center;
+}
+
+.section {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.howToPlay {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.callout {
+  border-left: 3px solid var(--ui-accent);
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-style: italic;
+  opacity: 0.75;
+  background: color-mix(in srgb, var(--ui-accent) 5%, transparent);
+  border-radius: 0 6px 6px 0;
+  margin: 0;
+}
+
+.chaosIntro {
+  margin-bottom: 1.5rem;
+}
+
+.chaosIntroTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  margin: 0 0 0.5rem;
+}
+
+.chaosIntroText {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boardGlow {
+    animation: none;
+    box-shadow: 0 0 16px color-mix(in srgb, var(--ui-accent) 70%, transparent);
+  }
+}
+
+@media (max-width: 479px) {
+  .section {
+    padding: 1rem;
+  }
+}

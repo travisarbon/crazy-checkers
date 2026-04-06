@@ -11,6 +11,7 @@ import { useAudioManager } from '../audio/useAudioManager';
 import { SoundEvent } from '../audio/types';
 import BoardPreview from './BoardPreview';
 import TimeControlSection from './TimeControlSection';
+import ModeScreenShell from './ModeScreenShell';
 import styles from './ConfigScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -369,35 +370,26 @@ export default function ConfigScreen({ settings, onSettingsChange, onBack }: Con
   };
 
   return (
-    <div className={styles.configScreen} data-testid="config-screen" role="main">
-      <header className={styles.header}>
-        <button className={styles.backButton} onClick={() => { audioManager?.play(SoundEvent.MenuClick); onBack(); }} aria-label="Back to main menu">
-          &larr; Back
-        </button>
-        <h1 className={styles.title}>Configure</h1>
-      </header>
+    <ModeScreenShell title="Configure" onBack={onBack} testId="config-screen">
+      <ThemeSection selectedThemeId={settings.themeId} onSelect={setTheme} />
 
-      <div className={styles.sections}>
-        <ThemeSection selectedThemeId={settings.themeId} onSelect={setTheme} />
+      <AnimationSpeedSection speed={settings.animationSpeed} onChange={setAnimationSpeed} />
 
-        <AnimationSpeedSection speed={settings.animationSpeed} onChange={setAnimationSpeed} />
+      <SoundSection settings={settings} onChange={onSettingsChange} audioManager={audioManager} />
 
-        <SoundSection settings={settings} onChange={onSettingsChange} audioManager={audioManager} />
-
-        <div className={styles.section}>
-          <TimeControlSection
-            value={settings.timeControl}
-            onChange={(tc) => { onSettingsChange({ ...settings, timeControl: tc }); }}
-          />
-        </div>
-
-        <MoveConfirmationSection
-          enabled={settings.moveConfirmation}
-          onChange={setMoveConfirmation}
+      <div className={styles.section}>
+        <TimeControlSection
+          value={settings.timeControl}
+          onChange={(tc) => { onSettingsChange({ ...settings, timeControl: tc }); }}
         />
-
-        <DataSection />
       </div>
-    </div>
+
+      <MoveConfirmationSection
+        enabled={settings.moveConfirmation}
+        onChange={setMoveConfirmation}
+      />
+
+      <DataSection />
+    </ModeScreenShell>
   );
 }

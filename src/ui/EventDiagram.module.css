@@ -1,0 +1,91 @@
+/* EventDiagram — before/after event visualization */
+
+.diagram {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.eventHeader {
+  margin-bottom: 1rem;
+}
+
+.eventName {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  margin: 0;
+}
+
+.flavorText {
+  font-size: 0.85rem;
+  font-style: italic;
+  opacity: 0.7;
+  margin: 0.25rem 0 0;
+}
+
+.boardRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.boardColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.boardLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+}
+
+.arrow {
+  font-size: 1.5rem;
+  color: var(--ui-accent);
+  align-self: center;
+  padding-top: 1.5rem;
+}
+
+.effectDescription {
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  line-height: 1.4;
+}
+
+.boardWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.annotation {
+  position: absolute;
+  background: var(--ui-accent);
+  color: var(--ui-bg);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+@media (max-width: 479px) {
+  .diagram {
+    padding: 1rem;
+  }
+
+  .boardRow {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .arrow {
+    transform: rotate(90deg);
+    padding-top: 0;
+  }
+}

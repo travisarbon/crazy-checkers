@@ -288,6 +288,26 @@ export function clearSavedGame(): void {
   }
 }
 
+/**
+ * Returns true if a saved game exists in persistence for the specified mode.
+ * Mode is matched against the SavedGame.mode field.
+ */
+export function savedGameExistsForMode(targetMode: string): boolean {
+  const saved = loadSavedGame();
+  return saved !== null && saved.mode === targetMode;
+}
+
+/**
+ * Returns the saved game if it matches the specified mode, or null otherwise.
+ */
+export function loadSavedGameForMode(targetMode: string): SavedGame | null {
+  const saved = loadSavedGame();
+  if (saved !== null && saved.mode === targetMode) {
+    return saved;
+  }
+  return null;
+}
+
 function isValidSavedGame(value: unknown): value is SavedGame {
   if (typeof value !== 'object' || value === null) return false;
   const obj = value as Record<string, unknown>;

@@ -461,6 +461,251 @@ function buildUpInTheAirExpiration(board: BoardState): AnimationStep[] {
 }
 
 // ---------------------------------------------------------------------------
+// Tier 2/3 activation builders (Task 16.5)
+// ---------------------------------------------------------------------------
+
+function buildConscriptionActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-accent)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildGhostWalkActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-accent)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildLandmineActivation(): AnimationStep[] {
+  const mineSquares = [14, 15, 18, 19].map(n => square(n));
+  return [{ type: 'flash', squares: mineSquares, color: 'var(--ui-danger)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 3, pulses: 3 }];
+}
+
+function buildLeapfrogActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-accent)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildDoubleTimeActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-accent)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildChainReactionActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-danger)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildReinforcementsActivation(boardBefore: BoardState, boardAfter: BoardState): AnimationStep[] {
+  const newSquares: Square[] = [];
+  for (let sq = 1; sq <= 32; sq++) {
+    if (getBoardSquare(boardBefore, square(sq)) === null && getBoardSquare(boardAfter, square(sq)) !== null) {
+      newSquares.push(square(sq));
+    }
+  }
+  if (newSquares.length === 0) return [];
+  return [{ type: 'flash', squares: newSquares, color: 'var(--ui-accent)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildWormholeActivation(event: ActiveEvent): AnimationStep[] {
+  const meta = event.metadata as { wormholes?: ReadonlyArray<{ a: number; b: number }> } | undefined;
+  if (!meta?.wormholes) return [];
+  const squares = meta.wormholes.flatMap(p => [square(p.a), square(p.b)]);
+  return [{ type: 'flash', squares, color: 'rgba(255, 165, 0, 0.6)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 3, pulses: 3 }];
+}
+
+function buildTimeBombActivation(event: ActiveEvent): AnimationStep[] {
+  const meta = event.metadata as { bombSquare?: number } | undefined;
+  if (!meta?.bombSquare || meta.bombSquare < 0) return [];
+  return [{ type: 'flash', squares: [square(meta.bombSquare)], color: 'var(--ui-danger)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 3, pulses: 3 }];
+}
+
+function buildRicochetActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-accent)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildCrownThiefActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllPawnSquares(board), color: 'var(--ui-accent)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildStampedeActivation(boardBefore: BoardState, boardAfter: BoardState): AnimationStep[] {
+  const fromPositions = new Map<number, { color: PieceColor; type: PieceType }>();
+  const toPositions = new Map<number, { color: PieceColor; type: PieceType }>();
+  for (let sq = 1; sq <= 32; sq++) {
+    const before = getBoardSquare(boardBefore, square(sq));
+    const after = getBoardSquare(boardAfter, square(sq));
+    if (before) fromPositions.set(sq, { color: before.color, type: before.type });
+    if (after) toPositions.set(sq, { color: after.color, type: after.type });
+  }
+  return [{ type: 'shuffle', fromPositions, toPositions, durationMs: SHUFFLE_TOTAL }];
+}
+
+function buildTollRoadActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-danger)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildSwapMeetActivation(boardBefore: BoardState, boardAfter: BoardState): AnimationStep[] {
+  const fromPositions = new Map<number, { color: PieceColor; type: PieceType }>();
+  const toPositions = new Map<number, { color: PieceColor; type: PieceType }>();
+  for (let sq = 1; sq <= 32; sq++) {
+    const before = getBoardSquare(boardBefore, square(sq));
+    const after = getBoardSquare(boardAfter, square(sq));
+    if (before) fromPositions.set(sq, { color: before.color, type: before.type });
+    if (after) toPositions.set(sq, { color: after.color, type: after.type });
+  }
+  return [{ type: 'shuffle', fromPositions, toPositions, durationMs: SHUFFLE_TOTAL }];
+}
+
+function buildBackfireActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-danger)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildSacrificeActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-accent)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildFlippedScriptActivation(boardBefore: BoardState, boardAfter: BoardState): AnimationStep[] {
+  // Find pawns promoted by the flip
+  const promotedSquares: Square[] = [];
+  for (let sq = 1; sq <= 32; sq++) {
+    const before = getBoardSquare(boardBefore, square(sq));
+    const after = getBoardSquare(boardAfter, square(sq));
+    if (before?.type === PieceType.Pawn && after?.type === PieceType.King) {
+      promotedSquares.push(square(sq));
+    }
+  }
+  const steps: AnimationStep[] = [
+    { type: 'flash', squares: getAllOccupiedSquares(boardBefore), color: 'var(--ui-accent)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 },
+  ];
+  for (const sq of promotedSquares) {
+    steps.push({ type: 'kingPulse', square: sq, durationMs: ANIM_DURATION.KING_PULSE });
+  }
+  return steps;
+}
+
+function buildMarchingOrdersActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'rgba(255, 165, 0, 0.6)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 3, pulses: 3 }];
+}
+
+function buildHauntedActivation(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-danger)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 2, pulses: 2 }];
+}
+
+function buildShrinkingBoardActivation(): AnimationStep[] {
+  const ring0: Square[] = [];
+  for (let sq = 1; sq <= 32; sq++) {
+    const { row, col } = squareToGrid(square(sq));
+    if (Math.min(row, 7 - row, col, 7 - col) === 0) ring0.push(square(sq));
+  }
+  return [{ type: 'flash', squares: ring0, color: 'var(--ui-danger)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE * 3, pulses: 3 }];
+}
+
+// ---------------------------------------------------------------------------
+// Tier 2/3 expiry builders (Task 16.5)
+// ---------------------------------------------------------------------------
+
+function buildGenericAccentExpiry(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-accent)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE, pulses: 1 }];
+}
+
+function buildGenericDangerExpiry(board: BoardState): AnimationStep[] {
+  return [{ type: 'flash', squares: getAllOccupiedSquares(board), color: 'var(--ui-danger)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE, pulses: 1 }];
+}
+
+// ---------------------------------------------------------------------------
+// Tier 2/3 mid-move effect builders (Task 16.5)
+// ---------------------------------------------------------------------------
+
+function buildConscriptionEffect(move: Move, boardBefore: BoardState, boardAfter: BoardState): AnimationStep[] {
+  const steps: AnimationStep[] = [];
+  for (const capSq of move.captured) {
+    const before = getBoardSquare(boardBefore, capSq);
+    const after = getBoardSquare(boardAfter, capSq);
+    if (before && after && before.color !== after.color) {
+      steps.push({ type: 'colorSwap', square: capSq, fromColor: before.color, toColor: after.color, durationMs: 400 });
+    }
+  }
+  return steps;
+}
+
+function buildChainReactionEffect(move: Move, boardBefore: BoardState, boardAfter: BoardState): AnimationStep[] {
+  const captured = new Set(move.captured.map(s => s as number));
+  const cascaded: Square[] = [];
+  for (let sq = 1; sq <= 32; sq++) {
+    if (captured.has(sq)) continue;
+    if (getBoardSquare(boardBefore, square(sq)) !== null && getBoardSquare(boardAfter, square(sq)) === null) {
+      cascaded.push(square(sq));
+    }
+  }
+  if (cascaded.length === 0) return [];
+  const landingSquare = move.path[move.path.length - 1];
+  const steps: AnimationStep[] = [];
+  if (landingSquare !== undefined) {
+    steps.push({ type: 'explosion', centerSquare: landingSquare, affectedSquares: cascaded, durationMs: 600 });
+  }
+  for (const sq of cascaded) {
+    steps.push({ type: 'fadeOut', square: sq, durationMs: 200 });
+  }
+  return steps;
+}
+
+function buildLandmineEffect(move: Move, boardBefore: BoardState, boardAfter: BoardState): AnimationStep[] {
+  const landing = move.path[move.path.length - 1];
+  if (landing === undefined) return [];
+  const mineSquares = new Set([14, 15, 18, 19]);
+  if (!mineSquares.has(landing as number)) return [];
+  if (getBoardSquare(boardBefore, landing) !== null || getBoardSquare(boardAfter, landing) !== null) return [];
+  // Piece was destroyed by mine (it was placed by applyMove then removed by onTurnEnd)
+  // Actually, we detect: piece moved to a mine square and is now gone
+  return [
+    { type: 'explosion', centerSquare: landing, affectedSquares: [landing], durationMs: 600 },
+  ];
+}
+
+function buildCrownThiefEffect(move: Move, boardBefore: BoardState, boardAfter: BoardState): AnimationStep[] {
+  if (move.captured.length === 0) return [];
+  const movingPiece = getBoardSquare(boardBefore, move.from);
+  if (!movingPiece || movingPiece.type !== PieceType.Pawn) return [];
+  const landing = move.path[move.path.length - 1];
+  if (landing === undefined) return [];
+  const landingPiece = getBoardSquare(boardAfter, landing);
+  if (landingPiece?.type === PieceType.King) {
+    return [{ type: 'kingPulse', square: landing, durationMs: ANIM_DURATION.KING_PULSE }];
+  }
+  return [];
+}
+
+function buildTollRoadEffect(move: Move, boardBefore: BoardState, boardAfter: BoardState): AnimationStep[] {
+  if (move.captured.length === 0) return [];
+  const capturedSet = new Set(move.captured.map(s => s as number));
+  const landing = move.path[move.path.length - 1];
+  const landingNum = landing as number | undefined;
+  // Find a square where the active player lost a piece that wasn't captured or the landing
+  for (let sq = 1; sq <= 32; sq++) {
+    if (capturedSet.has(sq)) continue;
+    if (sq === landingNum) continue;
+    const before = getBoardSquare(boardBefore, square(sq));
+    const after = getBoardSquare(boardAfter, square(sq));
+    if (before !== null && after === null) {
+      return [
+        { type: 'flash', squares: [square(sq)], color: 'var(--ui-danger)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE, pulses: 1 },
+        { type: 'fadeOut', square: square(sq), durationMs: 200 },
+      ];
+    }
+  }
+  return [];
+}
+
+function buildSacrificeEffect(boardBefore: BoardState, boardAfter: BoardState): AnimationStep[] {
+  // Find squares where a pawn became a king (for the non-active/defender color)
+  const steps: AnimationStep[] = [];
+  for (let sq = 1; sq <= 32; sq++) {
+    const before = getBoardSquare(boardBefore, square(sq));
+    const after = getBoardSquare(boardAfter, square(sq));
+    if (before?.type === PieceType.Pawn && after?.type === PieceType.King && before.color === after.color) {
+      steps.push(
+        { type: 'flash', squares: [square(sq)], color: 'var(--ui-accent)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE, pulses: 1 },
+        { type: 'kingPulse', square: square(sq), durationMs: ANIM_DURATION.KING_PULSE },
+      );
+    }
+  }
+  return steps;
+}
+
+// ---------------------------------------------------------------------------
 // Dispatchers
 // ---------------------------------------------------------------------------
 
@@ -510,6 +755,50 @@ function buildActivationForEvent(
       return buildSentryActivation(board);
     case CrazyEvent.RushHour:
       return buildRushHourActivation(board);
+    // Phase 3 — Task 16.5 (Tier 2 Batch 1)
+    case CrazyEvent.Conscription:
+      return buildConscriptionActivation(board);
+    case CrazyEvent.GhostWalk:
+      return buildGhostWalkActivation(board);
+    case CrazyEvent.Landmine:
+      return buildLandmineActivation();
+    case CrazyEvent.Leapfrog:
+      return buildLeapfrogActivation(board);
+    case CrazyEvent.DoubleTime:
+      return buildDoubleTimeActivation(board);
+    case CrazyEvent.ChainReaction:
+      return buildChainReactionActivation(board);
+    // Phase 3 — Task 16.5 (Tier 2 Batch 2)
+    case CrazyEvent.Reinforcements:
+      return boardAfter ? buildReinforcementsActivation(board, boardAfter) : [];
+    case CrazyEvent.Wormhole:
+      return buildWormholeActivation(event);
+    case CrazyEvent.TimeBomb:
+      return buildTimeBombActivation(event);
+    case CrazyEvent.Ricochet:
+      return buildRicochetActivation(board);
+    case CrazyEvent.CrownThief:
+      return buildCrownThiefActivation(board);
+    case CrazyEvent.Stampede:
+      return boardAfter ? buildStampedeActivation(board, boardAfter) : [];
+    case CrazyEvent.TollRoad:
+      return buildTollRoadActivation(board);
+    case CrazyEvent.SwapMeet:
+      return boardAfter ? buildSwapMeetActivation(board, boardAfter) : [];
+    // Phase 3 — Task 16.5 (Tier 2 Batch 3)
+    case CrazyEvent.Backfire:
+      return buildBackfireActivation(board);
+    case CrazyEvent.Sacrifice:
+      return buildSacrificeActivation(board);
+    // Phase 3 — Task 16.5 (Tier 3)
+    case CrazyEvent.FlippedScript:
+      return boardAfter ? buildFlippedScriptActivation(board, boardAfter) : [];
+    case CrazyEvent.MarchingOrders:
+      return buildMarchingOrdersActivation(board);
+    case CrazyEvent.Haunted:
+      return buildHauntedActivation(board);
+    case CrazyEvent.ShrinkingBoard:
+      return buildShrinkingBoardActivation();
     default:
       return [];
   }
@@ -549,6 +838,29 @@ function buildExpirationForEvent(
       return buildSentryExpiration(board);
     case CrazyEvent.RushHour:
       return buildRushHourExpiration(board);
+    // Phase 3 — Task 16.5 (Tier 2 expirations)
+    case CrazyEvent.Conscription:
+    case CrazyEvent.GhostWalk:
+    case CrazyEvent.Leapfrog:
+    case CrazyEvent.DoubleTime:
+    case CrazyEvent.Ricochet:
+    case CrazyEvent.CrownThief:
+    case CrazyEvent.Sacrifice:
+      return buildGenericAccentExpiry(board);
+    case CrazyEvent.Landmine:
+    case CrazyEvent.ChainReaction:
+    case CrazyEvent.TollRoad:
+    case CrazyEvent.Backfire:
+      return buildGenericDangerExpiry(board);
+    case CrazyEvent.Wormhole: {
+      const meta = event.metadata as { wormholes?: ReadonlyArray<{ a: number; b: number }> } | undefined;
+      const squares = (meta?.wormholes ?? []).flatMap(p => [square(p.a), square(p.b)]);
+      return squares.length > 0
+        ? [{ type: 'flash', squares, color: 'rgba(255, 165, 0, 0.6)', durationMs: EVENT_ANIM_DURATION.FLASH_PULSE, pulses: 1 }]
+        : [];
+    }
+    // Permanent/condition-based events (no standard expiry): FlippedScript, MarchingOrders, Haunted, ShrinkingBoard
+    // Instant events (no expiry): Reinforcements, Stampede, SwapMeet
     default:
       return [];
   }
@@ -600,6 +912,25 @@ export function useEventAnimations(_options: { flipped: boolean; }) {
         }
         if (event.type === CrazyEvent.HotPotato) {
           steps.push(...buildHotPotatoEffect(move, event));
+        }
+        // Tier 2/3 mid-move effects
+        if (event.type === CrazyEvent.Conscription && move.captured.length > 0) {
+          steps.push(...buildConscriptionEffect(move, boardBefore, boardAfter));
+        }
+        if (event.type === CrazyEvent.ChainReaction && move.captured.length > 0) {
+          steps.push(...buildChainReactionEffect(move, boardBefore, boardAfter));
+        }
+        if (event.type === CrazyEvent.Landmine) {
+          steps.push(...buildLandmineEffect(move, boardBefore, boardAfter));
+        }
+        if (event.type === CrazyEvent.CrownThief && move.captured.length > 0) {
+          steps.push(...buildCrownThiefEffect(move, boardBefore, boardAfter));
+        }
+        if (event.type === CrazyEvent.TollRoad && move.captured.length > 0) {
+          steps.push(...buildTollRoadEffect(move, boardBefore, boardAfter));
+        }
+        if (event.type === CrazyEvent.Sacrifice && move.captured.length > 0) {
+          steps.push(...buildSacrificeEffect(boardBefore, boardAfter));
         }
       }
       return steps;

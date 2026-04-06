@@ -1,0 +1,69 @@
+/* ClassicScreen — mode-specific styling */
+
+.boardSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.boardCaption {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  text-align: center;
+}
+
+.section {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.howToPlay {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.subsectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.subsectionTitle:first-child {
+  margin-top: 0;
+}
+
+.contentParagraph {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
+.diagramGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.diagramItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.diagramCaption {
+  font-size: 0.8rem;
+  text-align: center;
+  opacity: 0.75;
+}
+
+@media (max-width: 479px) {
+  .section {
+    padding: 1rem;
+  }
+}

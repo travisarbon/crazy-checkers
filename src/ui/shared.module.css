@@ -1,0 +1,21 @@
+/* Shared section styling — used by ExpandableDetailPanel, EventDiagram,
+   ConfigScreen sections, and all mode sub-menu content sections. */
+
+.section {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  margin: 0 0 1rem 0;
+}
+
+@media (max-width: 479px) {
+  .section {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,96 @@
+/* EventReferencePanel — event summary table and collapsible cards */
+
+.eventTableWrapper {
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+
+.eventTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.eventTable th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--ui-accent);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  white-space: nowrap;
+}
+
+.eventTable td {
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-accent) 10%, transparent);
+}
+
+.eventTable tr:nth-child(even) {
+  background: color-mix(in srgb, var(--ui-accent) 3%, transparent);
+}
+
+.eventCardsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.mechanicalEffect {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 0 0 0.75rem;
+}
+
+.duration {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin: 0 0 0.75rem;
+}
+
+.stackingNotes h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  margin: 0 0 0.5rem;
+}
+
+.stackingNotes ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+}
+
+.stackingNotes li {
+  margin-bottom: 0.25rem;
+}
+
+.interactionOverview {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--ui-accent) 20%, transparent);
+}
+
+.sectionSubtitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  margin: 0 0 0.75rem;
+}
+
+.overviewText {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
+@media (max-width: 479px) {
+  .eventTable {
+    font-size: 0.75rem;
+  }
+
+  .eventTable th,
+  .eventTable td {
+    padding: 0.3rem 0.5rem;
+  }
+}

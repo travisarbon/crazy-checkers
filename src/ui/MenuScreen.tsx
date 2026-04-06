@@ -1,18 +1,15 @@
 /**
  * Title screen and mode selection.
  *
- * Displays the game title and a grid of mode buttons. In Phase 1,
- * only Classic and Configure are functional; other modes show
- * "Coming Soon". Clicking Classic opens the GameSetupDialog.
+ * Displays the game title and a grid of mode buttons. Hidden modes
+ * (Choice, Classified, Chaos) are revealed dynamically based on
+ * the unlock snapshot provided via props.
  */
 
-import { useState } from 'react';
-import type { PlayerSetup } from '../engine/types';
-import { GameMode } from '../engine/types';
-import type { TimeControlConfig } from '../engine/clock';
+import { useEffect } from 'react';
 import { useAudioManager } from '../audio/useAudioManager';
 import { SoundEvent } from '../audio/types';
-import GameSetupDialog from './dialogs/GameSetupDialog';
+import type { UnlockSnapshot } from '../persistence/unlockState';
 import styles from './MenuScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -20,9 +17,12 @@ import styles from './MenuScreen.module.css';
 // ---------------------------------------------------------------------------
 
 interface MenuScreenProps {
-  onStartGame: (players: PlayerSetup, flipped: boolean, mode: GameMode, timeControl: TimeControlConfig | null) => void;
   onConfigure: () => void;
-  defaultTimeControl: TimeControlConfig | null;
+  onNavigate: (screenKind: string) => void;
+  unlockSnapshot: UnlockSnapshot;
+  newlyUnlocked: { choice: boolean; classified: boolean; chaos: boolean };
+  onUnlockAnimationEnd: (mode: 'choice' | 'classified' | 'chaos') => void;
+  chaosUnlocked: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -33,112 +33,115 @@ interface ModeEntry {
   readonly id: string;
   readonly label: string;
   readonly enabled: boolean;
-  readonly hidden: boolean;
+  /** null = always visible; otherwise, the key in UnlockSnapshot that gates visibility. */
+  readonly visibilityGate: keyof UnlockSnapshot | null;
   readonly description: string;
 }
 
 const MODES: readonly ModeEntry[] = [
-  {
-    id: 'crazy',
-    label: 'Crazy',
-    enabled: true,
-    hidden: false,
-    description: 'Checkers with chaotic events',
-  },
-  {
-    id: 'classic',
-    label: 'Classic',
-    enabled: true,
-    hidden: false,
-    description: 'Standard American Rules Checkers',
-  },
-  {
-    id: 'challenge',
-    label: 'Challenge',
-    enabled: false,
-    hidden: false,
-    description: 'Timed checkers puzzles',
-  },
-  { id: 'code', label: 'Code', enabled: false, hidden: false, description: 'Enter unlock codes' },
-  {
-    id: 'cogitate',
-    label: 'Cogitate',
-    enabled: false,
-    hidden: false,
-    description: 'Game review and analysis',
-  },
-  {
-    id: 'career',
-    label: 'Career',
-    enabled: false,
-    hidden: false,
-    description: 'Statistics and progression',
-  },
-  {
-    id: 'configure',
-    label: 'Configure',
-    enabled: true,
-    hidden: false,
-    description: 'Settings and themes',
-  },
+  { id: 'crazy', label: 'Crazy', enabled: true, visibilityGate: null, description: 'Checkers with chaotic events' },
+  { id: 'classic', label: 'Classic', enabled: true, visibilityGate: null, description: 'Standard American Rules Checkers' },
+  { id: 'challenge', label: 'Challenge', enabled: true, visibilityGate: null, description: 'Timed checkers puzzles' },
+  { id: 'code', label: 'Code', enabled: true, visibilityGate: null, description: 'Enter unlock codes' },
+  { id: 'cogitate', label: 'Cogitate', enabled: true, visibilityGate: null, description: 'Game review and analysis' },
+  { id: 'career', label: 'Career', enabled: true, visibilityGate: null, description: 'Statistics and progression' },
+  { id: 'configure', label: 'Configure', enabled: true, visibilityGate: null, description: 'Settings and themes' },
+  { id: 'choice', label: 'Choice', enabled: true, visibilityGate: 'choiceUnlocked', description: 'Permanent event checkers' },
+  { id: 'classified', label: 'Classified', enabled: true, visibilityGate: 'classifiedUnlocked', description: 'World game library' },
+  { id: 'chaos', label: 'Chaos', enabled: true, visibilityGate: 'chaosUnlocked', description: 'Ultimate chaos checkers' },
 ];
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function isModeVisible(mode: ModeEntry, snapshot: UnlockSnapshot): boolean {
+  if (mode.visibilityGate === null) return true;
+  return snapshot[mode.visibilityGate];
+}
+
+function getNewlyUnlockedFlag(
+  modeId: string,
+  newlyUnlocked: { choice: boolean; classified: boolean; chaos: boolean },
+): boolean {
+  switch (modeId) {
+    case 'choice': return newlyUnlocked.choice;
+    case 'classified': return newlyUnlocked.classified;
+    case 'chaos': return newlyUnlocked.chaos;
+    default: return false;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export default function MenuScreen({ onStartGame, onConfigure, defaultTimeControl }: MenuScreenProps) {
-  const [showSetupDialog, setShowSetupDialog] = useState(false);
-  const [selectedMode, setSelectedMode] = useState<GameMode>(GameMode.Classic);
+export default function MenuScreen({
+  onConfigure,
+  onNavigate,
+  unlockSnapshot,
+  newlyUnlocked,
+  onUnlockAnimationEnd,
+  chaosUnlocked,
+}: MenuScreenProps) {
   const audioManager = useAudioManager();
+
+  // Reduced-motion fallback: immediately mark seen when animation won't fire
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (!mq.matches) return;
+
+    if (newlyUnlocked.choice) onUnlockAnimationEnd('choice');
+    if (newlyUnlocked.classified) onUnlockAnimationEnd('classified');
+    if (newlyUnlocked.chaos) onUnlockAnimationEnd('chaos');
+  }, [newlyUnlocked, onUnlockAnimationEnd]);
 
   function handleModeClick(modeId: string): void {
     audioManager?.play(SoundEvent.MenuClick);
-    if (modeId === 'classic' || modeId === 'crazy') {
-      setSelectedMode(modeId === 'crazy' ? GameMode.Crazy : GameMode.Classic);
-      setShowSetupDialog(true);
-    } else if (modeId === 'configure') {
+    if (modeId === 'configure') {
       onConfigure();
+    } else {
+      onNavigate(modeId);
     }
-  }
-
-  function handleSetupConfirm(players: PlayerSetup, flipped: boolean, mode: GameMode, timeControl: TimeControlConfig | null): void {
-    setShowSetupDialog(false);
-    onStartGame(players, flipped, mode, timeControl);
-  }
-
-  function handleSetupCancel(): void {
-    setShowSetupDialog(false);
   }
 
   return (
     <div className={styles.menuScreen} data-testid="menu-screen" role="main">
       <header>
-        <h1 className={styles.gameTitle}>Crazy Checkers</h1>
+        <h1 className={styles.gameTitle}>
+          {chaosUnlocked ? 'Chaos Checkers' : 'Crazy Checkers'}
+        </h1>
         <p className={styles.gameSubtitle}>A chaotic twist on a timeless classic</p>
       </header>
 
       <nav className={styles.modeGrid} aria-label="Game modes">
-        {MODES.filter((m) => !m.hidden).map((mode) => (
-          <button
-            key={mode.id}
-            className={`${styles.modeButton ?? ''} ${!mode.enabled ? (styles.disabled ?? '') : ''}`}
-            disabled={!mode.enabled}
-            aria-label={mode.enabled ? mode.label : `${mode.label} — Coming Soon`}
-            title={mode.description}
-            onClick={() => {
-              handleModeClick(mode.id);
-            }}
-          >
-            <span>{mode.label}</span>
-            {!mode.enabled && <span className={styles.badge}>Coming Soon</span>}
-          </button>
-        ))}
+        {MODES.filter((m) => isModeVisible(m, unlockSnapshot)).map((mode) => {
+          const isNewlyUnlocked = getNewlyUnlockedFlag(mode.id, newlyUnlocked);
+          return (
+            <button
+              key={mode.id}
+              className={`${styles.modeButton ?? ''} ${!mode.enabled ? (styles.disabled ?? '') : ''} ${isNewlyUnlocked ? (styles.unlockReveal ?? '') : ''}`}
+              disabled={!mode.enabled}
+              aria-label={mode.enabled ? mode.label : `${mode.label} — Coming Soon`}
+              title={mode.description}
+              onAnimationEnd={isNewlyUnlocked ? () => { onUnlockAnimationEnd(mode.id as 'choice' | 'classified' | 'chaos'); } : undefined}
+              onClick={() => {
+                handleModeClick(mode.id);
+              }}
+            >
+              <span>{mode.label}</span>
+              {!mode.enabled && <span className={styles.badge}>Coming Soon</span>}
+            </button>
+          );
+        })}
       </nav>
 
-      {showSetupDialog && (
-        <GameSetupDialog mode={selectedMode} defaultTimeControl={defaultTimeControl} onConfirm={handleSetupConfirm} onCancel={handleSetupCancel} />
-      )}
+      {/* Screen reader announcement for newly unlocked modes */}
+      <div aria-live="polite" className={styles.srOnly}>
+        {newlyUnlocked.choice && 'Choice mode unlocked!'}
+        {newlyUnlocked.classified && 'Classified mode unlocked!'}
+        {newlyUnlocked.chaos && 'Chaos mode unlocked! The game title is now Chaos Checkers.'}
+      </div>
     </div>
   );
 }

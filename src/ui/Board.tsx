@@ -11,6 +11,7 @@ import { useState, useRef, useCallback, memo } from 'react';
 import type { BoardState, Piece as PieceData, Square } from '../engine/types';
 import { getBoardSquare, gridToSquare, squareToGrid } from '../engine/board';
 import { PieceColor, PieceType, square } from '../engine/types';
+import { gridToExtSquare } from '../engine/events/marchingOrders';
 import type { AnimatingPiece, FlashingSquaresState, ExplosionState, OverlayState } from './useAnimationQueue';
 import { ANIM_DURATION } from './useAnimationQueue';
 import PieceComponent from './Piece';
@@ -58,6 +59,10 @@ interface BoardProps {
   // Persistent event overlay props (Task 11.3)
   /** Persistent event indicator state from useEventOverlays. */
   eventOverlayState?: EventOverlayState;
+
+  // Marching Orders 64-square support
+  /** 64-element orthogonal grid for rendering light-square pieces. */
+  marchingOrdersGrid?: readonly ({ color: PieceColor; type: PieceType } | null)[];
 }
 
 function describeSquare(sq: Square, piece: PieceData | null): string {
@@ -146,6 +151,7 @@ function Board({
   explosionState,
   overlayState,
   eventOverlayState,
+  marchingOrdersGrid,
 }: BoardProps) {
   const rows = Array.from({ length: 8 }, (_, i) => i);
   const cols = Array.from({ length: 8 }, (_, i) => i);
@@ -241,16 +247,59 @@ function Board({
               const y = renderRow * SQUARE_SIZE;
 
               if (!isDark) {
+                // Marching Orders: light squares become interactive with pieces
+                const moGridIdx = marchingOrdersGrid ? row * 8 + col : -1;
+                const moPiece = marchingOrdersGrid && moGridIdx >= 0 ? marchingOrdersGrid[moGridIdx] : null;
+                const moExtSq = marchingOrdersGrid ? gridToExtSquare(row, col) : 0;
+                const moIsLegalDest = marchingOrdersGrid && !isAnimating && (legalMoveSquares?.has(moExtSq) ?? false);
+                const moIsSelected = marchingOrdersGrid && !isAnimating && selectedSquare !== null && (selectedSquare as number) === moExtSq;
+                const moIsSelectable = marchingOrdersGrid && moPiece !== null && (selectablePieces?.has(moExtSq) ?? false);
+                const moClickable = marchingOrdersGrid && (moIsSelectable || moIsLegalDest);
+
                 return (
-                  <rect
+                  <g
                     key={col}
-                    x={x}
-                    y={y}
-                    width={SQUARE_SIZE}
-                    height={SQUARE_SIZE}
-                    fill="var(--board-light)"
-                    aria-hidden="true"
-                  />
+                    onClick={() => {
+                      if (isAnimating || !marchingOrdersGrid) return;
+                      onSquareClick?.(moExtSq as Square);
+                    }}
+                    style={{ cursor: moClickable ? 'pointer' : 'default' }}
+                  >
+                    <rect
+                      x={x}
+                      y={y}
+                      width={SQUARE_SIZE}
+                      height={SQUARE_SIZE}
+                      fill={moIsSelected ? 'var(--square-selected, #b8d4e3)' : 'var(--board-light)'}
+                    />
+                    {moPiece !== null && moPiece !== undefined && (
+                      <PieceComponent
+                        color={moPiece.color}
+                        type={moPiece.type}
+                        cx={x + SQUARE_SIZE / 2}
+                        cy={y + SQUARE_SIZE / 2}
+                        shadow={pieceShadow}
+                      />
+                    )}
+                    {moIsLegalDest && moPiece === null && (
+                      <circle
+                        cx={x + SQUARE_SIZE / 2}
+                        cy={y + SQUARE_SIZE / 2}
+                        r={LEGAL_DOT_RADIUS}
+                        className={styles.legalMoveDot}
+                      />
+                    )}
+                    {moIsLegalDest && moPiece !== null && (
+                      <circle
+                        cx={x + SQUARE_SIZE / 2}
+                        cy={y + SQUARE_SIZE / 2}
+                        r={CAPTURE_RING_RADIUS}
+                        fill="none"
+                        strokeWidth={CAPTURE_RING_STROKE}
+                        className={styles.captureRing}
+                      />
+                    )}
+                  </g>
                 );
               }
 

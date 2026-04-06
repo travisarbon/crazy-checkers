@@ -5,7 +5,7 @@
  * AI event reasoning, and the absence of degenerate or crash-inducing board states.
  */
 
-import { GameMode, type CrazyEvent } from '../../engine/types';
+import { CrazyEvent, GameMode } from '../../engine/types';
 import { IMPLEMENTED_EVENTS } from '../../engine/events';
 import { runMatch, type MatchConfig, type MatchResult } from './selfPlay';
 
@@ -19,12 +19,30 @@ export interface CrazyValidationReport {
   hardVsEasy: MatchResult;
   /** Hard vs. Hard (Crazy mode), 50 games. */
   hardVsHard: MatchResult;
-  /** Per-event forced matches (10 games each, 7 events = 70 games). */
+  /** Per-event forced matches (10 games each). */
   perEvent: Record<string, MatchResult>;
-  /** Pairwise event stacking spot-checks (21 combinations, 2 games each = 42 games). */
+  /** Pairwise event stacking spot-checks. */
   pairwise: Record<string, MatchResult>;
   /** Summary statistics. */
   summary: ValidationSummary;
+  // Phase 3 additions
+  /** Triple+ event stacking stress tests. */
+  tripleStacking: Record<string, MatchResult>;
+  /** Extra Crazy mode (event on every capture). */
+  extraCrazy: MatchResult | null;
+  /** Simulated Chaos mode (DoubleTrouble on every capture). */
+  chaosMode: MatchResult | null;
+  /** Performance benchmark with 5+ simultaneous events. */
+  performanceBenchmark: PerformanceBenchmarkResult | null;
+}
+
+export interface PerformanceBenchmarkResult {
+  avgMoveTimeMs: number;
+  p95MoveTimeMs: number;
+  maxMoveTimeMs: number;
+  totalGames: number;
+  totalMoves: number;
+  passesThreshold: boolean;
 }
 
 export interface ValidationSummary {
@@ -34,6 +52,12 @@ export interface ValidationSummary {
   hardVsEasyWinRate: number;
   allEventsTriggered: boolean;
   degenerateStatesFound: string[];
+  // Phase 3 additions
+  pairwiseCoverage: number;
+  tripleStackingErrors: number;
+  extraCrazyErrors: number;
+  chaosModeErrors: number;
+  performancePass: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -99,6 +123,128 @@ function buildPairwiseConfigs(): Array<{ pair: [CrazyEvent, CrazyEvent]; config:
 }
 
 // ---------------------------------------------------------------------------
+// Phase 3 — Triple+ Stacking Configs
+// ---------------------------------------------------------------------------
+
+const TRIPLE_STACKING_BASE: Omit<MatchConfig, 'forceEventSequence'> = {
+  gameCount: 3,
+  whiteDifficulty: 'hard',
+  blackDifficulty: 'hard',
+  alternateColors: false,
+  maxMovesPerGame: 400,
+  seed: 20260430,
+  mode: GameMode.Crazy,
+};
+
+function buildTripleStackingConfigs(): Array<{ label: string; config: MatchConfig }> {
+  const configs: Array<{ label: string; config: MatchConfig }> = [
+    // All Tier 3
+    { label: 'Tier3-All', config: { ...TRIPLE_STACKING_BASE, gameCount: 5, forceEventSequence: [CrazyEvent.FlippedScript, CrazyEvent.MarchingOrders, CrazyEvent.Haunted, CrazyEvent.ShrinkingBoard] } },
+    // Same-hook triples: getLegalMoves
+    { label: 'getLegalMoves-3a', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.Quicksand, CrazyEvent.ForcedMarch, CrazyEvent.FrozenAssets] } },
+    { label: 'getLegalMoves-3b', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.GhostWalk, CrazyEvent.Leapfrog, CrazyEvent.Backfire] } },
+    { label: 'getLegalMoves-3c', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.RoyalDecree, CrazyEvent.Sentry, CrazyEvent.StepBack] } },
+    // Same-hook triples: onCapture
+    { label: 'onCapture-3a', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.ChainReaction, CrazyEvent.Sacrifice, CrazyEvent.Haunted] } },
+    { label: 'onCapture-3b', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.LiveGrenade, CrazyEvent.TimeBomb, CrazyEvent.ChainReaction] } },
+    // Same-hook triples: onTurnEnd
+    { label: 'onTurnEnd-3a', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.HotPotato, CrazyEvent.Landmine, CrazyEvent.TollRoad] } },
+    { label: 'onTurnEnd-3b', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.Wormhole, CrazyEvent.DoubleTime, CrazyEvent.ShrinkingBoard] } },
+    // Same-hook triples: applyMove
+    { label: 'applyMove-3a', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.Conscription, CrazyEvent.Ricochet, CrazyEvent.CrownThief] } },
+    // Same-hook triples: onTurnStart
+    { label: 'onTurnStart-3a', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.ChecksMix, CrazyEvent.Stampede, CrazyEvent.SwapMeet] } },
+    // Capture chain combos
+    { label: 'Capture-Chain-3a', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.ChainReaction, CrazyEvent.Backfire, CrazyEvent.Landmine] } },
+    { label: 'Capture-Chain-3b', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.Conscription, CrazyEvent.Sacrifice, CrazyEvent.TollRoad] } },
+    { label: 'Capture-Chain-3c', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.LiveGrenade, CrazyEvent.Conscription, CrazyEvent.ChainReaction] } },
+    // Board-altering stacks
+    { label: 'Board-Alter-5a', config: { ...TRIPLE_STACKING_BASE, gameCount: 2, forceEventSequence: [CrazyEvent.ShrinkingBoard, CrazyEvent.Landmine, CrazyEvent.Wormhole, CrazyEvent.SafeHaven, CrazyEvent.TollRoad] } },
+    { label: 'Board-Alter-5b', config: { ...TRIPLE_STACKING_BASE, gameCount: 2, forceEventSequence: [CrazyEvent.Haunted, CrazyEvent.Quicksand, CrazyEvent.Landmine, CrazyEvent.Bodyguard, CrazyEvent.Sentry] } },
+    // Duration mix (instant + permanent + timed)
+    { label: 'Mixed-Duration-5', config: { ...TRIPLE_STACKING_BASE, gameCount: 2, forceEventSequence: [CrazyEvent.ChecksMix, CrazyEvent.KingForADay, CrazyEvent.OppositeDay, CrazyEvent.Reinforcements, CrazyEvent.Stampede] } },
+    { label: 'Mixed-Duration-5b', config: { ...TRIPLE_STACKING_BASE, gameCount: 2, forceEventSequence: [CrazyEvent.SwapMeet, CrazyEvent.Demotion, CrazyEvent.FlippedScript, CrazyEvent.RushHour, CrazyEvent.GhostWalk] } },
+    // 5-event stress
+    { label: 'Stress-5a', config: { ...TRIPLE_STACKING_BASE, gameCount: 2, forceEventSequence: [CrazyEvent.OppositeDay, CrazyEvent.Bodyguard, CrazyEvent.Quicksand, CrazyEvent.FrozenAssets, CrazyEvent.SafeHaven] } },
+    { label: 'Stress-5b', config: { ...TRIPLE_STACKING_BASE, gameCount: 2, forceEventSequence: [CrazyEvent.ForcedMarch, CrazyEvent.RoyalDecree, CrazyEvent.Sentry, CrazyEvent.RushHour, CrazyEvent.StepBack] } },
+    // 6+ event mega-stacks
+    { label: 'Mega-6', config: { ...TRIPLE_STACKING_BASE, gameCount: 2, forceEventSequence: [CrazyEvent.KingForADay, CrazyEvent.OppositeDay, CrazyEvent.Bodyguard, CrazyEvent.Conscription, CrazyEvent.Sacrifice, CrazyEvent.TollRoad] } },
+    { label: 'Mega-7', config: { ...TRIPLE_STACKING_BASE, gameCount: 2, forceEventSequence: [CrazyEvent.ShrinkingBoard, CrazyEvent.Haunted, CrazyEvent.Landmine, CrazyEvent.Wormhole, CrazyEvent.TimeBomb, CrazyEvent.ChainReaction, CrazyEvent.LiveGrenade] } },
+    // Promotion combos
+    { label: 'Promo-3a', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.FlippedScript, CrazyEvent.PromotionParty, CrazyEvent.CrownThief] } },
+    { label: 'Promo-3b', config: { ...TRIPLE_STACKING_BASE, forceEventSequence: [CrazyEvent.Demotion, CrazyEvent.Sacrifice, CrazyEvent.KingForADay] } },
+  ];
+  return configs;
+}
+
+const EXTRA_CRAZY_CONFIG: MatchConfig = {
+  gameCount: 30,
+  whiteDifficulty: 'hard',
+  blackDifficulty: 'hard',
+  alternateColors: true,
+  maxMovesPerGame: 400,
+  seed: 20260440,
+  mode: GameMode.Crazy,
+  extraCrazyMode: true,
+};
+
+const CHAOS_MODE_CONFIG: MatchConfig = {
+  gameCount: 30,
+  whiteDifficulty: 'hard',
+  blackDifficulty: 'hard',
+  alternateColors: true,
+  maxMovesPerGame: 400,
+  seed: 20260450,
+  mode: GameMode.Chaos,
+};
+
+const PERF_BENCHMARK_CONFIG: MatchConfig = {
+  gameCount: 20,
+  whiteDifficulty: 'hard',
+  blackDifficulty: 'hard',
+  alternateColors: false,
+  maxMovesPerGame: 200,
+  seed: 20260460,
+  mode: GameMode.Crazy,
+  forceEventSequence: [
+    CrazyEvent.OppositeDay,
+    CrazyEvent.Bodyguard,
+    CrazyEvent.Quicksand,
+    CrazyEvent.FrozenAssets,
+    CrazyEvent.SafeHaven,
+    CrazyEvent.ForcedMarch,
+    CrazyEvent.RoyalDecree,
+    CrazyEvent.Sentry,
+  ],
+  trackMoveTimings: true,
+};
+
+function runPerformanceBenchmark(
+  onProgress?: (matchName: string, gamesCompleted: number, totalGames: number) => void,
+): PerformanceBenchmarkResult {
+  const result = runMatch({
+    ...PERF_BENCHMARK_CONFIG,
+    onGameComplete: onProgress
+      ? (record) => { onProgress('Perf Benchmark', record.gameNumber, PERF_BENCHMARK_CONFIG.gameCount); }
+      : undefined,
+  });
+  const allMoveTimes = result.games.flatMap(g => g.moveTimings ?? []);
+  if (allMoveTimes.length === 0) {
+    return { avgMoveTimeMs: 0, p95MoveTimeMs: 0, maxMoveTimeMs: 0, totalGames: result.totalGames, totalMoves: 0, passesThreshold: true };
+  }
+  allMoveTimes.sort((a, b) => a - b);
+  const p95Index = Math.floor(allMoveTimes.length * 0.95);
+  return {
+    avgMoveTimeMs: allMoveTimes.reduce((s, t) => s + t, 0) / allMoveTimes.length,
+    p95MoveTimeMs: allMoveTimes[p95Index] ?? 0,
+    maxMoveTimeMs: allMoveTimes[allMoveTimes.length - 1] ?? 0,
+    totalGames: result.totalGames,
+    totalMoves: allMoveTimes.length,
+    passesThreshold: (allMoveTimes[p95Index] ?? 0) <= 3000,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Degenerate State Checks
 // ---------------------------------------------------------------------------
 
@@ -126,20 +272,34 @@ function checkDegenerateStates(
         }
       }
 
-      // Up in the Air: flag if game move count is suspiciously high
-      if (eventType === 'UP_IN_THE_AIR' && game.moveCount > 350) {
+      // Instant shuffle events: game must not end within 1 ply
+      const instantShuffleEvents = ['CHECKS_MIX', 'STAMPEDE', 'SWAP_MEET', 'REINFORCEMENTS'];
+      if (instantShuffleEvents.includes(eventType) && game.eventLog) {
+        for (const entry of game.eventLog) {
+          if (entry.event === eventType && game.moveCount <= entry.ply + 1) {
+            degenerates.push(
+              `${eventType}: Game #${String(game.gameNumber)} ended within 1 ply of activation at ply ${String(entry.ply)} (seed: ${String(game.gameSeed)})`,
+            );
+          }
+        }
+      }
+
+      // Long-game events: flag excessively long games
+      const longGameEvents = ['UP_IN_THE_AIR', 'OPPOSITE_DAY', 'SHRINKING_BOARD', 'MARCHING_ORDERS'];
+      if (longGameEvents.includes(eventType) && game.moveCount > 350) {
         degenerates.push(
-          `Up in the Air: Game #${String(game.gameNumber)} had ${String(game.moveCount)} moves, approaching cap (seed: ${String(game.gameSeed)})`,
+          `${eventType}: Game #${String(game.gameNumber)} had ${String(game.moveCount)} moves, approaching cap (seed: ${String(game.gameSeed)})`,
         );
       }
 
-      // Hot Potato: flag games with excessive event repetition
-      if (eventType === 'HOT_POTATO' && game.eventLog) {
+      // Repetition events: flag excessive consecutive same-event triggers
+      const repetitionEvents = ['HOT_POTATO', 'DOUBLE_TROUBLE'];
+      if (repetitionEvents.includes(eventType) && game.eventLog) {
         let maxConsecutive = 0;
         let consecutive = 1;
-        for (let i = 1; i < game.eventLog.length; i++) {
-          const curr = game.eventLog[i];
-          const prev = game.eventLog[i - 1];
+        for (let k = 1; k < game.eventLog.length; k++) {
+          const curr = game.eventLog[k];
+          const prev = game.eventLog[k - 1];
           if (curr && prev && curr.event === prev.event) {
             consecutive++;
             maxConsecutive = Math.max(maxConsecutive, consecutive);
@@ -149,7 +309,7 @@ function checkDegenerateStates(
         }
         if (maxConsecutive > 4) {
           degenerates.push(
-            `Hot Potato: Game #${String(game.gameNumber)} had ${String(maxConsecutive)} consecutive same-event triggers (seed: ${String(game.gameSeed)})`,
+            `${eventType}: Game #${String(game.gameNumber)} had ${String(maxConsecutive)} consecutive same-event triggers (seed: ${String(game.gameSeed)})`,
           );
         }
       }
@@ -211,24 +371,58 @@ export function runCrazyValidation(
     });
   }
 
-  // 5. Degenerate state checks
+  // 5. Triple+ stacking stress tests
+  const tripleStacking: Record<string, MatchResult> = {};
+  for (const { label, config } of buildTripleStackingConfigs()) {
+    tripleStacking[label] = runMatch({
+      ...config,
+      onGameComplete: onProgress
+        ? (record) => { onProgress(`Triple: ${label}`, record.gameNumber, config.gameCount); }
+        : undefined,
+    });
+  }
+
+  // 6. Extra Crazy mode
+  const extraCrazy = runMatch({
+    ...EXTRA_CRAZY_CONFIG,
+    onGameComplete: onProgress
+      ? (record) => { onProgress('Extra Crazy', record.gameNumber, EXTRA_CRAZY_CONFIG.gameCount); }
+      : undefined,
+  });
+
+  // 7. Chaos mode
+  const chaosMode = runMatch({
+    ...CHAOS_MODE_CONFIG,
+    onGameComplete: onProgress
+      ? (record) => { onProgress('Chaos Mode', record.gameNumber, CHAOS_MODE_CONFIG.gameCount); }
+      : undefined,
+  });
+
+  // 8. Performance benchmark
+  const performanceBenchmark = runPerformanceBenchmark(onProgress);
+
+  // 9. Degenerate state checks
   const degenerateStates = checkDegenerateStates(perEvent);
 
-  // 6. Aggregate summary
+  // 10. Aggregate summary
   const allResults = [
     hardVsEasy,
     hardVsHard,
     ...Object.values(perEvent),
     ...Object.values(pairwise),
+    ...Object.values(tripleStacking),
+    extraCrazy,
+    chaosMode,
   ];
 
-  const totalGames = allResults.reduce((sum, r) => sum + r.totalGames, 0);
+  const totalGames = allResults.reduce((sum, r) => sum + r.totalGames, 0) + performanceBenchmark.totalGames;
   const totalErrors = allResults.reduce((sum, r) => sum + r.errorGames, 0);
   const totalAnomalies = allResults.reduce((sum, r) => sum + r.anomalousGames.length, 0);
 
-  // Check that all 7 event types triggered at least once across random matches
   const allFrequency = { ...hardVsEasy.eventStats?.eventFrequency, ...hardVsHard.eventStats?.eventFrequency };
   const allEventsTriggered = IMPLEMENTED_EVENTS.every((event) => (allFrequency[event] ?? 0) > 0);
+
+  const tripleStackingErrors = Object.values(tripleStacking).reduce((sum, r) => sum + r.errorGames, 0);
 
   const summary: ValidationSummary = {
     totalGames,
@@ -237,9 +431,14 @@ export function runCrazyValidation(
     hardVsEasyWinRate: hardVsEasy.primaryWinRate,
     allEventsTriggered,
     degenerateStatesFound: degenerateStates,
+    pairwiseCoverage: Object.keys(pairwise).length / Math.max(1, (IMPLEMENTED_EVENTS.length * (IMPLEMENTED_EVENTS.length - 1)) / 2),
+    tripleStackingErrors,
+    extraCrazyErrors: extraCrazy.errorGames,
+    chaosModeErrors: chaosMode.errorGames,
+    performancePass: performanceBenchmark.passesThreshold,
   };
 
-  return { hardVsEasy, hardVsHard, perEvent, pairwise, summary };
+  return { hardVsEasy, hardVsHard, perEvent, pairwise, summary, tripleStacking, extraCrazy, chaosMode, performanceBenchmark };
 }
 
 // ---------------------------------------------------------------------------
@@ -251,11 +450,17 @@ export function runCrazyValidation(
  * inclusion in the Phase 2 documentation folder.
  */
 export function formatValidationReport(report: CrazyValidationReport): string {
-  const { hardVsEasy, hardVsHard, perEvent, pairwise, summary } = report;
-  const overallPass = summary.totalErrors === 0 && summary.hardVsEasyWinRate >= 0.70;
+  const { hardVsEasy, hardVsHard, perEvent, pairwise, summary, tripleStacking, extraCrazy, chaosMode, performanceBenchmark } = report;
+  const overallPass =
+    summary.totalErrors === 0 &&
+    summary.hardVsEasyWinRate >= 0.70 &&
+    summary.tripleStackingErrors === 0 &&
+    summary.extraCrazyErrors === 0 &&
+    summary.chaosModeErrors === 0 &&
+    summary.performancePass;
 
   const lines: string[] = [];
-  lines.push('# Task 13.1 — Crazy Mode Automated Validation Report');
+  lines.push('# Task 16.6 — Full Event Pool Validation Report');
   lines.push('');
   lines.push(`**Date:** ${new Date().toISOString()}`);
   lines.push(`**Total games:** ${String(summary.totalGames)}`);
@@ -284,7 +489,8 @@ export function formatValidationReport(report: CrazyValidationReport): string {
   lines.push('');
 
   // Section 3: Per-Event
-  lines.push('## 3. Per-Event Forced Matches (70 games)');
+  const perEventCount = Object.values(perEvent).reduce((s, r) => s + r.totalGames, 0);
+  lines.push(`## 3. Per-Event Forced Matches (${String(perEventCount)} games)`);
   lines.push('');
   lines.push('| Event | Games | Errors | Avg Length | Anomalies | Notes |');
   lines.push('|-------|-------|--------|------------|-----------|-------|');
@@ -297,7 +503,8 @@ export function formatValidationReport(report: CrazyValidationReport): string {
   lines.push('');
 
   // Section 4: Pairwise
-  lines.push('## 4. Pairwise Stacking Spot-Checks (42 games)');
+  const pairwiseCount = Object.values(pairwise).reduce((s, r) => s + r.totalGames, 0);
+  lines.push(`## 4. Pairwise Stacking (${String(pairwiseCount)} games)`);
   lines.push('');
   lines.push('| Pair | Games | Errors | Notes |');
   lines.push('|------|-------|--------|-------|');
@@ -306,8 +513,60 @@ export function formatValidationReport(report: CrazyValidationReport): string {
   }
   lines.push('');
 
-  // Section 5: Event Frequency
-  lines.push('## 5. Event Frequency Distribution');
+  // Section 5: Triple+ Stacking
+  const tripleCount = Object.values(tripleStacking).reduce((s, r) => s + r.totalGames, 0);
+  const tripleErrors = Object.values(tripleStacking).reduce((s, r) => s + r.errorGames, 0);
+  lines.push(`## 5. Triple+ Event Stacking (${String(tripleCount)} games)`);
+  lines.push('');
+  lines.push('| Config | Games | Errors | Avg Length | Notes |');
+  lines.push('|--------|-------|--------|------------|-------|');
+  for (const [label, result] of Object.entries(tripleStacking)) {
+    lines.push(`| ${label} | ${String(result.totalGames)} | ${String(result.errorGames)} | ${result.avgMoveCount.toFixed(1)} | |`);
+  }
+  lines.push(`\n**Total errors:** ${String(tripleErrors)}`);
+  lines.push('');
+
+  // Section 6: Extra Crazy
+  lines.push('## 6. Extra Crazy Mode (30 games)');
+  lines.push('');
+  if (extraCrazy) {
+    lines.push(`- Crashes: ${String(extraCrazy.errorGames)}`);
+    lines.push(`- Average game length: ${extraCrazy.avgMoveCount.toFixed(1)} moves`);
+    lines.push(`- Capped games: ${String(extraCrazy.cappedGames)}`);
+  } else {
+    lines.push('Skipped.');
+  }
+  lines.push('');
+
+  // Section 7: Chaos Mode
+  lines.push('## 7. Chaos Mode (30 games)');
+  lines.push('');
+  if (chaosMode) {
+    lines.push(`- Crashes: ${String(chaosMode.errorGames)}`);
+    lines.push(`- Average game length: ${chaosMode.avgMoveCount.toFixed(1)} moves`);
+    lines.push(`- Capped games: ${String(chaosMode.cappedGames)}`);
+  } else {
+    lines.push('Skipped.');
+  }
+  lines.push('');
+
+  // Section 8: Performance Benchmark
+  lines.push('## 8. Performance Benchmark (5+ events)');
+  lines.push('');
+  if (performanceBenchmark) {
+    lines.push(`- Total games: ${String(performanceBenchmark.totalGames)}`);
+    lines.push(`- Total moves: ${String(performanceBenchmark.totalMoves)}`);
+    lines.push(`- Avg move time: ${performanceBenchmark.avgMoveTimeMs.toFixed(1)}ms`);
+    lines.push(`- P95 move time: ${performanceBenchmark.p95MoveTimeMs.toFixed(1)}ms (threshold: <=3000ms)`);
+    lines.push(`- Max move time: ${performanceBenchmark.maxMoveTimeMs.toFixed(1)}ms`);
+    lines.push(`- **Result:** ${performanceBenchmark.passesThreshold ? 'PASS' : 'FAIL'}`);
+  } else {
+    lines.push('Skipped.');
+  }
+  lines.push('');
+
+  // Section 9: Event Frequency
+  lines.push('## 9. Event Frequency Distribution');
   lines.push('');
   const combinedFrequency: Record<string, number> = {};
   for (const result of [hardVsEasy, hardVsHard]) {
@@ -322,8 +581,8 @@ export function formatValidationReport(report: CrazyValidationReport): string {
   }
   lines.push('');
 
-  // Section 6: Degenerate States
-  lines.push('## 6. Degenerate States Found');
+  // Section 10: Degenerate States
+  lines.push('## 10. Degenerate States Found');
   lines.push('');
   if (summary.degenerateStatesFound.length === 0) {
     lines.push('No degenerate states found.');
@@ -334,8 +593,8 @@ export function formatValidationReport(report: CrazyValidationReport): string {
   }
   lines.push('');
 
-  // Section 7: Anomalous Games
-  lines.push('## 7. Anomalous Games for Manual Review');
+  // Section 11: Anomalous Games
+  lines.push('## 11. Anomalous Games for Manual Review');
   lines.push('');
   const allAnomalous: Array<{ matchName: string; gameNumber: number; seed: number }> = [];
   const collectAnomalous = (name: string, result: MatchResult) => {
@@ -354,6 +613,11 @@ export function formatValidationReport(report: CrazyValidationReport): string {
   for (const [pairKey, result] of Object.entries(pairwise)) {
     collectAnomalous(`Pairwise: ${pairKey}`, result);
   }
+  for (const [label, result] of Object.entries(tripleStacking)) {
+    collectAnomalous(`Triple: ${label}`, result);
+  }
+  if (extraCrazy) collectAnomalous('Extra Crazy', extraCrazy);
+  if (chaosMode) collectAnomalous('Chaos Mode', chaosMode);
 
   if (allAnomalous.length === 0) {
     lines.push('No anomalous games found.');
@@ -375,5 +639,9 @@ export {
   HARD_VS_HARD_CONFIG,
   buildPerEventConfigs,
   buildPairwiseConfigs,
+  buildTripleStackingConfigs,
   checkDegenerateStates,
+  EXTRA_CRAZY_CONFIG,
+  CHAOS_MODE_CONFIG,
+  PERF_BENCHMARK_CONFIG,
 };

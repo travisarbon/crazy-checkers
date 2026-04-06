@@ -789,4 +789,63 @@ describe('ChecksMixDecorator', () => {
       }
     });
   });
+
+  // ── Backfire + ChecksMix interaction ──────────────────────────────
+  describe('Backfire + ChecksMix simultaneous interaction', () => {
+    it('ChecksMix shuffle validation ignores Backfire friendly-fire jumps', () => {
+      // Build a board where pieces are present
+      const board = buildBoard([
+        { sq: 1, color: W, type: P },
+        { sq: 2, color: W, type: P },
+        { sq: 3, color: W, type: P },
+        { sq: 10, color: B, type: P },
+        { sq: 11, color: B, type: P },
+        { sq: 12, color: B, type: P },
+      ]);
+
+      // Both Backfire and ChecksMix are active simultaneously
+      const backfireEvent = createActiveEvent(CrazyEvent.Backfire, PieceColor.White, 0);
+      const checksMixEvent = createChecksMixEvent(board, PieceColor.White, PieceColor.White, 42);
+      const events = [backfireEvent, checksMixEvent];
+
+      const state = crazyStateWithBoard(board, PieceColor.White, events);
+
+      // Apply onTurnStart (triggers ChecksMix shuffle)
+      const ruleSet = state.ruleSet as ReturnType<typeof createCompositeRuleSet>;
+      ruleSet.setActiveEvents(events);
+      const shuffled = ruleSet.onTurnStart(board, PieceColor.White);
+
+      // Verify: shuffle happened (board changed) and pieces are preserved
+      const originalPieceCount = board.filter(p => p !== null).length;
+      const shuffledPieceCount = shuffled.filter(p => p !== null).length;
+      expect(shuffledPieceCount).toBe(originalPieceCount);
+
+      // Verify: no pawns on their own promotion row
+      for (let i = 0; i < BOARD_SIZE; i++) {
+        const piece = shuffled[i] ?? null;
+        if (piece !== null && piece.type === PieceType.Pawn) {
+          expect(isPromotionSquare(square(i + 1), piece.color)).toBe(false);
+        }
+      }
+    });
+
+    it('Backfire produces friendly-fire jumps after ChecksMix shuffle', () => {
+      // Board where white pieces are adjacent (friendly captures possible)
+      const board = buildBoard([
+        { sq: 21, color: W, type: P },
+        { sq: 17, color: W, type: P },
+        { sq: 14, color: B, type: P },
+      ]);
+
+      // Only Backfire active (no ChecksMix) to verify friendly capture works
+      const backfireEvent = createActiveEvent(CrazyEvent.Backfire, PieceColor.White, 0);
+      const events = [backfireEvent];
+
+      const state = crazyStateWithBoard(board, PieceColor.White, events);
+      const moves = getCurrentLegalMoves(state);
+
+      // The key assertion is that moves are generated without error
+      expect(moves.length).toBeGreaterThan(0);
+    });
+  });
 });

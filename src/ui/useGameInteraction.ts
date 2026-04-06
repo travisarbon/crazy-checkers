@@ -188,9 +188,10 @@ export function useGameInteraction({
       return getContinuationJumps(intermediateBoard, selectedSquare, gameState.activeEvents);
     }
 
-    // Use getCurrentLegalMoves (routes through CompositeEventRuleSet) and filter
+    // Use getCurrentLegalMoves (routes through CompositeEventRuleSet) and filter.
+    // Use numeric comparison so extended square numbers (33-64 from Marching Orders) work.
     const allMoves = getCurrentLegalMoves(gameState);
-    return allMoves.filter((m) => m.from === selectedSquare);
+    return allMoves.filter((m) => (m.from as number) === (selectedSquare as number));
   }, [selectedSquare, intermediateBoard, gameState]);
 
   // ── Derived state: destination squares ───────────────────────────────

@@ -17,7 +17,7 @@ import {
   PieceType,
   PlayerType,
 } from './types';
-import { createInitialBoard, getBoardSquare } from './board';
+import { BOARD_SIZE, createInitialBoard, getBoardSquare } from './board';
 import { computeZobristHash, isRepetition, updateZobristHash } from './zobrist';
 import { checkEventTrigger, createActiveEvent, EVENT_METADATA_FACTORIES, removeEventsByType, resolveConflicts, tickAllEvents } from './events';
 import type { CompositeEventRuleSet } from './compositeRuleSet';
@@ -171,18 +171,26 @@ export function makeMove(state: GameState, move: Move): GameState {
   }
 
   // ── Snapshot captured pieces before removal ─────────────────────────
+  // Extended squares (> 32) are used by Marching Orders for light-square
+  // pieces that live only in the event's 64-element grid metadata.
+  // getBoardSquare only handles 1–32, so skip it for extended squares.
   const capturedPieces: Array<{ sq: Square; piece: Piece }> = [];
   for (const sq of move.captured) {
-    const piece = getBoardSquare(board, sq);
-    if (piece !== null) {
-      capturedPieces.push({ sq, piece });
+    if ((sq as number) <= BOARD_SIZE) {
+      const piece = getBoardSquare(board, sq);
+      if (piece !== null) {
+        capturedPieces.push({ sq, piece });
+      }
     }
   }
 
   // ── Snapshot the moving piece before apply ──────────────────────────
-  const movingPiece = getBoardSquare(board, move.from);
-  if (movingPiece === null) {
-    throw new Error(`No piece at move origin square ${String(move.from)}`);
+  let movingPiece: Piece | null = null;
+  if ((move.from as number) <= BOARD_SIZE) {
+    movingPiece = getBoardSquare(board, move.from);
+    if (movingPiece === null) {
+      throw new Error(`No piece at move origin square ${String(move.from)}`);
+    }
   }
 
   // ── Apply the move ──────────────────────────────────────────────────
@@ -221,6 +229,10 @@ export function makeMove(state: GameState, move: Move): GameState {
     updatedEvents = applyMetadataUpdates(updatedEvents, metadataUpdates);
   }
 
+  // ── Check suppress-turn-switch signal (Double Time) ────────────────
+  const suppressTurnSwitch =
+    isCompositeRuleSet(state.ruleSet) && state.ruleSet.drainSuppressTurnSwitch();
+
   // ── Determine the landing piece (for Zobrist update) ────────────────
   const finalSquare = move.path[move.path.length - 1];
   if (finalSquare === undefined) {
@@ -229,7 +241,7 @@ export function makeMove(state: GameState, move: Move): GameState {
   const landingPiece = getBoardSquare(board, finalSquare);
 
   // ── Compute new Zobrist hash ────────────────────────────────────────
-  const nextColor = opponentColor(state.activeColor);
+  const nextColor = suppressTurnSwitch ? state.activeColor : opponentColor(state.activeColor);
   let newHash: bigint;
 
   // If hooks modified the board beyond the move, incremental update
@@ -253,7 +265,7 @@ export function makeMove(state: GameState, move: Move): GameState {
 
   // ── Update half-move clock ──────────────────────────────────────────
   const isCapture = move.captured.length > 0;
-  const isPawnAdvance = movingPiece.type === PieceType.Pawn;
+  const isPawnAdvance = movingPiece !== null && movingPiece.type === PieceType.Pawn;
   const halfMoveClock = isCapture || isPawnAdvance ? 0 : state.halfMoveClock + 1;
 
   // ── Assemble position hash history ──────────────────────────────────
@@ -289,7 +301,9 @@ export function makeMove(state: GameState, move: Move): GameState {
   }
 
   // ── Tick existing event durations (any mode with active events) ─────
-  if (updatedEvents.length > 0) {
+  // Skip tick when turn switch is suppressed (Double Time first sub-move)
+  // so both sub-moves count as a single ply for duration purposes.
+  if (updatedEvents.length > 0 && !suppressTurnSwitch) {
     updatedEvents = tickAllEvents(updatedEvents);
     updatedEvents = resolveConflicts(updatedEvents);
   }

@@ -1,0 +1,73 @@
+/* ExpandableDetailPanel — collapsible disclosure widget */
+
+.panel {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.toggleButton {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.toggleButton:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.chevron {
+  font-size: 1rem;
+  transition: transform 200ms ease;
+}
+
+.chevronExpanded {
+  transform: rotate(90deg);
+}
+
+.summary {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  margin: 0.25rem 0 0;
+}
+
+.contentWrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms ease;
+}
+
+.contentWrapperExpanded {
+  grid-template-rows: 1fr;
+}
+
+.contentInner {
+  overflow: hidden;
+}
+
+.contentBody {
+  padding-top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron,
+  .contentWrapper {
+    transition: none;
+  }
+}
+
+@media (max-width: 479px) {
+  .panel {
+    padding: 1rem;
+  }
+}

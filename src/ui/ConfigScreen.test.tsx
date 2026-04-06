@@ -66,7 +66,7 @@ describe('ConfigScreen', () => {
 
   it('renders back button', () => {
     renderConfig();
-    expect(screen.getByRole('button', { name: 'Back to main menu' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back to previous screen' })).toBeInTheDocument();
   });
 
   it('renders five theme cards', () => {
@@ -191,7 +191,7 @@ describe('ConfigScreen', () => {
   it('back button calls onBack', () => {
     const onBack = vi.fn();
     renderConfig({ onBack });
-    fireEvent.click(screen.getByRole('button', { name: 'Back to main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to previous screen' }));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 

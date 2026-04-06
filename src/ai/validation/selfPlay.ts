@@ -44,6 +44,18 @@ export interface MatchConfig {
    * Used for pairwise stacking validation. Takes precedence over forceEvent.
    */
   forceEventSequence?: CrazyEvent[];
+
+  /**
+   * Extra Crazy mode: trigger an event on every capture move (not just multi-jumps).
+   * Simulates Choice mode 8 behavior within the self-play framework.
+   */
+  extraCrazyMode?: boolean;
+
+  /**
+   * Track per-move AI search times for performance benchmarking.
+   * When true, GameRecord.moveTimings will be populated.
+   */
+  trackMoveTimings?: boolean;
 }
 
 /** Record of a single completed game. */
@@ -78,6 +90,12 @@ export interface GameRecord {
 
   /** Error message if the game crashed. */
   errorMessage?: string;
+
+  /** Per-move AI search times in ms (when trackMoveTimings is true). */
+  moveTimings?: number[];
+
+  /** Number of active events at each move (for perf correlation). */
+  activeEventCounts?: number[];
 }
 
 /** Aggregated results of a full match. */
@@ -187,6 +205,8 @@ export function playSingleGame(
   mode: GameMode = GameMode.Classic,
   forceEvent?: CrazyEvent,
   forceEventSequence?: CrazyEvent[],
+  extraCrazyMode?: boolean,
+  trackMoveTimings?: boolean,
 ): GameRecord {
   const ruleSet = createAmericanRules();
   const isCrazyMode = mode === GameMode.Crazy || mode === GameMode.Chaos;
@@ -217,6 +237,8 @@ export function playSingleGame(
   let moveCount = 0;
   let cappedByMoveLimit = false;
   const startTime = performance.now();
+  const moveTimings: number[] = [];
+  const activeEventCounts: number[] = [];
 
   while (currentState.status === GameStatus.InProgress) {
     if (moveCount >= maxMoves) {
@@ -238,7 +260,12 @@ export function playSingleGame(
       ? { ...currentState, board: effectiveBoard }
       : currentState;
 
+    const searchStart = trackMoveTimings ? performance.now() : 0;
     const searchResult = iterativeSearch(searchState, searchConfig);
+    if (trackMoveTimings) {
+      moveTimings.push(performance.now() - searchStart);
+      activeEventCounts.push(currentState.activeEvents.length);
+    }
     const legalMoves = getCurrentLegalMoves(currentState);
 
     if (searchResult.move === null || legalMoves.length === 0) {
@@ -321,6 +348,8 @@ export function playSingleGame(
     mode,
     eventLog: isCrazyMode ? eventLog : undefined,
     eventCount: isCrazyMode ? eventLog.length : undefined,
+    moveTimings: trackMoveTimings ? moveTimings : undefined,
+    activeEventCounts: trackMoveTimings ? activeEventCounts : undefined,
   };
 }
 
@@ -463,6 +492,8 @@ export function runMatch(config: MatchConfig): MatchResult {
         mode,
         config.forceEvent,
         config.forceEventSequence,
+        config.extraCrazyMode,
+        config.trackMoveTimings,
       );
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);

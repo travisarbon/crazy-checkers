@@ -242,6 +242,12 @@ export class ChecksMixDecorator extends EventDecorator {
     );
     if (checksMixEntries.length === 0) return board;
 
+    // Use base rules (no event decorators) for mandatory-capture validation.
+    // Other active events like Backfire expand the set of legal captures
+    // (e.g., friendly-fire jumps), which would cause ChecksMix to reject
+    // valid shuffles by mistaking event-generated jumps for real captures.
+    const baseRules = this.getBaseRuleSet();
+
     let result = board;
     for (const entry of checksMixEntries) {
       const metadata = entry.metadata as unknown as { seed: number } | undefined;
@@ -251,7 +257,7 @@ export class ChecksMixDecorator extends EventDecorator {
       // This prevents stale placement when another event modifies the board
       // between Checks Mix creation and application.
       result = shuffleBoard(result, activeColor, metadata.seed, (b, c) =>
-        this.inner.getLegalMoves(b, c),
+        baseRules.getLegalMoves(b, c),
       );
     }
     return result;

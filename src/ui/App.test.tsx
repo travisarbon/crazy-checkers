@@ -7,6 +7,17 @@ vi.mock('../ai/workerClient', () => ({
   requestAIMove: vi.fn(() => new Promise(() => {})),
 }));
 
+// Mock the unlock evaluator to prevent async side effects in tests
+vi.mock('../persistence/unlockEvaluator', () => ({
+  evaluateUnlocks: vi.fn(() =>
+    Promise.resolve({
+      choiceUnlocked: false,
+      classifiedUnlocked: false,
+      chaosUnlocked: false,
+    }),
+  ),
+}));
+
 // Mock matchMedia for GameScreen's useIsMobile hook
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -41,18 +52,10 @@ describe('App', () => {
     expect(screen.getByText('Crazy Checkers')).toBeInTheDocument();
   });
 
-  it('Classic → setup → start navigates to game', () => {
+  it('Classic button navigates to classic sub-menu screen', () => {
     render(<App />);
-
-    // Click Classic to open setup dialog
     fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
-    expect(screen.getByTestId('game-setup-dialog')).toBeInTheDocument();
-
-    // Click Start Game with defaults (Pass Around, White)
-    fireEvent.click(screen.getByTestId('setup-start'));
-
-    // Should now be on the game screen
-    expect(screen.getByTestId('game-screen')).toBeInTheDocument();
+    expect(screen.getByTestId('classic-screen')).toBeInTheDocument();
     expect(screen.queryByTestId('menu-screen')).not.toBeInTheDocument();
   });
 
@@ -68,39 +71,58 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Configure' }));
     expect(screen.getByTestId('config-screen')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /back to main menu/i }));
+    fireEvent.click(screen.getByRole('button', { name: /back to previous screen/i }));
     expect(screen.getByTestId('menu-screen')).toBeInTheDocument();
   });
 
-  it('Main Menu from game returns to menu', () => {
+  // ── Sub-menu screen navigation ─────────────────────────────────────
+
+  it.each([
+    ['Classic', 'classic-screen'],
+    ['Crazy', 'crazy-screen'],
+    ['Challenge', 'challenge-screen'],
+    ['Code', 'code-screen'],
+    ['Cogitate', 'cogitate-screen'],
+    ['Career', 'career-screen'],
+  ])('%s navigates to %s', (label, testId) => {
     render(<App />);
-
-    // Navigate to a game
-    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
-    fireEvent.click(screen.getByTestId('setup-start'));
-    expect(screen.getByTestId('game-screen')).toBeInTheDocument();
-
-    // Click Main Menu button — now shows confirmation dialog during active game
-    fireEvent.click(screen.getByRole('button', { name: /return to main menu/i }));
-    expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
-
-    // Confirm the action
-    fireEvent.click(screen.getByTestId('confirm-confirm'));
-    expect(screen.getByTestId('menu-screen')).toBeInTheDocument();
-  });
-
-  it('New Game from game stays in game', () => {
-    render(<App />);
-
-    // Navigate to a game
-    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
-    fireEvent.click(screen.getByTestId('setup-start'));
-    expect(screen.getByTestId('game-screen')).toBeInTheDocument();
-
-    // Click New Game — should confirm first
-    window.confirm = vi.fn(() => true);
-    fireEvent.click(screen.getByRole('button', { name: 'New Game' }));
-    expect(screen.getByTestId('game-screen')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: label }));
+    expect(screen.getByTestId(testId)).toBeInTheDocument();
     expect(screen.queryByTestId('menu-screen')).not.toBeInTheDocument();
+  });
+
+  it('Back from sub-menu returns to menu', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    expect(screen.getByTestId('classic-screen')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /back to previous screen/i }));
+    expect(screen.getByTestId('menu-screen')).toBeInTheDocument();
+  });
+
+  it('Config screen still works after refactor', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Configure' }));
+    expect(screen.getByTestId('config-screen')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Configure' })).toBeInTheDocument();
+  });
+
+  it('Classic sub-menu has Start Game button', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    expect(screen.getByTestId('start-game-button')).toBeInTheDocument();
+  });
+
+  it('Classic Start Game launches game', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    fireEvent.click(screen.getByTestId('start-game-button'));
+    expect(screen.getByTestId('game-screen')).toBeInTheDocument();
+  });
+
+  it('Crazy sub-menu has Start Game button', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Crazy' }));
+    expect(screen.getByTestId('start-game-button')).toBeInTheDocument();
   });
 });

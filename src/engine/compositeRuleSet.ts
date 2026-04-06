@@ -99,6 +99,19 @@ export class CompositeEventRuleSet implements RuleSet {
   }
 
   /**
+   * Collects the suppress-turn-switch signal from all active decorators.
+   * Returns true if any decorator requested suppression.
+   * Called by game.ts after onTurnEnd to conditionally skip turn alternation
+   * and event ply tick (used by Double Time for two-moves-per-turn).
+   */
+  drainSuppressTurnSwitch(): boolean {
+    for (const decorator of this.activeChainDecorators) {
+      if (decorator.drainSuppressTurnSwitch()) return true;
+    }
+    return false;
+  }
+
+  /**
    * Collects and clears pending metadata update requests from all active decorators.
    * Called by game.ts after hook chains (onTurnEnd) that may request
    * metadata updates for active events (e.g., Dealer's Choice skip tracking).

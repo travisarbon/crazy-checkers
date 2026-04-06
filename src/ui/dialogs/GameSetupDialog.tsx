@@ -1,4 +1,8 @@
 /**
+ * @deprecated Use GameSetupSection instead. This modal dialog is no longer
+ * opened from MenuScreen (removed in Task 17.1). The inline GameSetupSection
+ * component replaces it within mode sub-menu screens.
+ *
  * Game-setup dialog for Classic mode.
  *
  * Collects game type (Pass Around / vs. CPU), color choice,

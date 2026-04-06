@@ -9,9 +9,9 @@
  * sequentially (oldest event first).
  */
 
-import type { ActiveEvent, BoardState } from '../engine/types';
+import type { ActiveEvent, BoardState, Square } from '../engine/types';
 import { CrazyEvent, PieceColor, PieceType } from '../engine/types';
-import { getAllAdjacentSquares, getBoardSquare, getSquaresWithColor, BOARD_SIZE } from '../engine/board';
+import { getAllAdjacentSquares, getBoardSquare, getSquaresWithColor, squareToGrid, BOARD_SIZE } from '../engine/board';
 import { evaluate, EVAL_WEIGHTS, type EvalWeights } from './evaluator';
 
 // ---------------------------------------------------------------------------
@@ -412,6 +412,374 @@ export const EVENT_EVAL_WEIGHTS_REGISTRY: ReadonlyMap<CrazyEvent, EventEvalWeigh
         mobilityPerMove: 1.5,
         advancementPerRow: 1.3,
         endgameAdvancementPerRow: 1.3,
+      },
+    },
+  ],
+
+  // Event 14: Conscription — captured pieces switch sides instead of removal
+  [
+    CrazyEvent.Conscription,
+    {
+      multipliers: {
+        pawnValue: 1.8,
+        kingValue: 1.6,
+        mobilityPerMove: 1.3,
+      },
+    },
+  ],
+
+  // Event 15: Ghost Walk — pieces phase through friendly blockers
+  [
+    CrazyEvent.GhostWalk,
+    {
+      multipliers: {
+        mobilityPerMove: 1.5,
+        centerBonus: 0.9,
+      },
+    },
+  ],
+
+  // Event 16: Landmine — center squares destroy entering pieces
+  [
+    CrazyEvent.Landmine,
+    {
+      multipliers: {
+        centerBonus: -0.5,
+        expandedCenterBonus: 0.3,
+      },
+      scoreAdjuster: (weightedScore, board, color, event, appliedWeights) => {
+        // Penalize own pieces on mined squares that aren't safe
+        const metadata = event.metadata as { safePieces?: Array<{ square: number }> } | undefined;
+        const safePieces = metadata?.safePieces ?? [];
+        let penalty = 0;
+        for (const sq of [14, 15, 18, 19]) {
+          const piece = board[sq - 1];
+          if (piece !== null && piece !== undefined && piece.color === color) {
+            const isSafe = safePieces.some(sp => sp.square === sq);
+            if (!isSafe) penalty -= appliedWeights.pawnValue * 0.5;
+          }
+        }
+        return weightedScore + penalty;
+      },
+    },
+  ],
+
+  // Event 17: Leapfrog — non-capturing jumps over friendly pieces
+  [
+    CrazyEvent.Leapfrog,
+    {
+      multipliers: {
+        mobilityPerMove: 2.0,
+        advancementPerRow: 1.2,
+      },
+    },
+  ],
+
+  // Event 19: Double Time — two moves per turn
+  [
+    CrazyEvent.DoubleTime,
+    {
+      multipliers: {
+        pawnValue: 1.3,
+        kingValue: 1.3,
+        mobilityPerMove: 1.5,
+        advancementPerRow: 1.3,
+      },
+    },
+  ],
+
+  // Event 21: Chain Reaction — captures cascade through adjacent same-color pieces
+  [
+    CrazyEvent.ChainReaction,
+    {
+      multipliers: {
+        centerBonus: 0.5,
+        expandedCenterBonus: 0.6,
+      },
+      scoreAdjuster: (weightedScore, board, color, _event, appliedWeights) => {
+        // Penalize own piece clusters (adjacent same-color pieces)
+        const ownSquares = getSquaresWithColor(board, color);
+        let clusterPenalty = 0;
+        for (const sq of ownSquares) {
+          for (const { adjacent } of getAllAdjacentSquares(sq)) {
+            const piece = getBoardSquare(board, adjacent);
+            if (piece !== null && piece.color === color) {
+              clusterPenalty -= appliedWeights.pawnValue * 0.15;
+            }
+          }
+        }
+        // Reward targeting enemy clusters
+        const enemyColor = color === PieceColor.White ? PieceColor.Black : PieceColor.White;
+        const enemySquares = getSquaresWithColor(board, enemyColor);
+        let clusterBonus = 0;
+        for (const sq of enemySquares) {
+          for (const { adjacent } of getAllAdjacentSquares(sq)) {
+            const piece = getBoardSquare(board, adjacent);
+            if (piece !== null && piece.color === enemyColor) {
+              clusterBonus += appliedWeights.pawnValue * 0.1;
+            }
+          }
+        }
+        return weightedScore + clusterPenalty + clusterBonus;
+      },
+    },
+  ],
+
+  // Event 23: Reinforcements — spawn pawns on back row
+  [
+    CrazyEvent.Reinforcements,
+    {
+      multipliers: {
+        pawnValue: 0.8,
+        backRowBonus: 1.4,
+        advancementPerRow: 0.9,
+      },
+    },
+  ],
+
+  // Event 24: Wormhole — teleportation between linked square pairs
+  [
+    CrazyEvent.Wormhole,
+    {
+      multipliers: {
+        mobilityPerMove: 1.3,
+        centerBonus: 0.8,
+      },
+    },
+  ],
+
+  // Event 26: Time Bomb — countdown detonation on a random piece
+  [
+    CrazyEvent.TimeBomb,
+    {
+      multipliers: {
+        kingValue: 1.1,
+      },
+      scoreAdjuster: (weightedScore, board, color, event, appliedWeights) => {
+        const metadata = event.metadata as { bombSquare?: number; countdown?: number; bombColor?: string } | undefined;
+        if (!metadata?.bombSquare || metadata.bombSquare < 0 || !metadata.countdown) return weightedScore;
+        const bombPiece = getBoardSquare(board, metadata.bombSquare as Square);
+        if (bombPiece === null) return weightedScore;
+
+        let penalty = 0;
+        const neighbors = getAllAdjacentSquares(metadata.bombSquare as Square);
+        for (const { adjacent } of neighbors) {
+          const piece = getBoardSquare(board, adjacent);
+          if (piece !== null && piece.color === color) {
+            penalty -= appliedWeights.pawnValue * 0.4 * (1 / metadata.countdown);
+          }
+        }
+        if (bombPiece.color !== color) {
+          penalty += appliedWeights.pawnValue * 0.3;
+        }
+        return weightedScore + penalty;
+      },
+    },
+  ],
+
+  // Event 28: Ricochet — post-capture diagonal bounce
+  [
+    CrazyEvent.Ricochet,
+    {
+      multipliers: {
+        mobilityPerMove: 1.2,
+        advancementPerRow: 1.1,
+      },
+    },
+  ],
+
+  // Event 29: Crown Thief — pawn capturing king gets promoted
+  [
+    CrazyEvent.CrownThief,
+    {
+      multipliers: {
+        pawnValue: 1.4,
+        kingValue: 0.8,
+        mobilityPerMove: 1.1,
+      },
+    },
+  ],
+
+  // Event 30: Stampede — all pawns advance one square
+  [
+    CrazyEvent.Stampede,
+    {
+      multipliers: {
+        advancementPerRow: 0.7,
+        backRowBonus: 0.5,
+        centerBonus: 1.2,
+      },
+    },
+  ],
+
+  // Event 31: Toll Road — captures cost the capturer their least advanced piece
+  [
+    CrazyEvent.TollRoad,
+    {
+      multipliers: {
+        pawnValue: 1.3,
+        kingValue: 1.4,
+        mobilityPerMove: 0.8,
+        backRowBonus: 0.5,
+      },
+    },
+  ],
+
+  // Event 32: Swap Meet — random opposing piece position swaps
+  [
+    CrazyEvent.SwapMeet,
+    {
+      multipliers: {
+        advancementPerRow: 0.5,
+        centerBonus: 0.6,
+        expandedCenterBonus: 0.6,
+        backRowBonus: 0.5,
+        mobilityPerMove: 0.9,
+      },
+    },
+  ],
+
+  // Event 34: Backfire — friendly fire captures
+  [
+    CrazyEvent.Backfire,
+    {
+      multipliers: {
+        pawnValue: 1.2,
+        kingValue: 1.3,
+        mobilityPerMove: 0.7,
+      },
+      scoreAdjuster: (weightedScore, board, color, _event, appliedWeights) => {
+        // Penalize having pieces adjacent to own pieces (friendly fire exposure)
+        const ownSquares = getSquaresWithColor(board, color);
+        let friendlyAdjacentPenalty = 0;
+        for (const sq of ownSquares) {
+          for (const { adjacent } of getAllAdjacentSquares(sq)) {
+            const piece = getBoardSquare(board, adjacent);
+            if (piece !== null && piece.color === color) {
+              friendlyAdjacentPenalty -= appliedWeights.pawnValue * 0.1;
+            }
+          }
+        }
+        return weightedScore + friendlyAdjacentPenalty;
+      },
+    },
+  ],
+
+  // Event 38: Sacrifice — defender's most advanced pawn promotes on capture
+  [
+    CrazyEvent.Sacrifice,
+    {
+      multipliers: {
+        pawnValue: 1.3,
+        kingValue: 0.9,
+        advancementPerRow: 1.4,
+      },
+      scoreAdjuster: (weightedScore, board, color, _event, appliedWeights) => {
+        // Count opponent's promotable pawns — each reduces value of captures
+        const enemyColor = color === PieceColor.White ? PieceColor.Black : PieceColor.White;
+        const enemySquares = getSquaresWithColor(board, enemyColor);
+        let enemyPawnCount = 0;
+        for (const sq of enemySquares) {
+          const p = getBoardSquare(board, sq);
+          if (p !== null && p.type === PieceType.Pawn) {
+            enemyPawnCount++;
+          }
+        }
+        const capturePenalty = enemyPawnCount * appliedWeights.pawnValue * -0.15;
+        return weightedScore + capturePenalty;
+      },
+    },
+  ],
+
+  // Event 9: Flipped Script — promotion rows permanently swapped
+  [
+    CrazyEvent.FlippedScript,
+    {
+      multipliers: {
+        advancementPerRow: -0.5,
+        endgameAdvancementPerRow: -0.5,
+        backRowBonus: 2.5,
+        kingValue: 1.3,
+      },
+    },
+  ],
+
+  // Event 10: Marching Orders — orthogonal movement replaces diagonal
+  [
+    CrazyEvent.MarchingOrders,
+    {
+      multipliers: {
+        centerBonus: 1.5,
+        expandedCenterBonus: 1.3,
+        mobilityPerMove: 1.5,
+        advancementPerRow: 0.8,
+        backRowBonus: 0.5,
+        trappedKingPenalty: 1.5,
+      },
+    },
+  ],
+
+  // Event 37: Haunted — captured pieces become ghost obstacles
+  [
+    CrazyEvent.Haunted,
+    {
+      multipliers: {
+        centerBonus: 1.3,
+        mobilityPerMove: 1.4,
+        trappedKingPenalty: 1.5,
+      },
+      scoreAdjuster: (weightedScore, board, color, event) => {
+        const metadata = event.metadata as { ghosts?: ReadonlyArray<{ square: number }> } | undefined;
+        if (!metadata?.ghosts) return weightedScore;
+
+        const ghostSet = new Set(metadata.ghosts.map(g => g.square));
+        let proximityPenalty = 0;
+        for (const sq of getSquaresWithColor(board, color)) {
+          for (const { adjacent } of getAllAdjacentSquares(sq)) {
+            if (ghostSet.has(adjacent as number)) {
+              proximityPenalty += 3;
+            }
+          }
+        }
+        return weightedScore - proximityPenalty;
+      },
+    },
+  ],
+
+  // Event 39: Shrinking Board — progressive ring elimination
+  [
+    CrazyEvent.ShrinkingBoard,
+    {
+      multipliers: {
+        centerBonus: 2.0,
+        expandedCenterBonus: 1.5,
+        backRowBonus: 0.0,
+        advancementPerRow: 0.5,
+        endgameAdvancementPerRow: 0.5,
+        mobilityPerMove: 1.5,
+      },
+      scoreAdjuster: (weightedScore, board, color, event) => {
+        const metadata = event.metadata as {
+          removedSquares?: readonly number[];
+          nextRingLevel?: number;
+        } | undefined;
+        if (!metadata?.removedSquares) return weightedScore;
+
+        const removedSet = new Set(metadata.removedSquares);
+        let penalty = 0;
+        for (const sq of getSquaresWithColor(board, color)) {
+          if (removedSet.has(sq as number)) {
+            penalty += 20;
+          } else {
+            const { row, col } = squareToGrid(sq);
+            const distFromEdge = Math.min(row, 7 - row, col, 7 - col);
+            const nextRing = metadata.nextRingLevel ?? 1;
+            if (distFromEdge <= nextRing) {
+              penalty += (nextRing - distFromEdge + 1) * 5;
+            }
+          }
+        }
+        return weightedScore - penalty;
       },
     },
   ],

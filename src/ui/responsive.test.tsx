@@ -63,7 +63,16 @@ describe.each(VIEWPORTS)('Responsive layout at $name ($width×$height)', ({ widt
   });
 
   it('MenuScreen renders without error', () => {
-    render(<MenuScreen onStartGame={vi.fn()} onConfigure={vi.fn()} defaultTimeControl={null} />);
+    render(
+      <MenuScreen
+        onConfigure={vi.fn()}
+        onNavigate={vi.fn()}
+        unlockSnapshot={{ choiceUnlocked: false, classifiedUnlocked: false, chaosUnlocked: false }}
+        newlyUnlocked={{ choice: false, classified: false, chaos: false }}
+        onUnlockAnimationEnd={vi.fn()}
+        chaosUnlocked={false}
+      />,
+    );
     expect(screen.getByText('Crazy Checkers')).toBeTruthy();
   });
 });

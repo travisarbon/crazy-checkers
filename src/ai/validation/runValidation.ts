@@ -2,13 +2,19 @@
  * Full AI validation suite.
  * Run with: npx tsx src/ai/validation/runValidation.ts
  * Or via npm script: npm run validate:ai
+ * Phase 3: npx tsx src/ai/validation/runValidation.ts --phase3
  */
 
 import { runMatch, type MatchResult } from './selfPlay';
+import { runCrazyValidation, formatValidationReport } from './crazyModeValidation';
 
 const MASTER_SEED = 42;
 
 function main(): void {
+  const isPhase3 = process.argv.includes('--phase3');
+  if (isPhase3) {
+    return runPhase3Validation();
+  }
   console.log('=== Crazy Checkers — AI Strength Validation ===\n');
 
   // --- Match 1: Hard vs. Easy (100 games) ---
@@ -83,6 +89,52 @@ function main(): void {
     }
     process.exitCode = 1;
   }
+}
+
+function runPhase3Validation(): void {
+  console.log('=== Crazy Checkers — Phase 3 Full Event Pool Validation ===\n');
+  console.log('[Phase 3] Running full 40-event validation suite...\n');
+
+  const startTime = performance.now();
+  let lastSection = '';
+
+  const report = runCrazyValidation((matchName, gamesCompleted, totalGames) => {
+    const section = matchName.split(':')[0] ?? matchName;
+    if (section !== lastSection) {
+      if (lastSection !== '') process.stdout.write('\n');
+      process.stdout.write(`[${section}] `);
+      lastSection = section;
+    }
+    process.stdout.write('.');
+    if (gamesCompleted === totalGames) process.stdout.write(` ${String(gamesCompleted)}/${String(totalGames)}`);
+  });
+
+  const totalSeconds = (performance.now() - startTime) / 1000;
+  console.log(`\n\nTotal: ${String(report.summary.totalGames)} games in ${totalSeconds.toFixed(0)}s`);
+
+  const overallPass =
+    report.summary.totalErrors === 0 &&
+    report.summary.hardVsEasyWinRate >= 0.70 &&
+    report.summary.tripleStackingErrors === 0 &&
+    report.summary.extraCrazyErrors === 0 &&
+    report.summary.chaosModeErrors === 0 &&
+    report.summary.performancePass;
+
+  console.log(`Overall: ${overallPass ? 'PASS' : 'FAIL'}`);
+
+  if (!overallPass) {
+    if (report.summary.totalErrors > 0) console.log(`  - ${String(report.summary.totalErrors)} error(s)`);
+    if (report.summary.hardVsEasyWinRate < 0.70) console.log(`  - Hard win rate: ${(report.summary.hardVsEasyWinRate * 100).toFixed(1)}%`);
+    if (report.summary.tripleStackingErrors > 0) console.log(`  - ${String(report.summary.tripleStackingErrors)} triple stacking error(s)`);
+    if (report.summary.extraCrazyErrors > 0) console.log(`  - ${String(report.summary.extraCrazyErrors)} Extra Crazy error(s)`);
+    if (report.summary.chaosModeErrors > 0) console.log(`  - ${String(report.summary.chaosModeErrors)} Chaos mode error(s)`);
+    if (!report.summary.performancePass) console.log('  - Performance benchmark FAILED');
+    process.exitCode = 1;
+  }
+
+  // Output the formatted report
+  const formattedReport = formatValidationReport(report);
+  console.log('\n' + formattedReport);
 }
 
 function printMatchReport(label: string, result: MatchResult, winRateTarget: number | null): void {

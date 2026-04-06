@@ -43,7 +43,7 @@ export const EVENT_DURATIONS: Readonly<Record<CrazyEvent, number>> = {
   [CrazyEvent.NoTouching]: 2, // 1 round = 2 plies
   // Phases 3–4 (Events 8–40)
   [CrazyEvent.StepBack]: 4, // 2 rounds
-  [CrazyEvent.FlippedScript]: 0, // Instant, permanent transformation
+  [CrazyEvent.FlippedScript]: -1, // Permanent (applied guard in decorator)
   [CrazyEvent.MarchingOrders]: -1, // Permanent
   [CrazyEvent.DealersChoice]: -1, // Condition-based (both skips used)
   [CrazyEvent.Bodyguard]: 4, // 2 rounds
@@ -233,6 +233,32 @@ export abstract class EventDecorator implements RuleSet {
   }
 
   /**
+   * Pending suppress-turn-switch flag accumulated during hook execution.
+   * When true, game.ts will not alternate the active color or tick event
+   * durations after this turn. Used by Double Time for two-moves-per-turn.
+   */
+  private _suppressTurnSwitch = false;
+
+  /**
+   * Called by subclasses to suppress the normal turn switch after the
+   * current move. Also suppresses event ply tick so the double-move
+   * counts as a single ply for duration purposes.
+   */
+  protected requestSuppressTurnSwitch(): void {
+    this._suppressTurnSwitch = true;
+  }
+
+  /**
+   * Returns and clears the pending suppress-turn-switch flag.
+   * Called by CompositeEventRuleSet to drain the flag from active decorators.
+   */
+  drainSuppressTurnSwitch(): boolean {
+    const val = this._suppressTurnSwitch;
+    this._suppressTurnSwitch = false;
+    return val;
+  }
+
+  /**
    * Pending metadata update requests accumulated during hook execution.
    * Collected by CompositeEventRuleSet after hook chains complete.
    */
@@ -314,6 +340,19 @@ export abstract class EventDecorator implements RuleSet {
         if (e.type !== this.getEventType()) return true;
         return e.remainingPlies !== 0;
       });
+  }
+
+  /**
+   * Walks the inner chain to find the root (non-decorator) RuleSet.
+   * Used by decorators like ChecksMix that need base-rules validation
+   * without interference from other active event decorators.
+   */
+  protected getBaseRuleSet(): RuleSet {
+    let current: RuleSet = this.inner;
+    while (current instanceof EventDecorator) {
+      current = current.inner;
+    }
+    return current;
   }
 
   // --- RuleSet delegation ---
@@ -453,6 +492,30 @@ export const IMPLEMENTED_EVENTS: readonly CrazyEvent[] = [
   CrazyEvent.RushHour,
   // Phase 3 — Task 15.3 (Double Trouble meta-event)
   CrazyEvent.DoubleTrouble,
+  // Phase 3 — Task 16.1 (Tier 2 Batch 1)
+  CrazyEvent.Conscription,
+  CrazyEvent.GhostWalk,
+  CrazyEvent.Landmine,
+  CrazyEvent.Leapfrog,
+  CrazyEvent.DoubleTime,
+  CrazyEvent.ChainReaction,
+  // Phase 3 — Task 16.2 (Tier 2 Batch 2)
+  CrazyEvent.Reinforcements,
+  CrazyEvent.Wormhole,
+  CrazyEvent.TimeBomb,
+  CrazyEvent.Ricochet,
+  CrazyEvent.CrownThief,
+  CrazyEvent.Stampede,
+  CrazyEvent.TollRoad,
+  CrazyEvent.SwapMeet,
+  // Phase 3 — Task 16.3 (Tier 2 Batch 3)
+  CrazyEvent.Backfire,
+  CrazyEvent.Sacrifice,
+  // Phase 3 — Task 16.4 (Tier 3)
+  CrazyEvent.FlippedScript,
+  CrazyEvent.MarchingOrders,
+  CrazyEvent.Haunted,
+  CrazyEvent.ShrinkingBoard,
 ];
 
 /**
