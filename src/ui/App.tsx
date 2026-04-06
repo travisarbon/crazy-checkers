@@ -32,7 +32,6 @@ import CogitateScreen from './CogitateScreen';
 import CareerScreen from './CareerScreen';
 import CodeScreen from './CodeScreen';
 import ModeScreenShell from './ModeScreenShell';
-import ResumeGameDialog from './dialogs/ResumeGameDialog';
 import { useUnlockState } from './hooks/useUnlockState';
 
 // ---------------------------------------------------------------------------
@@ -277,33 +276,19 @@ export default function App() {
     }
   }, [pendingResume]);
 
-  const handleDiscard = useCallback(() => {
-    clearSavedGame();
-    setPendingResume(null);
-  }, []);
-
   // Render
   let content: React.ReactNode;
   switch (screen.kind) {
     case 'menu':
       content = (
-        <>
-          <MenuScreen
-            onConfigure={navigateToConfig}
-            onNavigate={(kind) => { navigateToScreen(buildScreenFromKind(kind as ScreenKind)); }}
-            unlockSnapshot={unlockSnapshot}
-            newlyUnlocked={newlyUnlocked}
-            onUnlockAnimationEnd={markSeen}
-            chaosUnlocked={unlockSnapshot.chaosUnlocked}
-          />
-          {pendingResume !== null && (
-            <ResumeGameDialog
-              savedGame={pendingResume}
-              onResume={handleResume}
-              onDiscard={handleDiscard}
-            />
-          )}
-        </>
+        <MenuScreen
+          onConfigure={navigateToConfig}
+          onNavigate={(kind) => { navigateToScreen(buildScreenFromKind(kind as ScreenKind)); }}
+          unlockSnapshot={unlockSnapshot}
+          newlyUnlocked={newlyUnlocked}
+          onUnlockAnimationEnd={markSeen}
+          chaosUnlocked={unlockSnapshot.chaosUnlocked}
+        />
       );
       break;
 
