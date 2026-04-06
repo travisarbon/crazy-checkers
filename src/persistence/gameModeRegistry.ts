@@ -11,7 +11,6 @@
 
 import type { CrazyEvent } from '../engine/types';
 import type { GameRecord } from './gameHistory';
-import type { SerializedActiveEvent } from './serialization';
 import { CHOICE_MODE_DATA } from './choiceModeData';
 import type { TrackId } from './choiceModeData';
 import { CLASSIFIED_PLACEHOLDER_DATA } from './classifiedPlaceholderData';
