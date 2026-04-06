@@ -284,7 +284,9 @@ export function extractPermanentEvent(record: GameRecord): CrazyEvent | null {
   }
   const initialEvents = record.activeEventsPerPly[0];
   if (!initialEvents || initialEvents.length === 0) return null;
-  return initialEvents[0].type as CrazyEvent;
+  const firstEvent = initialEvents[0];
+  if (!firstEvent) return null;
+  return firstEvent.type as CrazyEvent;
 }
 
 /** Map a GameRecord to its corresponding registry entry. */
