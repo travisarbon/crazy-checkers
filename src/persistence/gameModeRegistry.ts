@@ -283,8 +283,8 @@ export function extractPermanentEvent(record: GameRecord): CrazyEvent | null {
   if (!record.activeEventsPerPly || record.activeEventsPerPly.length === 0) {
     return null;
   }
-  const initialEvents: SerializedActiveEvent[] = record.activeEventsPerPly[0];
-  if (initialEvents.length === 0) return null;
+  const initialEvents = record.activeEventsPerPly[0];
+  if (!initialEvents || initialEvents.length === 0) return null;
   return initialEvents[0].type as CrazyEvent;
 }
 

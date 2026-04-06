@@ -369,6 +369,10 @@ describe('report formatting', () => {
       hardVsHard: emptyMatchResult,
       perEvent: {},
       pairwise: {},
+      tripleStacking: {},
+      extraCrazy: null,
+      chaosMode: null,
+      performanceBenchmark: null,
       summary: {
         totalGames: 0,
         totalErrors: 0,
@@ -376,6 +380,11 @@ describe('report formatting', () => {
         hardVsEasyWinRate: 0,
         allEventsTriggered: false,
         degenerateStatesFound: [],
+        pairwiseCoverage: 0,
+        tripleStackingErrors: 0,
+        extraCrazyErrors: 0,
+        chaosModeErrors: 0,
+        performancePass: true,
       },
     };
 

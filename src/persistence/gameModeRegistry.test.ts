@@ -112,16 +112,16 @@ describe('Category Queries', () => {
 
   it('Choice modes sorted by choiceNumber', () => {
     const choices = getModesByCategory('choice');
-    for (let i = 0; i < choices.length; i++) {
-      expect(choices[i].choiceNumber).toBe(i + 1);
-    }
+    choices.forEach((entry, i) => {
+      expect(entry.choiceNumber).toBe(i + 1);
+    });
   });
 
   it('Classified modes sorted by classifiedIndex', () => {
     const classified = getModesByCategory('classified');
-    for (let i = 0; i < classified.length; i++) {
-      expect(classified[i].classifiedIndex).toBe(i + 1);
-    }
+    classified.forEach((entry, i) => {
+      expect(entry.classifiedIndex).toBe(i + 1);
+    });
   });
 });
 
@@ -150,7 +150,11 @@ describe('Wave Queries', () => {
     for (let w = 1; w <= 8; w++) {
       const entries = getClassifiedByWave(w);
       for (let i = 1; i < entries.length; i++) {
-        expect(entries[i].classifiedIndex).toBeGreaterThan(entries[i - 1].classifiedIndex ?? 0);
+        const prev = entries[i - 1];
+        const curr = entries[i];
+        if (prev && curr) {
+          expect(curr.classifiedIndex).toBeGreaterThan(prev.classifiedIndex ?? 0);
+        }
       }
     }
   });
@@ -346,8 +350,9 @@ describe('Extensibility', () => {
 
   it('all entries are frozen (immutable)', () => {
     const entry = getMode('classic');
+    expect(entry).toBeDefined();
     expect(() => {
-      (entry as Record<string, unknown>).displayName = 'Modified';
+      (entry as unknown as Record<string, unknown>).displayName = 'Modified';
     }).toThrow();
   });
 
@@ -355,9 +360,9 @@ describe('Extensibility', () => {
     const first = getAllModes();
     const second = getAllModes();
     expect(first.length).toBe(second.length);
-    for (let i = 0; i < first.length; i++) {
-      expect(first[i].id).toBe(second[i].id);
-    }
+    first.forEach((entry, i) => {
+      expect(entry.id).toBe(second[i]?.id);
+    });
   });
 });
 

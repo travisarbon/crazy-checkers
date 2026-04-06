@@ -4,10 +4,10 @@ import ClassicScreen from './ClassicScreen';
 import { GameMode } from '../engine/types';
 
 function renderClassic(overrides?: Partial<{
-  onBack: ReturnType<typeof vi.fn>;
-  onStartGame: ReturnType<typeof vi.fn>;
+  onBack: () => void;
+  onStartGame: (...args: unknown[]) => void;
   savedGameExists: boolean;
-  onResumeSavedGame: ReturnType<typeof vi.fn>;
+  onResumeSavedGame: () => void;
 }>) {
   const onBack = overrides?.onBack ?? vi.fn();
   const onStartGame = overrides?.onStartGame ?? vi.fn();

@@ -205,7 +205,7 @@ export function playSingleGame(
   mode: GameMode = GameMode.Classic,
   forceEvent?: CrazyEvent,
   forceEventSequence?: CrazyEvent[],
-  extraCrazyMode?: boolean,
+  _extraCrazyMode?: boolean,
   trackMoveTimings?: boolean,
 ): GameRecord {
   const ruleSet = createAmericanRules();

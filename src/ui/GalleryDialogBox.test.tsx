@@ -5,10 +5,10 @@ import GalleryDialogBox from './GalleryDialogBox';
 function renderDialog(overrides?: Partial<{
   title: string;
   description: string;
-  onPlay: ReturnType<typeof vi.fn>;
-  onClose: ReturnType<typeof vi.fn>;
-  onNext: ReturnType<typeof vi.fn>;
-  onPrevious: ReturnType<typeof vi.fn>;
+  onPlay: () => void;
+  onClose: () => void;
+  onNext: () => void;
+  onPrevious: () => void;
 }>) {
   const onPlay = overrides?.onPlay ?? vi.fn();
   const onClose = overrides?.onClose ?? vi.fn();

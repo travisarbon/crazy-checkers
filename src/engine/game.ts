@@ -251,7 +251,7 @@ export function makeMove(state: GameState, move: Move): GameState {
     state.ruleSet.onTurnEnd ??
     state.ruleSet.onCapture
   );
-  if (!hasHooks && landingPiece !== null) {
+  if (!hasHooks && movingPiece !== null && landingPiece !== null) {
     newHash = updateZobristHash(
       state.positionHashes[state.positionHashes.length - 1] ?? 0n,
       move,

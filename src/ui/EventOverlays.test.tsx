@@ -31,6 +31,18 @@ const EMPTY_STATE: EventOverlayState = {
   forcedMarchSquare: null,
   royalDecreeActive: false,
   sentryPinLines: [],
+  ghostWalkActive: false,
+  landmineSquares: new Set(),
+  doubleTimeActive: false,
+  wormholePortals: [],
+  timeBombState: null,
+  backfireActive: false,
+  flippedScriptActive: false,
+  marchingOrdersActive: false,
+  marchingOrdersGrid: null,
+  hauntedGhosts: [],
+  shrinkingBoardRemovedSquares: new Set(),
+  shrinkingBoardRingLevel: 0,
 };
 
 function renderOverlays(overlayState: Partial<EventOverlayState> = {}) {

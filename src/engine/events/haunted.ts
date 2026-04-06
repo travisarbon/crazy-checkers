@@ -130,7 +130,6 @@ export class HauntedDecorator extends EventDecorator {
 
     // Clear transient state
     this._pendingGhosts = [];
-    this._pendingGhostCountDelta = 0;
 
     // Decrement ghost timers and remove expired ghosts
     const updatedGhosts = mergedGhosts

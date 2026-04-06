@@ -5,9 +5,9 @@ import { GameMode, PlayerType } from '../engine/types';
 
 function renderSetup(overrides?: Partial<{
   mode: typeof GameMode[keyof typeof GameMode];
-  onStartGame: ReturnType<typeof vi.fn>;
+  onStartGame: (...args: unknown[]) => void;
   savedGameExists: boolean;
-  onResumeSavedGame: ReturnType<typeof vi.fn>;
+  onResumeSavedGame: () => void;
 }>) {
   const onStartGame = overrides?.onStartGame ?? vi.fn();
   const onResumeSavedGame = overrides?.onResumeSavedGame ?? vi.fn();

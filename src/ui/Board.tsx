@@ -274,11 +274,10 @@ function Board({
                     />
                     {moPiece !== null && moPiece !== undefined && (
                       <PieceComponent
-                        color={moPiece.color}
-                        type={moPiece.type}
+                        piece={moPiece}
+                        sq={moExtSq as Square}
                         cx={x + SQUARE_SIZE / 2}
                         cy={y + SQUARE_SIZE / 2}
-                        shadow={pieceShadow}
                       />
                     )}
                     {moIsLegalDest && moPiece === null && (
