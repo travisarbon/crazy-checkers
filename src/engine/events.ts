@@ -47,7 +47,7 @@ export const EVENT_DURATIONS: Readonly<Record<CrazyEvent, number>> = {
   [CrazyEvent.MarchingOrders]: -1, // Permanent
   [CrazyEvent.DealersChoice]: -1, // Condition-based (both skips used)
   [CrazyEvent.Bodyguard]: 4, // 2 rounds
-  [CrazyEvent.Quicksand]: 4, // 2 rounds
+  [CrazyEvent.Quicksand]: 16, // 8 rounds
   [CrazyEvent.Conscription]: 4, // 2 rounds
   [CrazyEvent.GhostWalk]: 2, // 1 round
   [CrazyEvent.Landmine]: 4, // 2 rounds

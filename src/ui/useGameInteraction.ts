@@ -7,11 +7,15 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import type { ActiveEvent, BoardState, GameState, Move, Square, SquareState } from '../engine/types';
+import type { ActiveEvent, BoardState, GameState, Move, Piece, Square, SquareState } from '../engine/types';
 import { CrazyEvent, GameStatus } from '../engine/types';
 import { getBoardSquare } from '../engine/board';
+import { extSquareToGrid } from '../engine/events/marchingOrders';
+import type { MarchingOrdersMetadata } from '../engine/events/marchingOrders';
 import { getMovesToSquare, getJumpsForPiece } from '../engine/moves';
 import { getFlyingJumps } from '../engine/flyingMoves';
+import { getBackfireJumpsForPiece } from '../engine/events/backfire';
+import { getBoardSquare as getBoardSq } from '../engine/board';
 import { makeMove, getCurrentLegalMoves, getEffectiveBoard } from '../engine/game';
 
 // ---------------------------------------------------------------------------
@@ -84,6 +88,32 @@ export interface UseGameInteractionResult {
 // ---------------------------------------------------------------------------
 
 /**
+ * Look up a piece at any square, including Marching Orders light squares (33-64).
+ * Falls back to the 32-square board for dark squares (1-32).
+ */
+function getPieceAtSquare(
+  board: BoardState,
+  sq: Square,
+  activeEvents: readonly ActiveEvent[],
+): Piece | null {
+  const sqNum = sq as number;
+  if (sqNum <= 32) return getBoardSquare(board, sq);
+
+  // Light square — check Marching Orders metadata
+  for (let i = activeEvents.length - 1; i >= 0; i--) {
+    const event = activeEvents[i];
+    if (event?.type === CrazyEvent.MarchingOrders && event.metadata) {
+      const meta = event.metadata as unknown as MarchingOrdersMetadata;
+      const { row, col } = extSquareToGrid(sqNum);
+      const gridPiece = meta.orthogonalGrid[row * 8 + col];
+      if (gridPiece) return { color: gridPiece.color, type: gridPiece.type };
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
  * Create a temporary board showing the piece at `to`, with `from` vacated
  * and the captured piece removed. Used for rendering and for computing
  * continuation jumps during a multi-jump chain.
@@ -104,7 +134,8 @@ function applyPartialHop(
 
 /**
  * Returns continuation jumps for a piece during a multi-jump chain.
- * Uses flying jump logic when Up in the Air is active, standard otherwise.
+ * Uses flying jump logic when Up in the Air is active, Backfire-aware
+ * logic when Backfire is active (to allow friendly captures), standard otherwise.
  */
 function getContinuationJumps(
   board: BoardState,
@@ -115,6 +146,16 @@ function getContinuationJumps(
   if (upInTheAir) {
     return getFlyingJumps(board, sq);
   }
+
+  const backfireActive = activeEvents.some(e => e.type === CrazyEvent.Backfire);
+  if (backfireActive) {
+    const piece = getBoardSq(board, sq);
+    if (piece !== null) {
+      const stepBackActive = activeEvents.some(e => e.type === CrazyEvent.StepBack);
+      return getBackfireJumpsForPiece(board, sq, piece.color, piece.type, stepBackActive);
+    }
+  }
+
   return getJumpsForPiece(board, sq);
 }
 
@@ -358,7 +399,8 @@ export function useGameInteraction({
       }
 
       // Clicking a piece of the active color — select it (or switch selection)
-      const piece = getBoardSquare(effectiveBoard, sq);
+      // Use getPieceAtSquare to handle Marching Orders light squares (33-64)
+      const piece = getPieceAtSquare(effectiveBoard, sq, gameState.activeEvents);
       if (piece !== null && piece.color === gameState.activeColor) {
         if (selectablePieces.has(sq as number)) {
           setSelectedSquare(sq);

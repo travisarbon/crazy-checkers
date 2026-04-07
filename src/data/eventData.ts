@@ -157,7 +157,7 @@ export const EVENT_DATA: readonly EventDataEntry[] = [
   ),
   // Event 13 — Quicksand
   entry(13, CrazyEvent.Quicksand, 1,
-    'Edge squares become sticky for 2 rounds. Pieces that land on edge squares during the event become stuck and cannot move until the event expires. Pieces already on edges when the event fires are exempt.',
+    'Edge squares become sticky for 8 rounds. Pieces that land on edge squares during the event become stuck and cannot move until the event expires. Pieces already on edges when the event fires are exempt.',
     'Tar Pit',
     'Edge squares are permanently sticky. Any piece landing on an edge is permanently immobilized.',
     ['Exempt pieces already on edges can leave freely', 'Works independently of most other events'],
@@ -349,7 +349,7 @@ export const EVENT_DATA: readonly EventDataEntry[] = [
     'Meta-event: when drawn, re-rolls twice and activates 2 different events simultaneously. Double Trouble itself is never added to the active events list. It cannot trigger itself on re-rolls.',
     'Extra Crazy',
     'In Chaos mode, Double Trouble fires on every capture. Every single jump triggers two random events, creating exponential chaos.',
-    ['Cannot trigger itself on re-rolls', 'Handled by selection logic — no decorator needed'],
+    ['Cannot trigger itself on re-rolls', 'Never appears as an active event — resolves instantly into two other events'],
   ),
 ];
 

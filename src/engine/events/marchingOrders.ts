@@ -17,8 +17,8 @@
  * Duration: -1 (permanent). Overrides getLegalMoves, applyMove, shouldPromote.
  */
 
-import type { BoardState, Move, Piece, RuleSet, Square, SquareState } from '../types';
-import { CrazyEvent, PieceColor, PieceType } from '../types';
+import type { BoardState, GameResult, Move, Piece, RuleSet, Square, SquareState } from '../types';
+import { CrazyEvent, GameEndReason, GameResultType, PieceColor, PieceType } from '../types';
 import { BOARD_SIZE, squareToGrid, gridToSquare } from '../board';
 import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } from '../events';
 
@@ -83,10 +83,13 @@ const ORTHO_RIGHT: OrthoDelta = { dRow: 0, dCol: 1 };
 
 const ALL_ORTHO: readonly OrthoDelta[] = [ORTHO_UP, ORTHO_DOWN, ORTHO_LEFT, ORTHO_RIGHT];
 
-/** Simple-move directions. Pawns: forward only. Kings: all 4. */
+/** Simple-move directions. Pawns: forward + sideways. Kings: all 4. */
 function getOrthoSimpleDirs(piece: SerializedPiece): readonly OrthoDelta[] {
   if (piece.type === PieceType.King) return ALL_ORTHO;
-  return piece.color === PieceColor.White ? [ORTHO_UP] : [ORTHO_DOWN];
+  if (piece.color === PieceColor.White) {
+    return [ORTHO_UP, ORTHO_LEFT, ORTHO_RIGHT];
+  }
+  return [ORTHO_DOWN, ORTHO_LEFT, ORTHO_RIGHT];
 }
 
 /** Capture directions. Pawns: forward + sideways. Kings: all 4. */
@@ -306,6 +309,30 @@ export class MarchingOrdersDecorator extends EventDecorator {
 
     // Project grid back to 32-square BoardState
     return projectGridToBoard(grid);
+  }
+
+  override checkGameOver(board: BoardState, activeColor: PieceColor): GameResult | null {
+    if (!this.isActive(this.activeEventsContext)) {
+      return this.inner.checkGameOver(board, activeColor);
+    }
+
+    const legalMoves = this.getLegalMoves(board, activeColor);
+    if (legalMoves.length > 0) return null;
+
+    // Count pieces from the 64-square grid, not the 32-square projection
+    const metadata = this.getMarchingOrdersMetadata();
+    let pieceCount = 0;
+    if (metadata) {
+      for (const cell of metadata.orthogonalGrid) {
+        if (cell !== null && cell.color === activeColor) {
+          pieceCount++;
+        }
+      }
+    }
+
+    const reason = pieceCount === 0 ? GameEndReason.NoPiecesLeft : GameEndReason.NoLegalMoves;
+    const type = activeColor === PieceColor.White ? GameResultType.BlackWin : GameResultType.WhiteWin;
+    return { type, reason };
   }
 
   override shouldPromote(piece: Piece, sq: Square): boolean {

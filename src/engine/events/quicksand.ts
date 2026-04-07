@@ -1,7 +1,7 @@
 /**
  * Quicksand — production event decorator (Event 13).
  *
- * Pieces on edge squares cannot move for 2 rounds (4 plies).
+ * Pieces on edge squares cannot move for 8 rounds (16 plies).
  * Pieces that were already on edge squares when the event triggered
  * are exempt — but lose their exemption if they move off their square.
  *
