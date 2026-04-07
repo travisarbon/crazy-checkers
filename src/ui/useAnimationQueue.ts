@@ -9,6 +9,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { BoardState, Move, Square } from '../engine/types';
 import { PieceColor, PieceType } from '../engine/types';
 import { getBoardSquare, squareToGrid } from '../engine/board';
+import { extSquareToGrid } from '../engine/events/marchingOrders';
 
 // ---------------------------------------------------------------------------
 // Animation step types
@@ -197,9 +198,12 @@ const SQUARE_SIZE = 100;
 
 /**
  * Converts an engine Square to SVG viewBox center coordinates.
+ * Handles both standard dark squares (1-32) and Marching Orders
+ * extended light squares (33-64).
  */
 export function squareCenterCoords(sq: Square, flipped: boolean): { cx: number; cy: number } {
-  const { row, col } = squareToGrid(sq);
+  const sqNum = sq as number;
+  const { row, col } = sqNum > 32 ? extSquareToGrid(sqNum) : squareToGrid(sq);
   const renderRow = flipped ? 7 - row : row;
   return {
     cx: col * SQUARE_SIZE + SQUARE_SIZE / 2,
