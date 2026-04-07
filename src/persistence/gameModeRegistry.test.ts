@@ -40,16 +40,19 @@ function makeRecord(overrides: Partial<GameRecord>): GameRecord {
 // ---------------------------------------------------------------------------
 
 describe('Registry Completeness', () => {
-  it('registers all 105 modes', () => {
-    expect(getAllModes()).toHaveLength(105);
+  it('registers all 108 modes', () => {
+    expect(getAllModes()).toHaveLength(108);
   });
 
-  it('registers 5 core modes', () => {
+  it('registers 8 core modes', () => {
     expect(getMode('classic')).toBeDefined();
     expect(getMode('crazy')).toBeDefined();
     expect(getMode('chaos')).toBeDefined();
     expect(getMode('challenge')).toBeDefined();
     expect(getMode('free-play')).toBeDefined();
+    expect(getMode('cogitate')).toBeDefined();
+    expect(getMode('career')).toBeDefined();
+    expect(getMode('code')).toBeDefined();
   });
 
   it('registers all 40 Choice modes', () => {
@@ -101,8 +104,8 @@ describe('Lookup Functions', () => {
 
 describe('Category Queries', () => {
   it('getModesByCategory returns correct count per category', () => {
-    // classic category includes Classic + Free Play
-    expect(getModesByCategory('classic')).toHaveLength(2);
+    // classic category includes Classic + Free Play + Cogitate + Career + Code
+    expect(getModesByCategory('classic')).toHaveLength(5);
     expect(getModesByCategory('crazy')).toHaveLength(1);
     expect(getModesByCategory('chaos')).toHaveLength(1);
     expect(getModesByCategory('choice')).toHaveLength(40);

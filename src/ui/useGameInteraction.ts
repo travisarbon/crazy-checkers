@@ -356,6 +356,21 @@ export function useGameInteraction({
           const captured = findCapturedForHop(selectedSquare, sq, legalMoves);
           if (captured === null) return;
 
+          // Marching Orders: the 32-square board can't represent intermediate
+          // light-square positions, so execute multi-jump moves atomically.
+          const marchingOrdersActive = gameState.activeEvents.some(
+            e => e.type === CrazyEvent.MarchingOrders,
+          );
+          if (marchingOrdersActive) {
+            const fullMove = movesForDest.find(m => m.captured.length > 0);
+            if (fullMove) {
+              clearSelection();
+              const newState = makeMove(gameState, fullMove);
+              onMove(newState);
+            }
+            return;
+          }
+
           const applyFirstHop = () => {
             const newBoard = applyPartialHop(effectiveBoard, selectedSquare, sq, captured);
             const continuations = getContinuationJumps(newBoard, sq, gameState.activeEvents);

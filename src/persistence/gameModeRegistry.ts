@@ -112,6 +112,7 @@ function buildRegistry(): Map<string, ModeRegistryEntry> {
       choiceDescription: null, choiceNumber: null,
       classifiedIndex: null, boardGeometry: null, implemented: true,
     },
+    // Free Play: practice mode vs CPU with no career tracking
     {
       id: 'free-play', displayName: 'Free Play', category: 'classic',
       wave: null, family: null, tracksContribution: [],
@@ -119,6 +120,31 @@ function buildRegistry(): Map<string, ModeRegistryEntry> {
       engineMode: 'CLASSIC', permanentEvent: null,
       choiceDescription: null, choiceNumber: null,
       classifiedIndex: null, boardGeometry: null, implemented: true,
+    },
+    // Deferred modes — stubs for Tasks 20–22
+    {
+      id: 'cogitate', displayName: 'Cogitate', category: 'classic',
+      wave: null, family: null, tracksContribution: [],
+      excludeFromCareer: true, unlockRequirement: null,
+      engineMode: '', permanentEvent: null,
+      choiceDescription: null, choiceNumber: null,
+      classifiedIndex: null, boardGeometry: null, implemented: false,
+    },
+    {
+      id: 'career', displayName: 'Career', category: 'classic',
+      wave: null, family: null, tracksContribution: [],
+      excludeFromCareer: true, unlockRequirement: null,
+      engineMode: '', permanentEvent: null,
+      choiceDescription: null, choiceNumber: null,
+      classifiedIndex: null, boardGeometry: null, implemented: false,
+    },
+    {
+      id: 'code', displayName: 'Code', category: 'classic',
+      wave: null, family: null, tracksContribution: [],
+      excludeFromCareer: true, unlockRequirement: null,
+      engineMode: '', permanentEvent: null,
+      choiceDescription: null, choiceNumber: null,
+      classifiedIndex: null, boardGeometry: null, implemented: false,
     },
   ];
 
@@ -261,7 +287,7 @@ export function getImplementedModes(): readonly ModeRegistryEntry[] {
 
 /** Return all entries in stable order: core, Choice by number, Classified by index. */
 export function getAllModes(): readonly ModeRegistryEntry[] {
-  const coreOrder = ['classic', 'crazy', 'chaos', 'challenge', 'free-play'];
+  const coreOrder = ['classic', 'crazy', 'chaos', 'challenge', 'free-play', 'cogitate', 'career', 'code'];
   const core: ModeRegistryEntry[] = [];
   for (const id of coreOrder) {
     const entry = registry.get(id);

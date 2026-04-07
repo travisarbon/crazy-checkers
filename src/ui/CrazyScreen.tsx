@@ -75,7 +75,7 @@ export default function CrazyScreen({
 
       {/* Section 5: Event Reference */}
       <ExpandableDetailPanel
-        title="Event Reference \u2014 All 40 Crazy Events"
+        title="Event Reference — All 40 Crazy Events"
         summary="Complete reference for every event: mechanics, durations, and interactions"
       >
         <EventReferencePanel />
