@@ -21,6 +21,7 @@ import {
   GameStatus,
   PieceColor,
   PlayerType,
+  square,
 } from '../types';
 import type {
   ActiveEvent,
@@ -169,7 +170,7 @@ describe('QuicksandDecorator', () => {
     // No moves from edge sq 21
     expect(moves.every(m => (m.from as number) !== 21)).toBe(true);
     // Moves from center sq 14 should exist
-    expect(moves.some(m => (m.from as number) === 14)).toBe(true);
+    expect(moves.some(m => m.from === square(14))).toBe(true);
   });
 
   it('piece on exempt edge square can move', () => {
@@ -182,7 +183,7 @@ describe('QuicksandDecorator', () => {
     const state = crazyStateWithBoard(board, W, [event]);
     const moves = getCurrentLegalMoves(state);
 
-    expect(moves.some(m => (m.from as number) === 21)).toBe(true);
+    expect(moves.some(m => m.from === square(21))).toBe(true);
   });
 
   it('center pieces can always move', () => {
@@ -194,7 +195,7 @@ describe('QuicksandDecorator', () => {
     const state = crazyStateWithBoard(board, W, [event]);
     const moves = getCurrentLegalMoves(state);
 
-    expect(moves.some(m => (m.from as number) === 14)).toBe(true);
+    expect(moves.some(m => m.from === square(14))).toBe(true);
   });
 
   it('exempt piece loses exemption after moving (via metadata update)', () => {
@@ -207,7 +208,7 @@ describe('QuicksandDecorator', () => {
     let state = crazyStateWithBoard(board, W, [event]);
 
     // White moves from 21 (exempt edge) to center
-    const whiteMove = getCurrentLegalMoves(state).find(m => (m.from as number) === 21);
+    const whiteMove = getCurrentLegalMoves(state).find(m => m.from === square(21));
     expect(whiteMove).toBeDefined();
     if (whiteMove === undefined) throw new Error('no move from 21');
     state = makeMove(state, whiteMove);
@@ -220,21 +221,22 @@ describe('QuicksandDecorator', () => {
     }
   });
 
-  it('event expires after 2 rounds (4 plies)', () => {
-    // Duration-based: 4 plies = 2 rounds. Verify tick mechanism.
-    // Use the event directly from createActiveEvent and check remainingPlies.
+  it('event expires after 8 rounds (16 plies)', () => {
+    // Duration-based: 16 plies = 8 rounds. Verify tick mechanism.
     const event = createActiveEvent(CrazyEvent.Quicksand, W, 0, { exemptSquares: [] });
-    expect(event.remainingPlies).toBe(4);
+    expect(event.remainingPlies).toBe(16);
 
     // Verify it ticks down correctly via tickAllEvents
     let events: readonly ActiveEvent[] = [event];
-    events = tickAllEvents(events); // ply 1: 3 remaining
-    expect(events[0]?.remainingPlies).toBe(3);
-    events = tickAllEvents(events); // ply 2: 2 remaining
-    expect(events[0]?.remainingPlies).toBe(2);
-    events = tickAllEvents(events); // ply 3: 1 remaining
+    events = tickAllEvents(events);
+    expect(events[0]?.remainingPlies).toBe(15);
+
+    // Tick remaining 15 times
+    for (let i = 0; i < 14; i++) {
+      events = tickAllEvents(events);
+    }
     expect(events[0]?.remainingPlies).toBe(1);
-    events = tickAllEvents(events); // ply 4: 0 remaining → removed
+    events = tickAllEvents(events); // ply 16: 0 remaining → removed
     expect(events).toHaveLength(0);
   });
 

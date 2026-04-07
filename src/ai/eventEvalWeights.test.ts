@@ -389,8 +389,8 @@ describe('Registry completeness', () => {
     });
   }
 
-  it('registry has exactly 19 entries (7 Phase 2 + 6 Task 15.1 + 6 Task 15.2 events)', () => {
-    expect(EVENT_EVAL_WEIGHTS_REGISTRY.size).toBe(19);
+  it('registry has exactly 39 entries (7 Phase 2 + 12 Task 15 + 20 Task 16 events)', () => {
+    expect(EVENT_EVAL_WEIGHTS_REGISTRY.size).toBe(39);
   });
 });
 

@@ -53,18 +53,17 @@ const metaSet = new Set<CrazyEvent>(META_EVENTS);
 // ===========================================================================
 
 describe('IMPLEMENTED_EVENTS pool', () => {
-  it('contains exactly 20 entries', () => {
-    expect(IMPLEMENTED_EVENTS).toHaveLength(20);
+  it('contains exactly 40 entries', () => {
+    expect(IMPLEMENTED_EVENTS).toHaveLength(40);
   });
 
-  it('last entry is DoubleTrouble', () => {
-    expect(IMPLEMENTED_EVENTS[IMPLEMENTED_EVENTS.length - 1]).toBe(CrazyEvent.DoubleTrouble);
+  it('DoubleTrouble is in IMPLEMENTED_EVENTS', () => {
+    expect(IMPLEMENTED_EVENTS).toContain(CrazyEvent.DoubleTrouble);
   });
 
-  it('first 19 entries are regular (non-meta) events', () => {
-    for (let i = 0; i < 19; i++) {
-      const event = IMPLEMENTED_EVENTS[i];
-      expect(event).toBeDefined();
+  it('all entries except DoubleTrouble are regular (non-meta) events', () => {
+    for (const event of IMPLEMENTED_EVENTS) {
+      if (event === CrazyEvent.DoubleTrouble) continue;
       expect(metaSet.has(event as CrazyEvent)).toBe(false);
     }
   });
@@ -125,9 +124,9 @@ describe('selectDoubleTroubleEvents', () => {
 
 describe('selectRandomEvent (DoubleTrouble live)', () => {
   it('returns 2 events when DoubleTrouble is drawn', () => {
-    // DoubleTrouble is at index 19 of 20 events
-    // randomFn returning 19/20 = 0.95 → floor(0.95*20) = 19 = DoubleTrouble
-    const events = selectRandomEvent(() => 0.95);
+    // DoubleTrouble is at index 19 of 40 events
+    // randomFn returning 19/40 = 0.475 → floor(0.475*40) = 19 = DoubleTrouble
+    const events = selectRandomEvent(() => 0.475);
     expect(events).toHaveLength(2);
     expect(events[0]).not.toBe(events[1]);
   });

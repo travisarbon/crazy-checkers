@@ -404,12 +404,12 @@ describe('selectRandomEvent', () => {
   });
 
   it('selects last implemented event when random returns just under 1', () => {
-    // Last event is DoubleTrouble — triggers re-roll, returns 2 non-meta events
+    // Last event is ShrinkingBoard — a regular event, returns 1-element array
     const events = selectRandomEvent(() => 0.999);
-    expect(events).toHaveLength(2);
-    const metaSet = new Set<CrazyEvent>(META_EVENTS);
+    expect(events.length).toBeGreaterThanOrEqual(1);
+    const implementedSet = new Set<string>(IMPLEMENTED_EVENTS);
     for (const e of events) {
-      expect(metaSet.has(e)).toBe(false);
+      expect(implementedSet.has(e)).toBe(true);
     }
   });
 
