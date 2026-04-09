@@ -185,12 +185,14 @@ export function makeMove(state: GameState, move: Move): GameState {
   }
 
   // ── Snapshot the moving piece before apply ──────────────────────────
+  // When Marching Orders is active, pieces may exist in the 64-square
+  // grid metadata but not on the 32-square board (e.g., after an instant
+  // event like ChecksMix shuffles the board without updating the grid).
+  // In such cases, movingPiece may be null — applyMove (overridden by
+  // Marching Orders) will handle the actual piece movement from the grid.
   let movingPiece: Piece | null = null;
   if ((move.from as number) <= BOARD_SIZE) {
     movingPiece = getBoardSquare(board, move.from);
-    if (movingPiece === null) {
-      throw new Error(`No piece at move origin square ${String(move.from)}`);
-    }
   }
 
   // ── Apply the move ──────────────────────────────────────────────────

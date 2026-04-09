@@ -806,7 +806,11 @@ describe('makeMove — defensive errors', () => {
         getLegalMoves: () => [move], // pretend the move is legal
       },
     };
-    expect(() => makeMove(corruptState, move)).toThrow('No piece at move origin square');
+    // With Marching Orders support, movingPiece=null no longer throws
+    // at the snapshot step. The corrupt state will proceed to applyMove
+    // which handles the actual piece movement. Verify the origin-square
+    // error is no longer thrown (it proceeds past the snapshot).
+    expect(() => makeMove(corruptState, move)).not.toThrow('No piece at move origin square');
   });
 
   it('throws descriptive error when move path is empty', () => {

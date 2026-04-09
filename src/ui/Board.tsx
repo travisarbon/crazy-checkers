@@ -256,6 +256,16 @@ function Board({
                 const moIsSelectable = marchingOrdersGrid && moPiece !== null && (selectablePieces?.has(moExtSq) ?? false);
                 const moClickable = marchingOrdersGrid && (moIsSelectable || moIsLegalDest);
 
+                const moIsLastMove =
+                  lastMoveSquares != null &&
+                  (moExtSq === (lastMoveSquares.from as number) ||
+                    moExtSq === (lastMoveSquares.to as number));
+                const moIsPendingConfirm =
+                  !isAnimating &&
+                  pendingConfirmSquare !== null &&
+                  pendingConfirmSquare !== undefined &&
+                  (pendingConfirmSquare as number) === moExtSq;
+
                 return (
                   <g
                     key={col}
@@ -264,14 +274,77 @@ function Board({
                       onSquareClick?.(moExtSq as Square);
                     }}
                     style={{ cursor: moClickable ? 'pointer' : 'default' }}
+                    className={[
+                      styles.boardSquare,
+                      moClickable ? styles.boardSquareInteractive : '',
+                    ].filter(Boolean).join(' ')}
                   >
+                    {/* Base light square */}
                     <rect
                       x={x}
                       y={y}
                       width={SQUARE_SIZE}
                       height={SQUARE_SIZE}
-                      fill={moIsSelected ? 'var(--square-selected, #b8d4e3)' : 'var(--board-light)'}
+                      fill="var(--board-light)"
                     />
+
+                    {/* Last-move highlight */}
+                    {moIsLastMove && (
+                      <rect
+                        x={x}
+                        y={y}
+                        width={SQUARE_SIZE}
+                        height={SQUARE_SIZE}
+                        fill="var(--highlight-last-move)"
+                      />
+                    )}
+
+                    {/* Legal move destination highlight */}
+                    {moIsLegalDest && (
+                      <rect
+                        x={x}
+                        y={y}
+                        width={SQUARE_SIZE}
+                        height={SQUARE_SIZE}
+                        fill="var(--highlight-legal)"
+                      />
+                    )}
+
+                    {/* Selected piece highlight */}
+                    {moIsSelected && (
+                      <rect
+                        x={x}
+                        y={y}
+                        width={SQUARE_SIZE}
+                        height={SQUARE_SIZE}
+                        fill="var(--highlight-selected)"
+                      />
+                    )}
+
+                    {/* Pending confirmation highlight */}
+                    {moIsPendingConfirm && (
+                      <rect
+                        x={x}
+                        y={y}
+                        width={SQUARE_SIZE}
+                        height={SQUARE_SIZE}
+                        fill="var(--highlight-selected)"
+                        className={styles.pendingConfirm}
+                      />
+                    )}
+
+                    {/* Hover overlay */}
+                    {moClickable && (
+                      <rect
+                        x={x}
+                        y={y}
+                        width={SQUARE_SIZE}
+                        height={SQUARE_SIZE}
+                        fill="var(--highlight-hover)"
+                        className={styles.hoverOverlay}
+                      />
+                    )}
+
                     {moPiece !== null && moPiece !== undefined && (
                       <PieceComponent
                         piece={moPiece}

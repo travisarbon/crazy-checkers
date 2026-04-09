@@ -137,6 +137,12 @@ export class LeapfrogDecorator extends EventDecorator {
       return innerMoves;
     }
 
+    // When Marching Orders is active, it handles orthogonal leapfrog
+    // generation internally. Don't add diagonal leapfrogs on top.
+    if (this.activeEventsContext.some(e => e.type === CrazyEvent.MarchingOrders)) {
+      return innerMoves;
+    }
+
     // Generate extended jump chains (enemy captures + friendly leapfrogs)
     const allChains: Move[] = [];
     for (const sq of getSquaresWithColor(board, activeColor)) {

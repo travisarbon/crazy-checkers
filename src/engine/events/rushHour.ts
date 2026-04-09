@@ -71,6 +71,16 @@ export class RushHourDecorator extends EventDecorator {
   override getLegalMoves(board: BoardState, activeColor: PieceColor): Move[] {
     const innerMoves = this.inner.getLegalMoves(board, activeColor);
 
+    if (!this.isActive(this.activeEventsContext)) {
+      return innerMoves;
+    }
+
+    // When Marching Orders is active, it handles orthogonal double-steps
+    // internally. Don't add diagonal double-steps on top.
+    if (this.activeEventsContext.some(e => e.type === CrazyEvent.MarchingOrders)) {
+      return innerMoves;
+    }
+
     // If jumps exist, mandatory capture — don't add double-steps
     const hasJumps = innerMoves.some(m => m.captured.length > 0);
     if (hasJumps) return innerMoves;

@@ -190,6 +190,141 @@ function getOrthoJumpsForPiece(
 }
 
 // ---------------------------------------------------------------------------
+// Orthogonal Leapfrog jump chain generator (64-square grid)
+// ---------------------------------------------------------------------------
+
+/**
+ * Generates orthogonal jump chains that include friendly-piece leapfrogs
+ * (non-capturing) and enemy captures, mixable in the same chain.
+ * Used when both Marching Orders and Leapfrog are active.
+ */
+function getOrthoLeapfrogJumps(
+  grid: readonly (SerializedPiece | null)[],
+  startSq: number,
+  startRow: number,
+  startCol: number,
+  piece: SerializedPiece,
+  jumpDirs: readonly OrthoDelta[],
+  flippedActive: boolean,
+): Move[] {
+  const chains: Move[] = [];
+
+  function shouldPromoteOrtho(p: SerializedPiece, row: number): boolean {
+    if (p.type === PieceType.King) return false;
+    if (flippedActive) {
+      return p.color === PieceColor.White ? row === 7 : row === 0;
+    }
+    return p.color === PieceColor.White ? row === 0 : row === 7;
+  }
+
+  function explore(
+    row: number,
+    col: number,
+    path: number[],
+    captured: number[],
+    visitedSet: Set<number>,
+    boardState: readonly (SerializedPiece | null)[],
+  ): void {
+    if (piece.type === PieceType.Pawn && path.length > 0 && shouldPromoteOrtho(piece, row)) {
+      chains.push({ from: startSq as Square, path: [...path] as Square[], captured: [...captured] as Square[] });
+      return;
+    }
+
+    let foundContinuation = false;
+
+    for (const dir of jumpDirs) {
+      const adjRow = row + dir.dRow;
+      const adjCol = col + dir.dCol;
+      if (adjRow < 0 || adjRow > 7 || adjCol < 0 || adjCol > 7) continue;
+
+      const adjIdx = adjRow * 8 + adjCol;
+      if (visitedSet.has(adjIdx)) continue;
+
+      const adjPiece = boardState[adjIdx];
+      if (adjPiece === null || adjPiece === undefined) continue;
+
+      const landRow = adjRow + dir.dRow;
+      const landCol = adjCol + dir.dCol;
+      if (landRow < 0 || landRow > 7 || landCol < 0 || landCol > 7) continue;
+
+      const landIdx = landRow * 8 + landCol;
+      const landPiece = boardState[landIdx];
+      if (landPiece !== null && landPiece !== undefined && landIdx !== startRow * 8 + startCol) continue;
+
+      const landSq = gridToExtSquare(landRow, landCol);
+      const newVisited = new Set(visitedSet);
+      newVisited.add(adjIdx);
+
+      if (adjPiece.color !== piece.color) {
+        // Enemy capture
+        const capSq = gridToExtSquare(adjRow, adjCol);
+        const newBoard = [...boardState] as (SerializedPiece | null)[];
+        newBoard[adjIdx] = null;
+        foundContinuation = true;
+        explore(landRow, landCol, [...path, landSq], [...captured, capSq], newVisited, newBoard);
+      } else {
+        // Friendly leapfrog — non-capturing, don't remove the friendly piece
+        foundContinuation = true;
+        explore(landRow, landCol, [...path, landSq], captured, newVisited, boardState);
+      }
+    }
+
+    if (!foundContinuation && path.length > 0) {
+      chains.push({ from: startSq as Square, path: [...path] as Square[], captured: [...captured] as Square[] });
+    }
+  }
+
+  explore(startRow, startCol, [], [], new Set(), grid);
+  return chains;
+}
+
+// ---------------------------------------------------------------------------
+// Orthogonal Rush Hour double-step generator (64-square grid)
+// ---------------------------------------------------------------------------
+
+/**
+ * Generates orthogonal double-step moves for pawns on the 64-square grid.
+ * Pawns move two squares forward orthogonally (up for White, down for Black)
+ * with the intermediate square also empty. Non-capturing only.
+ */
+function getOrthoDoubleSteps(
+  grid: readonly (SerializedPiece | null)[],
+  activeColor: PieceColor,
+): Move[] {
+  const moves: Move[] = [];
+  const forwardDelta: OrthoDelta = activeColor === PieceColor.White ? ORTHO_UP : ORTHO_DOWN;
+
+  for (let i = 0; i < 64; i++) {
+    const piece = grid[i];
+    if (piece === null || piece === undefined || piece.color !== activeColor) continue;
+    if (piece.type !== PieceType.Pawn) continue;
+
+    const row = Math.floor(i / 8);
+    const col = i % 8;
+
+    // First step forward
+    const midRow = row + forwardDelta.dRow;
+    const midCol = col + forwardDelta.dCol;
+    if (midRow < 0 || midRow > 7 || midCol < 0 || midCol > 7) continue;
+    const midIdx = midRow * 8 + midCol;
+    if (grid[midIdx] !== null && grid[midIdx] !== undefined) continue;
+
+    // Second step forward
+    const destRow = midRow + forwardDelta.dRow;
+    const destCol = midCol + forwardDelta.dCol;
+    if (destRow < 0 || destRow > 7 || destCol < 0 || destCol > 7) continue;
+    const destIdx = destRow * 8 + destCol;
+    if (grid[destIdx] !== null && grid[destIdx] !== undefined) continue;
+
+    const fromSq = gridToExtSquare(row, col);
+    const destSq = gridToExtSquare(destRow, destCol);
+    moves.push({ from: fromSq as Square, path: [destSq as Square], captured: [] });
+  }
+
+  return moves;
+}
+
+// ---------------------------------------------------------------------------
 // Grid ↔ Board projection
 // ---------------------------------------------------------------------------
 
@@ -233,6 +368,8 @@ export class MarchingOrdersDecorator extends EventDecorator {
     const grid = metadata.orthogonalGrid;
     const stepBackActive = this.activeEventsContext.some(e => e.type === CrazyEvent.StepBack);
     const flippedActive = this.activeEventsContext.some(e => e.type === CrazyEvent.FlippedScript);
+    const leapfrogActive = this.activeEventsContext.some(e => e.type === CrazyEvent.Leapfrog);
+    const rushHourActive = this.activeEventsContext.some(e => e.type === CrazyEvent.RushHour);
 
     const allMoves: Move[] = [];
 
@@ -256,10 +393,20 @@ export class MarchingOrdersDecorator extends EventDecorator {
         allMoves.push({ from: sq as Square, path: [destSq as Square], captured: [] });
       }
 
-      // Generate jump chains
+      // Generate jump chains — use leapfrog variant when active
       const jumpDirs = getOrthoCaptureDirs(piece, stepBackActive);
-      const jumps = getOrthoJumpsForPiece(grid, sq, row, col, piece, jumpDirs, flippedActive);
-      allMoves.push(...jumps);
+      if (leapfrogActive) {
+        const leapfrogChains = getOrthoLeapfrogJumps(grid, sq, row, col, piece, jumpDirs, flippedActive);
+        allMoves.push(...leapfrogChains);
+      } else {
+        const jumps = getOrthoJumpsForPiece(grid, sq, row, col, piece, jumpDirs, flippedActive);
+        allMoves.push(...jumps);
+      }
+    }
+
+    // Rush Hour: add orthogonal double-step moves for pawns
+    if (rushHourActive) {
+      allMoves.push(...getOrthoDoubleSteps(grid, activeColor));
     }
 
     // Mandatory capture
