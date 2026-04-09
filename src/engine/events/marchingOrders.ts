@@ -357,13 +357,82 @@ export class MarchingOrdersDecorator extends EventDecorator {
     return new MarchingOrdersDecorator(inner);
   }
 
+  /**
+   * Synchronizes the 64-square MO grid with the current 32-square BoardState.
+   *
+   * When instant events (ChecksMix, Stampede, SwapMeet, Reinforcements) shuffle
+   * the board via onTurnStart, the MO grid metadata becomes stale because those
+   * events modify only the 32-square BoardState without knowledge of the MO grid.
+   *
+   * This method detects discrepancies between the grid's dark-square projection
+   * and the actual BoardState, and rebuilds the grid by:
+   * - Replacing all dark-square entries with the current BoardState contents.
+   * - Keeping all light-square pieces from the existing grid unchanged.
+   *
+   * If a sync is needed, a metadata update is requested so the corrected grid
+   * is persisted in the ActiveEvent for subsequent operations.
+   */
+  syncGridFromBoard(board: BoardState, metadata: MarchingOrdersMetadata): MarchingOrdersMetadata {
+    const grid = metadata.orthogonalGrid;
+
+    // Check if dark-square entries in the grid match the BoardState
+    let needsSync = false;
+    for (let sq = 1; sq <= 32; sq++) {
+      const { row, col } = squareToGrid(sq as Square);
+      const gridPiece = grid[row * 8 + col];
+      const boardPiece = board[sq - 1];
+
+      if (boardPiece === null || boardPiece === undefined) {
+        if (gridPiece !== null && gridPiece !== undefined) {
+          needsSync = true;
+          break;
+        }
+      } else {
+        if (
+          gridPiece === null ||
+          gridPiece === undefined ||
+          gridPiece.color !== boardPiece.color ||
+          gridPiece.type !== boardPiece.type
+        ) {
+          needsSync = true;
+          break;
+        }
+      }
+    }
+
+    if (!needsSync) return metadata;
+
+    // Rebuild grid: keep light-square pieces, replace dark-square entries
+    const newGrid = [...grid] as (SerializedPiece | null)[];
+    for (let sq = 1; sq <= 32; sq++) {
+      const { row, col } = squareToGrid(sq as Square);
+      const boardPiece = board[sq - 1];
+      newGrid[row * 8 + col] = boardPiece
+        ? { color: boardPiece.color, type: boardPiece.type }
+        : null;
+    }
+
+    const synced: MarchingOrdersMetadata = {
+      orthogonalGrid: newGrid,
+      applied: metadata.applied,
+    };
+
+    // Persist the corrected grid
+    this.requestMetadataUpdate(CrazyEvent.MarchingOrders, synced as unknown as Readonly<Record<string, unknown>>);
+
+    return synced;
+  }
+
   override getLegalMoves(board: BoardState, activeColor: PieceColor): Move[] {
     if (!this.isActive(this.activeEventsContext)) {
       return this.inner.getLegalMoves(board, activeColor);
     }
 
-    const metadata = this.getMarchingOrdersMetadata();
+    let metadata = this.getMarchingOrdersMetadata();
     if (!metadata) return this.inner.getLegalMoves(board, activeColor);
+
+    // Sync grid with board in case instant events shuffled the board
+    metadata = this.syncGridFromBoard(board, metadata);
 
     const grid = metadata.orthogonalGrid;
     const stepBackActive = this.activeEventsContext.some(e => e.type === CrazyEvent.StepBack);
@@ -420,8 +489,11 @@ export class MarchingOrdersDecorator extends EventDecorator {
       return this.inner.applyMove(board, move);
     }
 
-    const metadata = this.getMarchingOrdersMetadata();
+    let metadata = this.getMarchingOrdersMetadata();
     if (!metadata) return this.inner.applyMove(board, move);
+
+    // Sync grid with board in case instant events shuffled the board
+    metadata = this.syncGridFromBoard(board, metadata);
 
     const grid = [...metadata.orthogonalGrid] as (SerializedPiece | null)[];
     const fromGrid = extSquareToGrid(move.from as number);

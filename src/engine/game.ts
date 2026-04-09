@@ -185,14 +185,17 @@ export function makeMove(state: GameState, move: Move): GameState {
   }
 
   // ── Snapshot the moving piece before apply ──────────────────────────
-  // When Marching Orders is active, pieces may exist in the 64-square
-  // grid metadata but not on the 32-square board (e.g., after an instant
-  // event like ChecksMix shuffles the board without updating the grid).
-  // In such cases, movingPiece may be null — applyMove (overridden by
-  // Marching Orders) will handle the actual piece movement from the grid.
+  // For standard dark-square moves (from ≤ 32), the piece must exist on
+  // the board. Extended squares (> 32) are Marching Orders light-square
+  // pieces that live only in the event's 64-element grid metadata.
   let movingPiece: Piece | null = null;
   if ((move.from as number) <= BOARD_SIZE) {
     movingPiece = getBoardSquare(board, move.from);
+    if (movingPiece === null) {
+      throw new Error(
+        `makeMove: no piece at square ${String(move.from as number)} on the 32-square board.`,
+      );
+    }
   }
 
   // ── Apply the move ──────────────────────────────────────────────────
@@ -350,6 +353,53 @@ export function makeMove(state: GameState, move: Move): GameState {
 }
 
 // ---------------------------------------------------------------------------
+// Zero-legal-moves detection (stalemate)
+// ---------------------------------------------------------------------------
+
+/**
+ * Checks if the active player has zero legal moves and, if so, transitions
+ * the game to GameOver with the appropriate result.
+ *
+ * This handles the edge case where combined event decorators (e.g., Marching
+ * Orders + NoTouching, Marching Orders + Frozen Assets) collectively produce
+ * zero legal moves mid-game without capturing all pieces. Without this check,
+ * the game would hang because makeMove requires a move to advance.
+ *
+ * Should be called:
+ * - By the self-play harness at the top of each loop iteration.
+ * - By the UI after each makeMove dispatch.
+ *
+ * Returns the state unchanged if the game is not in progress or if the
+ * active player has legal moves.
+ */
+export function checkForStalemate(state: GameState): GameState {
+  if (state.status !== GameStatus.InProgress) return state;
+
+  const legalMoves = getCurrentLegalMoves(state);
+  if (legalMoves.length > 0) return state;
+
+  // Zero legal moves — determine game result
+  // Check if the active player has any pieces left
+  let pieceCount = 0;
+  for (let i = 0; i < state.board.length; i++) {
+    const piece = state.board[i];
+    if (piece !== null && piece !== undefined && piece.color === state.activeColor) {
+      pieceCount++;
+    }
+  }
+
+  const reason = pieceCount === 0 ? GameEndReason.NoPiecesLeft : GameEndReason.NoLegalMoves;
+  const type =
+    state.activeColor === PieceColor.White ? GameResultType.BlackWin : GameResultType.WhiteWin;
+
+  return {
+    ...state,
+    status: GameStatus.GameOver,
+    result: { type, reason },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Undo
 // ---------------------------------------------------------------------------
 
@@ -426,6 +476,23 @@ export function getCurrentLegalMoves(state: GameState): Move[] {
     : state.board;
 
   return state.ruleSet.getLegalMoves(board, state.activeColor);
+}
+
+/**
+ * Returns legal moves using a pre-computed effective board.
+ *
+ * Used by the self-play harness to ensure the search and legal-move
+ * computation share a single onTurnStart application, avoiding PRNG
+ * double-consumption by instant events like ChecksMix.
+ */
+export function getLegalMovesFromBoard(state: GameState, effectiveBoard: BoardState): Move[] {
+  if (state.status !== GameStatus.InProgress) return [];
+
+  if (isCompositeRuleSet(state.ruleSet)) {
+    state.ruleSet.setActiveEvents(state.activeEvents);
+  }
+
+  return state.ruleSet.getLegalMoves(effectiveBoard, state.activeColor);
 }
 
 /** Returns the PlayerType for the currently active color. */

@@ -267,7 +267,7 @@ describe('ShrinkingBoardDecorator', () => {
     const factory = EVENT_METADATA_FACTORIES.get(CrazyEvent.ShrinkingBoard);
     expect(factory).toBeDefined();
     if (factory === undefined) throw new Error('factory missing');
-    const metadata = factory(buildBoard([]), W) as ShrinkingBoardMetadata;
+    const metadata = factory(buildBoard([]), W) as unknown as ShrinkingBoardMetadata;
     expect(metadata.removedSquares).toEqual(RING_SQUARES[0]);
     expect(metadata.pliesSinceActivation).toBe(0);
     expect(metadata.nextRingLevel).toBe(1);

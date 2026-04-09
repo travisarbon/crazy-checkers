@@ -301,3 +301,123 @@ describe('MarchingOrdersDecorator', () => {
     expect(metadata.applied).toBe(false);
   });
 });
+
+// ===========================================================================
+// syncGridFromBoard
+// ===========================================================================
+
+describe('syncGridFromBoard', () => {
+  it('returns metadata unchanged when grid matches board', () => {
+    const board = buildBoard([
+      { sq: 1, color: W, type: P },
+      { sq: 32, color: B, type: P },
+    ]);
+    const grid = makeGrid([
+      { row: 0, col: 1, color: W, type: PieceType.Pawn },
+      { row: 7, col: 6, color: B, type: PieceType.Pawn },
+    ]);
+    const metadata: MarchingOrdersMetadata = { orthogonalGrid: grid, applied: true };
+    const base = createAmericanRules();
+    const decorator = new MarchingOrdersDecorator(base);
+    const synced = decorator.syncGridFromBoard(board, metadata);
+    expect(synced).toBe(metadata); // Same reference, no sync needed
+  });
+
+  it('updates dark-square entries when board was shuffled by an instant event', () => {
+    // Original grid has White pawn at sq 1 (row 0, col 1)
+    const originalGrid = makeGrid([
+      { row: 0, col: 1, color: W, type: PieceType.Pawn },
+      { row: 7, col: 6, color: B, type: PieceType.Pawn },
+      { row: 0, col: 0, color: W, type: PieceType.King }, // light-square piece
+    ]);
+    const metadata: MarchingOrdersMetadata = { orthogonalGrid: originalGrid, applied: true };
+
+    // Board was shuffled: White pawn moved from sq 1 to sq 2
+    const shuffledBoard = buildBoard([
+      { sq: 2, color: W, type: P },
+      { sq: 32, color: B, type: P },
+    ]);
+
+    const base = createAmericanRules();
+    const decorator = new MarchingOrdersDecorator(base);
+    const synced = decorator.syncGridFromBoard(shuffledBoard, metadata);
+
+    // Dark-square entries should match the shuffled board
+    const syncedBoard = projectGridToBoard(synced.orthogonalGrid);
+    expect(syncedBoard[0]).toBeNull(); // sq 1 now empty
+    expect(syncedBoard[1]).toEqual({ color: W, type: PieceType.Pawn }); // sq 2 has White pawn
+
+    // Light-square piece should be preserved
+    const lightIdx = 0 * 8 + 0; // row 0, col 0
+    expect(synced.orthogonalGrid[lightIdx]).toEqual({ color: W, type: PieceType.King });
+  });
+
+  it('preserves light-square pieces during sync', () => {
+    // Grid has pieces on both light and dark squares.
+    // Light squares have (row+col) even: (0,0), (3,3), (4,4), etc.
+    const grid = makeGrid([
+      { row: 0, col: 1, color: W, type: PieceType.Pawn }, // dark sq 1
+      { row: 3, col: 3, color: B, type: PieceType.King }, // light square (3+3=6)
+      { row: 4, col: 4, color: W, type: PieceType.Pawn }, // light square (4+4=8)
+    ]);
+    const metadata: MarchingOrdersMetadata = { orthogonalGrid: grid, applied: true };
+
+    // Empty board (all pieces removed by instant event)
+    const emptyBrd = buildBoard([]);
+
+    const base = createAmericanRules();
+    const decorator = new MarchingOrdersDecorator(base);
+    const synced = decorator.syncGridFromBoard(emptyBrd, metadata);
+
+    // Dark-square entries should be cleared
+    const syncedBoard = projectGridToBoard(synced.orthogonalGrid);
+    expect(syncedBoard[0]).toBeNull();
+
+    // Light-square pieces should remain
+    expect(synced.orthogonalGrid[3 * 8 + 3]).toEqual({ color: B, type: PieceType.King });
+    expect(synced.orthogonalGrid[4 * 8 + 4]).toEqual({ color: W, type: PieceType.Pawn });
+  });
+
+  it('handles Reinforcements adding a new piece to the board', () => {
+    // Original grid: just one piece
+    const grid = makeGrid([
+      { row: 0, col: 1, color: W, type: PieceType.Pawn },
+    ]);
+    const metadata: MarchingOrdersMetadata = { orthogonalGrid: grid, applied: true };
+
+    // Board has an extra piece added by Reinforcements
+    const board = buildBoard([
+      { sq: 1, color: W, type: P },
+      { sq: 10, color: B, type: P }, // New piece from Reinforcements
+    ]);
+
+    const base = createAmericanRules();
+    const decorator = new MarchingOrdersDecorator(base);
+    const synced = decorator.syncGridFromBoard(board, metadata);
+
+    const syncedBoard = projectGridToBoard(synced.orthogonalGrid);
+    expect(syncedBoard[0]).toEqual({ color: W, type: PieceType.Pawn });
+    expect(syncedBoard[9]).toEqual({ color: B, type: PieceType.Pawn });
+  });
+
+  it('getLegalMoves auto-syncs when called with a desynchronized board', () => {
+    // Set up MO grid with pieces at certain positions
+    const originalGrid = makeGrid([
+      { row: 6, col: 1, color: W, type: PieceType.Pawn }, // dark sq 25
+      { row: 0, col: 1, color: B, type: PieceType.Pawn }, // dark sq 1
+    ]);
+    const event = createMOEvent(originalGrid);
+
+    // But the actual board has the White pawn at a different position (shuffled by instant event)
+    const shuffledBoard = buildBoard([
+      { sq: 26, color: W, type: P }, // moved from sq 25 to sq 26
+      { sq: 1, color: B, type: P },
+    ]);
+
+    const state = crazyStateWithBoard(shuffledBoard, W, [event]);
+    // Should not crash — getLegalMoves should auto-sync the grid
+    const moves = getCurrentLegalMoves(state);
+    // White pawn at sq 26 should have some moves
+    expect(moves.length).toBeGreaterThan(0);
+  });
+});

@@ -12,7 +12,7 @@ import { BREAKPOINT } from './breakpoints';
 import type { ActiveEvent, GameState, PlayerSetup, RuleSet } from '../engine/types';
 import { GameMode, GameStatus, GameResultType, GameEndReason, PieceColor, PieceType, PlayerType } from '../engine/types';
 import type { TimeControlConfig } from '../engine/clock';
-import { createNewGame, makeMove, canUndo as engineCanUndo, resign, getEffectiveBoard } from '../engine/game';
+import { createNewGame, makeMove, canUndo as engineCanUndo, resign, getEffectiveBoard, checkForStalemate } from '../engine/game';
 import { requestAIMove } from '../ai/workerClient';
 import type { Difficulty } from '../ai/difficulty';
 import { saveGame, clearSavedGame } from '../persistence/settings';
@@ -356,6 +356,10 @@ export default function GameScreen({
   // --- Move handler ---
   const handleMove = useCallback(
     (newState: GameState, options?: { skipMoveAnimation?: boolean }) => {
+      // Check for stalemate: if the next player has zero legal moves,
+      // transition to GameOver before proceeding with animations/state.
+      newState = checkForStalemate(newState);
+
       // Record pre-move time for undo support
       gameClock.onMoveComplete();
 

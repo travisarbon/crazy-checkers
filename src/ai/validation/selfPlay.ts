@@ -8,7 +8,7 @@ import {
   GameMode,
 } from '../../engine/types';
 import { createAmericanRules } from '../../engine/rules';
-import { createNewGame, getEffectiveBoard, getCurrentLegalMoves, makeMove, movesAreEqual } from '../../engine/game';
+import { createNewGame, getEffectiveBoard, getLegalMovesFromBoard, makeMove, checkForStalemate } from '../../engine/game';
 import { IMPLEMENTED_EVENTS } from '../../engine/events';
 import { iterativeSearch } from '../search';
 import { getDifficultyConfig, toSearchConfig, selectMove, type Difficulty } from '../difficulty';
@@ -246,15 +246,20 @@ export function playSingleGame(
       break;
     }
 
+    // Check for stalemate: zero legal moves without checkGameOver having
+    // fired (e.g., MO + NoTouching combined decorator filtering).
+    currentState = checkForStalemate(currentState);
+    if (currentState.status !== GameStatus.InProgress) break;
+
     const difficulty =
       currentState.activeColor === PieceColor.White ? whiteDifficulty : blackDifficulty;
 
     const config = getDifficultyConfig(difficulty);
     const searchConfig = toSearchConfig(config);
 
-    // In Crazy mode, onTurnStart hooks (e.g., Checks Mix shuffle) transform the
-    // board before move validation. Present the search with the effective board
-    // so its root move list matches what makeMove will validate against.
+    // Compute the effective board once. Both the AI search and legal-move
+    // derivation use this same board, avoiding double onTurnStart application
+    // (which would consume PRNG state twice for events like ChecksMix).
     const effectiveBoard = getEffectiveBoard(currentState);
     const searchState: GameState = effectiveBoard !== currentState.board
       ? { ...currentState, board: effectiveBoard }
@@ -266,16 +271,13 @@ export function playSingleGame(
       moveTimings.push(performance.now() - searchStart);
       activeEventCounts.push(currentState.activeEvents.length);
     }
-    // getCurrentLegalMoves applies onTurnStart internally, matching what
-    // makeMove will do for validation. Use the original state so the same
-    // RNG sequence is consumed.
-    const legalMoves = getCurrentLegalMoves(currentState);
+
+    // Derive legal moves from the same effective board the search used.
+    const legalMoves = getLegalMovesFromBoard(currentState, effectiveBoard);
 
     if (legalMoves.length === 0) {
-      // No legal moves — game should end. This can happen with complex
-      // event stacking (e.g., Marching Orders + NoTouching) where the
-      // combined decorators produce 0 legal moves but checkGameOver
-      // hasn't fired yet. Treat as a loss for the active player.
+      // Should not happen after checkForStalemate, but guard defensively.
+      currentState = checkForStalemate(currentState);
       break;
     }
 
@@ -293,37 +295,9 @@ export function playSingleGame(
       randomFn,
     );
 
-    // In Crazy/Chaos mode, instant events (e.g., ChecksMix) can shuffle
-    // the board via onTurnStart between the search and move application.
-    // The search may produce a move valid on the pre-shuffle board that
-    // doesn't exist on the post-shuffle board. Fall back to the first
-    // legal move rather than crashing the validation.
-    let moveToPlay = legalMoves.some((m) => movesAreEqual(m, selectedMove))
-      ? selectedMove
-      : legalMoves[0] as typeof selectedMove;
-
-    // makeMove applies onTurnStart independently. In rare cases with
-    // complex event stacking (e.g., Marching Orders + instant events),
-    // the legal-move set from getCurrentLegalMoves may include moves
-    // that reference desynchronized state. Try the selected move; on
-    // failure, try remaining legal moves before giving up.
-    let moved = false;
-    for (let attempt = 0; attempt < legalMoves.length && !moved; attempt++) {
-      try {
-        currentState = makeMove(currentState, moveToPlay);
-        moved = true;
-      } catch {
-        // Move failed — try the next legal move
-        const nextIdx = legalMoves.findIndex((m) => movesAreEqual(m, moveToPlay)) + 1;
-        if (nextIdx < legalMoves.length) {
-          moveToPlay = legalMoves[nextIdx] as typeof moveToPlay;
-        } else {
-          // All moves exhausted — re-throw
-          currentState = makeMove(currentState, legalMoves[0] as typeof moveToPlay);
-          moved = true;
-        }
-      }
-    }
+    // With idempotent onTurnStart (single application shared between search
+    // and legal moves), the selected move should always be in the legal list.
+    currentState = makeMove(currentState, selectedMove);
     moveCount++;
 
     // Track event triggers for Crazy mode

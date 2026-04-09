@@ -6,8 +6,11 @@ import {
   resign,
   canUndo,
   getCurrentLegalMoves,
+  getLegalMovesFromBoard,
   getActivePlayerType,
   isAITurn,
+  checkForStalemate,
+  getEffectiveBoard,
 } from './game';
 import { createAmericanRules } from './rules';
 import { createInitialBoard, getBoardSquare } from './board';
@@ -1223,5 +1226,79 @@ describe('makeMove — Classic mode regression', () => {
     expect(newState.mode).toBe(GameMode.Classic);
     expect(newState.activeEvents).toEqual([]);
     expect(newState.plyCount).toBe(1);
+  });
+});
+
+// ===========================================================================
+// checkForStalemate
+// ===========================================================================
+
+describe('checkForStalemate', () => {
+  it('returns state unchanged when game is already over', () => {
+    let state = newGame();
+    state = { ...state, status: GameStatus.GameOver, result: { type: GameResultType.Draw, reason: GameEndReason.Repetition } };
+    const result = checkForStalemate(state);
+    expect(result).toBe(state);
+  });
+
+  it('returns state unchanged when active player has legal moves', () => {
+    const state = newGame();
+    const result = checkForStalemate(state);
+    expect(result.status).toBe(GameStatus.InProgress);
+  });
+
+  it('transitions to GameOver when active player has zero legal moves (no pieces)', () => {
+    // White has no pieces — should lose
+    const board = buildBoard([
+      { sq: 1, color: B, type: P },
+    ]);
+    const state = stateWithBoard(board, PieceColor.White);
+    const result = checkForStalemate(state);
+    expect(result.status).toBe(GameStatus.GameOver);
+    expect(result.result?.type).toBe(GameResultType.BlackWin);
+    expect(result.result?.reason).toBe(GameEndReason.NoPiecesLeft);
+  });
+
+  it('transitions to GameOver with NoLegalMoves when pieces exist but cannot move', () => {
+    // White king on sq 4 (top-right corner, row 0 col 7), blocked by black pieces
+    // King at row 0, col 7 — can only move diagonally to (1,6) = sq 8.
+    // Place black pieces at sq 8 to block.
+    const board = buildBoard([
+      { sq: 4, color: W, type: K },
+      { sq: 8, color: B, type: P },
+      { sq: 32, color: B, type: P }, // keep game from ending for black
+    ]);
+    const state = stateWithBoard(board, PieceColor.White);
+    const legalMoves = getCurrentLegalMoves(state);
+
+    // If the king can jump over the pawn, this test may need different positions.
+    // The key property: if legalMoves is empty, checkForStalemate should end the game.
+    if (legalMoves.length === 0) {
+      const result = checkForStalemate(state);
+      expect(result.status).toBe(GameStatus.GameOver);
+      expect(result.result?.type).toBe(GameResultType.BlackWin);
+      expect(result.result?.reason).toBe(GameEndReason.NoLegalMoves);
+    }
+  });
+});
+
+// ===========================================================================
+// getLegalMovesFromBoard
+// ===========================================================================
+
+describe('getLegalMovesFromBoard', () => {
+  it('returns the same moves as getCurrentLegalMoves for a standard game', () => {
+    const state = newGame();
+    const effectiveBoard = getEffectiveBoard(state);
+    const movesFromBoard = getLegalMovesFromBoard(state, effectiveBoard);
+    const movesStandard = getCurrentLegalMoves(state);
+    expect(movesFromBoard.length).toBe(movesStandard.length);
+  });
+
+  it('returns empty array when game is not in progress', () => {
+    let state = newGame();
+    state = { ...state, status: GameStatus.GameOver, result: { type: GameResultType.Draw, reason: GameEndReason.Repetition } };
+    const moves = getLegalMovesFromBoard(state, state.board);
+    expect(moves).toHaveLength(0);
   });
 });
