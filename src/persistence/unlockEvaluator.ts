@@ -9,6 +9,78 @@ import type { UnlockSnapshot } from './unlockState';
 import { getChallengesCompletedCount } from './challengeRecords';
 
 // ---------------------------------------------------------------------------
+// Track 1 — Puzzle Mastery thresholds (Design Document §2.3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Challenge-completion thresholds for unlocking Track 1 (Puzzle Mastery) Choice modes.
+ * Index 0 → Choice #1 (Revolution), Index 7 → Choice #8 (Extra Crazy).
+ * Validated against CHOICE_MODE_DATA by cross-reference unit test.
+ */
+export const TRACK_1_THRESHOLDS = [1, 15, 29, 43, 57, 71, 85, 99] as const;
+
+/**
+ * Progress information for Track 1 (Puzzle Mastery).
+ * Used by ChallengeScreen progress dashboard and future Career screen.
+ */
+export interface Track1ProgressInfo {
+  /** Number of Track 1 Choice modes currently unlocked (0-8). */
+  readonly unlockedCount: number;
+  /** Total number of Track 1 milestones (always 8). */
+  readonly totalMilestones: number;
+  /** Number of challenges needed for the next unlock, or null if all 8 are unlocked. */
+  readonly nextThreshold: number | null;
+  /** Current count of distinct solved puzzles. */
+  readonly challengesCompleted: number;
+}
+
+// ---------------------------------------------------------------------------
+// Track 1 evaluators (pure — no I/O)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the number of Track 1 (Puzzle Mastery) Choice modes unlocked
+ * for the given challenge completion count.
+ *
+ * @param challengesCompleted — Count of distinct puzzleIds solved (0-100).
+ * @returns Integer in [0, 8].
+ */
+export function getTrack1UnlockedCount(challengesCompleted: number): number {
+  let count = 0;
+  for (const threshold of TRACK_1_THRESHOLDS) {
+    if (challengesCompleted >= threshold) {
+      count += 1;
+    } else {
+      break;
+    }
+  }
+  return count;
+}
+
+/**
+ * Returns detailed Track 1 progress information for display in the
+ * ChallengeScreen dashboard and future Career screen.
+ *
+ * @param challengesCompleted — Count of distinct puzzleIds solved (0-100).
+ * @returns Track1ProgressInfo object.
+ */
+export function getTrack1Progress(challengesCompleted: number): Track1ProgressInfo {
+  const unlockedCount = getTrack1UnlockedCount(challengesCompleted);
+  const totalMilestones = TRACK_1_THRESHOLDS.length;
+  const nextThreshold =
+    unlockedCount < totalMilestones
+      ? TRACK_1_THRESHOLDS[unlockedCount] ?? null
+      : null;
+
+  return {
+    unlockedCount,
+    totalMilestones,
+    nextThreshold,
+    challengesCompleted,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Data adapters (each reads from a specific persistence store)
 // ---------------------------------------------------------------------------
 
@@ -17,13 +89,28 @@ function getChallengesCompleted(): Promise<number> {
 }
 
 /**
- * @stub — Returns 0 until Tasks 19-22 implement all five
- * progression tracks and the Choice unlock aggregator.
- * Replace with: import { getUnlockedChoiceModeCount } from './choiceProgress';
+ * Returns the total number of Choice modes unlocked across all five tracks.
+ *
+ * Currently only Track 1 (Puzzle Mastery) is wired — Tracks 2-5 return 0.
+ * When Tasks 19-22 implement the remaining tracks, this function will
+ * aggregate all five track counts.
+ *
+ * @returns Promise resolving to the number of unlocked Choice modes (0-40).
  */
-function getChoiceModesUnlocked(): Promise<number> {
-  // TODO(Task 20): Wire to Choice mode unlock aggregator
-  return Promise.resolve(0);
+async function getChoiceModesUnlocked(): Promise<number> {
+  const challengesCompleted = await getChallengesCompleted();
+  const track1Count = getTrack1UnlockedCount(challengesCompleted);
+
+  // TODO(Task 20): Add Track 2 (Chaos Veteran) — Crazy Hard wins
+  const track2Count = 0;
+  // TODO(Task 20): Add Track 3 (Rule Bender) — Choice Hard wins
+  const track3Count = 0;
+  // TODO(Task 20): Add Track 4 (Lifer) — mixed lifetime milestones
+  const track4Count = 0;
+  // TODO(Task 20): Add Track 5 (World Player) — Classified Hard wins
+  const track5Count = 0;
+
+  return track1Count + track2Count + track3Count + track4Count + track5Count;
 }
 
 /**

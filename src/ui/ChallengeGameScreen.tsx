@@ -44,6 +44,8 @@ export interface ChallengeGameScreenProps {
   readonly pieceShadow?: boolean;
   readonly isRetry?: boolean;
   readonly previousBestTimeMs?: number | null;
+  /** Called after a successful puzzle solve is recorded to IndexedDB. */
+  readonly onPuzzleCompleted?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +70,7 @@ export default function ChallengeGameScreen({
   pieceShadow = false,
   isRetry = false,
   previousBestTimeMs = null,
+  onPuzzleCompleted,
 }: ChallengeGameScreenProps) {
   // ── Initialize game state from puzzle ──────────────────────
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -103,6 +106,7 @@ export default function ChallengeGameScreen({
   const pendingStateRef = useRef<GameState | null>(null);
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => { isMountedRef.current = false; };
   }, []);
 
@@ -187,14 +191,16 @@ export default function ChallengeGameScreen({
 
     setCompletionData({ solveTimeMs: finalElapsedMs, rating });
 
-    // Record the attempt asynchronously
+    // Record the attempt asynchronously, then notify unlock system
     void recordChallengeAttempt(
       puzzle.id,
       true,
       finalElapsedMs,
       rating,
       movesPlayed,
-    );
+    ).then(() => {
+      onPuzzleCompleted?.();
+    });
 
     // Brief delay before showing dialog (let final animation play)
     setTimeout(() => {
@@ -202,7 +208,7 @@ export default function ChallengeGameScreen({
         setShowCompletion(true);
       }
     }, 500);
-  }, [puzzle, timer, movesPlayed]);
+  }, [puzzle, timer, movesPlayed, onPuzzleCompleted]);
 
   // ── Move callbacks ─────────────────────────────────────────
   const handleCorrectMove = useCallback((move: Move, newState: GameState) => {
