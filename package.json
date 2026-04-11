@@ -18,7 +18,11 @@
     "test:ai": "vitest run --config vitest.ai.config.ts --reporter=verbose",
     "test:perf": "node --expose-gc ./node_modules/.bin/vitest run --config vitest.perf.config.ts --reporter=verbose",
     "test:stress": "vitest run src/engine/events.stresstest.test.ts --reporter=verbose",
-    "validate:ai": "tsx src/ai/validation/runValidation.ts"
+    "validate:ai": "tsx src/ai/validation/runValidation.ts",
+    "generate-puzzles": "tsx scripts/generatePuzzles.ts",
+    "generate-puzzles:verbose": "tsx scripts/generatePuzzles.ts --verbose",
+    "generate-puzzles:quick": "tsx scripts/generatePuzzles.ts --quick",
+    "validate-puzzles": "vitest run src/data/puzzleData.test.ts"
   },
   "dependencies": {
     "comlink": "^4.4.2",
