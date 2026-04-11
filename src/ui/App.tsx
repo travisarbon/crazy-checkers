@@ -390,6 +390,7 @@ export default function App() {
           onRetry={(id) => { navigateToScreen({ kind: 'challenge-game', puzzleId: id }); }}
           animationSpeedMultiplier={settings.animationSpeed}
           pieceShadow={THEMES[settings.themeId]?.pieceShadow ?? false}
+          onPuzzleCompleted={refreshUnlocks}
         />
       );
       break;
