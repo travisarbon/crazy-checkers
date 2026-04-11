@@ -1,0 +1,258 @@
+/* CareerScreen — career dashboard styling */
+
+.section {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  margin: 0 0 0.75rem;
+}
+
+/* ── Loading and empty states ─────────────────────────────── */
+
+.loading {
+  text-align: center;
+  opacity: 0.55;
+  padding: 2rem 0;
+}
+
+.emptyMessage {
+  text-align: center;
+  opacity: 0.55;
+  padding: 1rem 0;
+  font-size: 0.9rem;
+}
+
+/* ── Section 1: Stats grid ────────────────────────────────── */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.statCard {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 20%, transparent);
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.statValue {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 700;
+  color: var(--ui-accent);
+}
+
+/* ── Section 2: Track progress ────────────────────────────── */
+
+.trackSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.trackWrapper {
+  /* Each ProgressTracker is wrapped in a container for spacing */
+}
+
+.trackDescription {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  margin: -0.5rem 0 0;
+}
+
+.nextMilestone {
+  font-size: 0.85rem;
+  color: var(--ui-accent);
+  margin-top: 0.25rem;
+}
+
+.trackComplete {
+  font-size: 0.85rem;
+  color: var(--ui-accent);
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+/* ── Section 3: Mode statistics tables ────────────────────── */
+
+.modeStatTableWrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modeStatTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.modeStatTable th {
+  text-align: left;
+  font-weight: 600;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 2px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  white-space: nowrap;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.modeStatTable td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-text) 10%, transparent);
+}
+
+.lockedRow {
+  opacity: 0.4;
+}
+
+.lockedRow td:last-child {
+  font-style: italic;
+}
+
+/* ── Challenge stats grid ─────────────────────────────────── */
+
+.challengeStatsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.challengeStatRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-text) 10%, transparent);
+}
+
+.challengeStatLabel {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.challengeStatValue {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+}
+
+.subsectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.subsectionTitle:first-child {
+  margin-top: 0;
+}
+
+/* ── Section 4: Chaos Gate ────────────────────────────────── */
+
+.chaosGateGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chaosGateRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.chaosGateLabel {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.chaosGateBar {
+  flex: 1;
+  max-width: 200px;
+}
+
+.chaosGateBarContainer {
+  width: 100%;
+  height: 10px;
+  background: color-mix(in srgb, var(--ui-accent) 15%, transparent);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.chaosGateBarFill {
+  height: 100%;
+  border-radius: 5px;
+  background: var(--ui-accent);
+  transition: width 500ms ease-out;
+}
+
+.chaosGateValue {
+  font-size: 0.8rem;
+  opacity: 0.65;
+  min-width: 60px;
+  text-align: right;
+}
+
+.chaosGateMet {
+  color: var(--ui-accent);
+  font-weight: 700;
+}
+
+.chaosGateUnlockedBanner {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--ui-accent);
+  padding: 1rem 0;
+}
+
+/* ── Responsive: Small phone (< 480px) ────────────────────── */
+@media (max-width: 479px) {
+  .section {
+    padding: 1rem;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── Responsive: Tablet+ (768px+) ─────────────────────────── */
+@media (min-width: 768px) {
+  .statsGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .chaosGateGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+}
+
+/* ── Reduced motion ───────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .chaosGateBarFill {
+    transition: none;
+  }
+}
