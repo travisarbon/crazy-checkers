@@ -1,0 +1,218 @@
+/* ── Backdrop ──────────────────────────────────────────────── */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 100;
+  animation: fadeIn 200ms ease-out;
+}
+
+/* ── Dialog panel ──────────────────────────────────────────── */
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 101;
+
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  border: 2px solid var(--ui-accent);
+  border-radius: 12px;
+  padding: 2rem 2.5rem;
+  min-width: 320px;
+  max-width: 420px;
+  width: 90vw;
+  text-align: center;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  animation: slideUp 250ms ease-out;
+}
+
+/* ── Stars ────────────────────────────────────────────────── */
+
+.stars {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.star {
+  font-size: 2.5rem;
+  opacity: 0;
+  animation: starPop 300ms ease-out forwards;
+}
+
+.starFilled {
+  color: var(--ui-accent);
+}
+
+.starEmpty {
+  color: var(--ui-text);
+  opacity: 0.3;
+  animation: none;
+}
+
+/* ── Heading ──────────────────────────────────────────────── */
+
+.heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: var(--ui-accent);
+}
+
+/* ── Puzzle info ──────────────────────────────────────────── */
+
+.puzzleInfo {
+  font-size: 0.85rem;
+  text-transform: capitalize;
+  margin: 0 0 0.5rem;
+  opacity: 0.75;
+}
+
+/* ── Time display ─────────────────────────────────────────── */
+
+.time {
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  margin: 0 0 1.5rem;
+}
+
+.newBest {
+  color: var(--ui-accent);
+  font-weight: 700;
+}
+
+.previousTime {
+  font-size: 0.85rem;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+/* ── Action buttons ───────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.primaryButton {
+  background: var(--ui-accent);
+  color: var(--ui-bg);
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+
+.primaryButton:hover {
+  opacity: 0.9;
+}
+
+.primaryButton:focus-visible {
+  outline: 2px solid var(--ui-text);
+  outline-offset: 2px;
+}
+
+.secondaryButton {
+  background: transparent;
+  color: var(--ui-text);
+  border: 1px solid var(--ui-text);
+  border-radius: 6px;
+  padding: 0.6rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+
+.secondaryButton:hover {
+  opacity: 0.75;
+}
+
+.secondaryButton:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+/* ── Animations ───────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes starPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Mobile ───────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .dialog {
+    padding: 1.5rem 1.25rem;
+    min-width: 0;
+    max-width: 95vw;
+  }
+
+  .heading {
+    font-size: 1.3rem;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    min-height: 48px;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 479px) {
+  .dialog {
+    padding: 1.25rem 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star {
+    animation: none;
+    opacity: 1;
+  }
+}

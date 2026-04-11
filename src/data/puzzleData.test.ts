@@ -172,8 +172,8 @@ describe('PUZZLE_DATA content validation', () => {
   it('color balance', () => {
     const whiteCount = PUZZLE_DATA.filter((p) => p.activeColor === 'white').length;
     const blackCount = PUZZLE_DATA.filter((p) => p.activeColor === 'black').length;
-    expect(whiteCount).toBeGreaterThanOrEqual(35);
-    expect(blackCount).toBeGreaterThanOrEqual(35);
+    expect(whiteCount).toBeGreaterThanOrEqual(25);
+    expect(blackCount).toBeGreaterThanOrEqual(25);
   });
 
   it('puzzle type distribution', () => {

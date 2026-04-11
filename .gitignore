@@ -17,6 +17,9 @@ coverage/
 playwright-report/
 test-results/
 
+# Claude Code
+CLAUDE.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

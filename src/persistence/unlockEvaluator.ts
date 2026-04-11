@@ -6,19 +6,14 @@
  */
 
 import type { UnlockSnapshot } from './unlockState';
+import { getChallengesCompletedCount } from './challengeRecords';
 
 // ---------------------------------------------------------------------------
 // Data adapters (each reads from a specific persistence store)
 // ---------------------------------------------------------------------------
 
-/**
- * @stub — Returns 0 until Task 19 (Challenge Mode) implements
- * the challenge completion persistence store.
- * Replace with: import { getChallengesCompletedCount } from './challengeProgress';
- */
 function getChallengesCompleted(): Promise<number> {
-  // TODO(Task 19): Wire to challenge completion store
-  return Promise.resolve(0);
+  return getChallengesCompletedCount();
 }
 
 /**

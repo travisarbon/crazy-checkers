@@ -4,7 +4,7 @@ import { createAmericanRules } from '../engine/rules';
 import { createInitialBoard } from '../engine/board';
 import { CrazyEvent, GameMode, PlayerType, GameStatus, PieceColor, square } from '../engine/types';
 import type { ActiveEvent, GameState, BoardState, Piece } from '../engine/types';
-import { serializeGameState, deserializeGameState, serializeBoard } from './serialization';
+import { serializeGameState, deserializeGameState, serializeBoard, deserializeBoardState } from './serialization';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -135,6 +135,42 @@ describe('serializeBoard', () => {
     expect(encoded[0]).toBe('W');
     expect(encoded[5]).toBe('B');
     expect(encoded[1]).toBe('.');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deserializeBoardState tests
+// ---------------------------------------------------------------------------
+
+describe('deserializeBoardState', () => {
+  it('round-trips with serializeBoard', () => {
+    const board = createInitialBoard();
+    const serialized = serializeBoard(board);
+    const deserialized = deserializeBoardState(serialized);
+    expect(deserialized).toEqual(board);
+  });
+
+  it('handles empty board', () => {
+    const emptyStr = '.'.repeat(32);
+    const board = deserializeBoardState(emptyStr);
+    expect(board.every((sq) => sq === null)).toBe(true);
+  });
+
+  it('handles all piece types', () => {
+    const str = 'wWbB' + '.'.repeat(28);
+    const board = deserializeBoardState(str);
+    expect(board[0]).toEqual({ color: 'WHITE', type: 'PAWN' });
+    expect(board[1]).toEqual({ color: 'WHITE', type: 'KING' });
+    expect(board[2]).toEqual({ color: 'BLACK', type: 'PAWN' });
+    expect(board[3]).toEqual({ color: 'BLACK', type: 'KING' });
+  });
+
+  it('throws on wrong length', () => {
+    expect(() => { deserializeBoardState('ww'); }).toThrow('32 characters');
+  });
+
+  it('throws on invalid character', () => {
+    expect(() => { deserializeBoardState('x' + '.'.repeat(31)); }).toThrow('Invalid board character');
   });
 });
 

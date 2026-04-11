@@ -18,8 +18,9 @@ import { serializeBoard } from './serialization';
 // ---------------------------------------------------------------------------
 
 const DB_NAME = 'crazy-checkers';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const GAMES_STORE = 'games';
+export const CHALLENGES_STORE = 'challenges';
 
 // ---------------------------------------------------------------------------
 // GameRecord schema
@@ -52,7 +53,7 @@ export interface GameRecord {
 // Database initialization
 // ---------------------------------------------------------------------------
 
-function getDb(): Promise<IDBPDatabase> {
+export function getDb(): Promise<IDBPDatabase> {
   return openDB(DB_NAME, DB_VERSION, {
     upgrade(db, oldVersion) {
       if (oldVersion < 1) {
@@ -64,6 +65,12 @@ function getDb(): Promise<IDBPDatabase> {
       // Version 2: added optional activeEventsPerPly and eventTriggerLog
       // fields to GameRecord. No schema migration needed — new fields are
       // optional and existing records load without them.
+
+      if (oldVersion < 3) {
+        const challengeStore = db.createObjectStore(CHALLENGES_STORE, { keyPath: 'id' });
+        challengeStore.createIndex('by-puzzleId', 'puzzleId');
+        challengeStore.createIndex('by-completedAt', 'completedAt');
+      }
     },
   });
 }

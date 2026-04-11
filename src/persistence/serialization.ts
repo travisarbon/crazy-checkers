@@ -5,7 +5,7 @@
  * so we convert to/from a plain JSON-safe representation.
  */
 
-import type { ActiveEvent, BoardState, GameState, Move } from '../engine/types';
+import type { ActiveEvent, BoardState, GameState, Move, Piece } from '../engine/types';
 import type {
   CrazyEvent,
   GameEndReason,
@@ -186,4 +186,26 @@ export function serializeBoard(board: BoardState): string {
       return sq.type === 'KING' ? 'B' : 'b';
     })
     .join('');
+}
+
+/**
+ * Deserializes a 32-character board string back into a BoardState.
+ * Inverse of serializeBoard.
+ *   '.' = empty, 'w' = white pawn, 'W' = white king,
+ *   'b' = black pawn, 'B' = black king.
+ */
+export function deserializeBoardState(serialized: string): BoardState {
+  if (serialized.length !== 32) {
+    throw new Error('Board string must be exactly 32 characters, got ' + String(serialized.length));
+  }
+  return serialized.split('').map((ch): Piece | null => {
+    switch (ch) {
+      case '.': return null;
+      case 'w': return { color: 'WHITE', type: 'PAWN' } as Piece;
+      case 'W': return { color: 'WHITE', type: 'KING' } as Piece;
+      case 'b': return { color: 'BLACK', type: 'PAWN' } as Piece;
+      case 'B': return { color: 'BLACK', type: 'KING' } as Piece;
+      default: throw new Error('Invalid board character: "' + ch + '"');
+    }
+  });
 }

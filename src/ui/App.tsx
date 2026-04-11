@@ -26,6 +26,8 @@ import ClassicScreen from './ClassicScreen';
 import CrazyScreen from './CrazyScreen';
 import ChaosScreen from './ChaosScreen';
 import ChallengeScreen from './ChallengeScreen';
+import ChallengeGameScreen from './ChallengeGameScreen';
+import { PUZZLE_DATA } from '../data/puzzleData';
 import ChoiceGalleryScreen from './ChoiceGalleryScreen';
 import ClassifiedGalleryScreen from './ClassifiedGalleryScreen';
 import CogitateScreen from './CogitateScreen';
@@ -55,6 +57,7 @@ type Screen =
   | { readonly kind: 'crazy' }
   | { readonly kind: 'chaos' }
   | { readonly kind: 'challenge' }
+  | { readonly kind: 'challenge-game'; readonly puzzleId: number }
   | { readonly kind: 'choice' }
   | { readonly kind: 'choice-detail'; readonly eventId: string }
   | { readonly kind: 'classified' }
@@ -77,6 +80,7 @@ function buildScreenFromKind(kind: ScreenKind): Screen {
     case 'crazy': return { kind: 'crazy' };
     case 'chaos': return { kind: 'chaos' };
     case 'challenge': return { kind: 'challenge' };
+    case 'challenge-game': return { kind: 'challenge' };
     case 'choice': return { kind: 'choice' };
     case 'classified': return { kind: 'classified' };
     case 'cogitate': return { kind: 'cogitate' };
@@ -190,9 +194,9 @@ export default function App() {
 
     // Determine parent based on navigation level
     let parentKind: ScreenKind | undefined;
-    if (screen.kind === 'choice-detail' || screen.kind === 'classified-detail') {
-      // Level 3: parent is the gallery
-      parentKind = screen.kind === 'choice-detail' ? 'choice' : 'classified';
+    if (screen.kind === 'choice-detail' || screen.kind === 'classified-detail' || screen.kind === 'challenge-game') {
+      // Level 3: parent is the gallery/sub-menu
+      parentKind = screen.kind === 'choice-detail' ? 'choice' : screen.kind === 'classified-detail' ? 'classified' : 'challenge';
     } else if (screen.kind === 'game') {
       // Game: parent is the mode that launched it
       parentKind = prev.kind !== 'menu' ? prev.kind : 'menu';
@@ -363,8 +367,33 @@ export default function App() {
       break;
 
     case 'challenge':
-      content = <ChallengeScreen onBack={navigateToMenu} />;
+      content = (
+        <ChallengeScreen
+          onBack={navigateToMenu}
+          onStartPuzzle={(puzzleId: number) => { navigateToScreen({ kind: 'challenge-game', puzzleId }); }}
+        />
+      );
       break;
+
+    case 'challenge-game': {
+      const puzzle = PUZZLE_DATA.find((p) => p.id === screen.puzzleId);
+      if (!puzzle) {
+        navigateToScreen({ kind: 'challenge' });
+        break;
+      }
+      content = (
+        <ChallengeGameScreen
+          key={'puzzle-' + String(screen.puzzleId)}
+          puzzle={puzzle}
+          onBack={() => { navigateToScreen({ kind: 'challenge' }); }}
+          onNextPuzzle={(nextId) => { navigateToScreen({ kind: 'challenge-game', puzzleId: nextId }); }}
+          onRetry={(id) => { navigateToScreen({ kind: 'challenge-game', puzzleId: id }); }}
+          animationSpeedMultiplier={settings.animationSpeed}
+          pieceShadow={THEMES[settings.themeId]?.pieceShadow ?? false}
+        />
+      );
+      break;
+    }
 
     case 'choice':
       content = <ChoiceGalleryScreen onBack={navigateToMenu} />;
