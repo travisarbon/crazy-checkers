@@ -1,0 +1,104 @@
+/* PuzzleSelector — 10x10 grid of puzzle cells */
+
+.puzzleSelector {
+  margin-top: 0.75rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+}
+
+.cell {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 32px;
+  font-size: 0.7rem;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ui-text);
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.cell:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 1px;
+}
+
+.cell_solved {
+  background: var(--ui-accent);
+  color: var(--ui-bg);
+  border-color: var(--ui-accent);
+}
+
+.cell_available {
+  border-color: var(--ui-accent);
+  background: transparent;
+}
+
+.cell_available:hover {
+  background: color-mix(in srgb, var(--ui-accent) 15%, transparent);
+}
+
+.cell_locked {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.cell_current {
+  border: 2px solid var(--ui-accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--ui-accent) 60%, transparent);
+  animation: pulse-border 1.5s ease-in-out infinite;
+}
+
+.cellNumber {
+  font-weight: 600;
+  line-height: 1;
+}
+
+.cellStars {
+  font-size: 0.5rem;
+  line-height: 1;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    box-shadow: 0 0 6px color-mix(in srgb, var(--ui-accent) 60%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--ui-accent) 90%, transparent);
+  }
+}
+
+/* ── Small phone (< 480px) ─────────────────────────────────── */
+@media (max-width: 479px) {
+  .cell {
+    min-height: 26px;
+    min-width: 26px;
+    font-size: 0.6rem;
+  }
+
+  .cellStars {
+    font-size: 0.45rem;
+  }
+}
+
+/* ── Reduced motion ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .cell_current {
+    animation: none;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--ui-accent) 70%, transparent);
+  }
+
+  .cell {
+    transition: none;
+  }
+}

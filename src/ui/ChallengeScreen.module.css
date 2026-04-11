@@ -1,0 +1,272 @@
+/* ChallengeScreen — mode-specific styling */
+
+.section {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  margin: 0 0 0.75rem;
+}
+
+.loading {
+  text-align: center;
+  opacity: 0.55;
+  padding: 2rem 0;
+}
+
+/* ── Board preview ─────────────────────────────────────────── */
+
+.boardPreviewWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.boardCaption {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  text-align: center;
+}
+
+/* ── How to Play ───────────────────────────────────────────── */
+
+.howToPlay {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Stats grid ────────────────────────────────────────────── */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.statCard {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 20%, transparent);
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.statValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--ui-accent);
+}
+
+/* ── Progress grid (mini 10x10) ────────────────────────────── */
+
+.progressGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  max-width: 300px;
+  margin: 0.75rem auto 0;
+}
+
+.progressCell {
+  aspect-ratio: 1 / 1;
+  border-radius: 3px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.progressCell_solved {
+  background: var(--ui-accent);
+}
+
+.progressCell_available {
+  background: color-mix(in srgb, var(--ui-accent) 40%, transparent);
+}
+
+.progressCell_locked {
+  background: color-mix(in srgb, var(--ui-text) 15%, transparent);
+}
+
+.progressCell_current {
+  background: color-mix(in srgb, var(--ui-accent) 40%, transparent);
+  box-shadow: 0 0 4px color-mix(in srgb, var(--ui-accent) 60%, transparent);
+  animation: mini-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes mini-pulse {
+  0%, 100% {
+    box-shadow: 0 0 4px color-mix(in srgb, var(--ui-accent) 60%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 8px color-mix(in srgb, var(--ui-accent) 90%, transparent);
+  }
+}
+
+/* ── Action row ────────────────────────────────────────────── */
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.continueButton {
+  background: var(--ui-accent);
+  color: var(--ui-bg);
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  transition: opacity 0.15s;
+}
+
+.continueButton:hover {
+  opacity: 0.85;
+}
+
+.continueButton:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.selectButton {
+  background: transparent;
+  color: var(--ui-text);
+  border: 2px solid var(--ui-accent);
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  transition: background-color 0.15s;
+}
+
+.selectButton:hover {
+  background: color-mix(in srgb, var(--ui-accent) 15%, transparent);
+}
+
+.selectButton:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.completeMessage {
+  color: var(--ui-accent);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* ── Expanded detail content ───────────────────────────────── */
+
+.subsectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.subsectionTitle:first-child {
+  margin-top: 0;
+}
+
+.contentParagraph {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
+/* ── Performance history table ─────────────────────────────── */
+
+.historyTableWrapper {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+
+.historyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.historyTable th {
+  text-align: left;
+  font-weight: 600;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 2px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  white-space: nowrap;
+}
+
+.historyTable td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-text) 10%, transparent);
+}
+
+.historyRow_solved td:first-child {
+  color: var(--ui-accent);
+}
+
+.historyRow_unsolved {
+  opacity: 0.6;
+}
+
+.emptyHistory {
+  text-align: center;
+  opacity: 0.55;
+  padding: 1rem 0;
+  font-size: 0.9rem;
+}
+
+/* ── Small phone (< 480px) ─────────────────────────────────── */
+@media (max-width: 479px) {
+  .section {
+    padding: 1rem;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actionRow {
+    flex-direction: column;
+  }
+
+  .continueButton,
+  .selectButton {
+    width: 100%;
+  }
+}
+
+/* ── Reduced motion ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .progressCell_current {
+    animation: none;
+    box-shadow: 0 0 6px color-mix(in srgb, var(--ui-accent) 70%, transparent);
+  }
+
+  .continueButton,
+  .selectButton {
+    transition: none;
+  }
+}
