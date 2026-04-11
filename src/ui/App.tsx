@@ -57,7 +57,7 @@ type Screen =
   | { readonly kind: 'crazy' }
   | { readonly kind: 'chaos' }
   | { readonly kind: 'challenge' }
-  | { readonly kind: 'challenge-game'; readonly puzzleId: number }
+  | { readonly kind: 'challenge-game'; readonly puzzleId: number; readonly retryCount?: number }
   | { readonly kind: 'choice' }
   | { readonly kind: 'choice-detail'; readonly eventId: string }
   | { readonly kind: 'classified' }
@@ -383,11 +383,11 @@ export default function App() {
       }
       content = (
         <ChallengeGameScreen
-          key={'puzzle-' + String(screen.puzzleId)}
+          key={'puzzle-' + String(screen.puzzleId) + '-' + String(screen.retryCount ?? 0)}
           puzzle={puzzle}
           onBack={() => { navigateToScreen({ kind: 'challenge' }); }}
           onNextPuzzle={(nextId) => { navigateToScreen({ kind: 'challenge-game', puzzleId: nextId }); }}
-          onRetry={(id) => { navigateToScreen({ kind: 'challenge-game', puzzleId: id }); }}
+          onRetry={(id) => { navigateToScreen({ kind: 'challenge-game', puzzleId: id, retryCount: (screen.retryCount ?? 0) + 1 }); }}
           animationSpeedMultiplier={settings.animationSpeed}
           pieceShadow={THEMES[settings.themeId]?.pieceShadow ?? false}
           onPuzzleCompleted={refreshUnlocks}
