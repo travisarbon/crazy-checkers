@@ -397,7 +397,14 @@ export default function App() {
     }
 
     case 'choice':
-      content = <ChoiceGalleryScreen onBack={navigateToMenu} />;
+      content = (
+        <ChoiceGalleryScreen
+          onBack={navigateToMenu}
+          onNavigateToDetail={(choiceNumber) => {
+            navigateToScreen({ kind: 'choice-detail', eventId: String(choiceNumber) });
+          }}
+        />
+      );
       break;
 
     case 'choice-detail':
