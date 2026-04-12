@@ -2,15 +2,15 @@
  * Swap Meet — production event decorator (Event 32).
  *
  * Instant event (duration 0). Two randomly selected pairs of opposing
- * pieces swap board positions. Piece types are preserved. Swapped pawns
- * do NOT auto-promote even if they land on their promotion row.
+ * pieces swap board positions. Piece types are preserved, except that
+ * pawns landing on their promotion row are promoted to kings.
  *
  * Uses seeded PRNG for deterministic replay.
  */
 
 import type { BoardState, Move, RuleSet } from '../types';
-import { CrazyEvent, PieceColor } from '../types';
-import { getBoardSquare, getSquaresWithColor, setBoardSquare } from '../board';
+import { CrazyEvent, PieceColor, PieceType } from '../types';
+import { getBoardSquare, getSquaresWithColor, isPromotionSquare, setBoardSquare } from '../board';
 import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } from '../events';
 import { createSeededRng } from './checksMix';
 
@@ -63,9 +63,20 @@ export class SwapMeetDecorator extends EventDecorator {
       if (wEntry === undefined || bEntry === undefined) break;
       if (wEntry.piece === null || bEntry.piece === null) break;
 
-      // Swap positions (preserve piece type and color)
-      result = setBoardSquare(result, wEntry.sq, bEntry.piece);
-      result = setBoardSquare(result, bEntry.sq, wEntry.piece);
+      // Swap positions (preserve color, but promote pawns that land on
+      // their promotion row — a swap that moves a pawn to its back rank
+      // should follow the same promotion rules as a regular move).
+      const wLandingPiece =
+        wEntry.piece.type === PieceType.Pawn && isPromotionSquare(bEntry.sq, wEntry.piece.color)
+          ? { ...wEntry.piece, type: PieceType.King }
+          : wEntry.piece;
+      const bLandingPiece =
+        bEntry.piece.type === PieceType.Pawn && isPromotionSquare(wEntry.sq, bEntry.piece.color)
+          ? { ...bEntry.piece, type: PieceType.King }
+          : bEntry.piece;
+
+      result = setBoardSquare(result, wEntry.sq, bLandingPiece);
+      result = setBoardSquare(result, bEntry.sq, wLandingPiece);
 
       // Remove from lists to prevent re-selection
       whiteEntries.splice(wIdx, 1);

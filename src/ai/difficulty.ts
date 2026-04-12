@@ -180,5 +180,10 @@ export function selectMove(
   }
 
   // --- Fallback: play the search's best move ---
-  return searchResult.move ?? (legalMoves[0] as Move);
+  // If the search didn't produce a move AND no legal moves exist, the caller
+  // should have short-circuited before reaching selectMove. Throwing here
+  // surfaces the bug instead of propagating an `undefined` move into makeMove.
+  if (searchResult.move) return searchResult.move;
+  if (legalMoves.length > 0) return legalMoves[0] as Move;
+  throw new Error('selectMove: no search result and no legal moves');
 }

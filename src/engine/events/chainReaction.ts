@@ -72,8 +72,15 @@ export class ChainReactionDecorator extends EventDecorator {
     // BFS cascade from all captured squares
     result = cascadeCapture(result, captured, capturedColor);
 
-    // Signal that this event should be removed (condition met)
-    this.requestEventRemoval(CrazyEvent.ChainReaction);
+    // Signal that this event should be removed (condition met) — unless
+    // permanent (Choice mode), in which case chain reactions fire on every
+    // capture for the full game.
+    const entry = this.activeEventsContext.find(
+      (e) => e.type === CrazyEvent.ChainReaction,
+    );
+    if (entry?.permanent !== true) {
+      this.requestEventRemoval(CrazyEvent.ChainReaction);
+    }
 
     return result;
   }

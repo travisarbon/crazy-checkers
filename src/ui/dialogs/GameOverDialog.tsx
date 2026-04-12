@@ -13,6 +13,7 @@ import { GameMode, GameResultType, GameEndReason, PieceColor as PC } from '../..
 import type { ClockState } from '../../engine/clock';
 import { getRemainingTime, formatTime } from '../../engine/clock';
 import { EVENT_DISPLAY_NAMES } from '../../engine/events';
+import { CHOICE_MODE_DATA } from '../../persistence/choiceModeData';
 import styles from './GameOverDialog.module.css';
 
 // ---------------------------------------------------------------------------
@@ -204,6 +205,19 @@ export default function GameOverDialog({
         {mode === GameMode.Crazy && (
           <p className={styles.modeLabel} data-testid="game-over-mode-label">Crazy Mode</p>
         )}
+        {mode === GameMode.Chaos && (
+          <p className={styles.modeLabel} data-testid="game-over-mode-label">Chaos Mode</p>
+        )}
+        {mode === GameMode.Choice && (() => {
+          const permanent = activeEvents?.find((e) => e.permanent === true);
+          const def = permanent
+            ? CHOICE_MODE_DATA.find((d) => d.event === permanent.type)
+            : CHOICE_MODE_DATA.find((d) => d.event === null);
+          const label = def?.displayName ?? 'Choice Mode';
+          return (
+            <p className={styles.modeLabel} data-testid="game-over-mode-label">{label}</p>
+          );
+        })()}
         <p id="game-over-reason" className={styles.reason}>
           {getReasonDescription(result, lastActiveColor)}
         </p>
@@ -218,7 +232,9 @@ export default function GameOverDialog({
             </span>
           </p>
         )}
-        {mode === GameMode.Crazy && activeEvents && activeEvents.length > 0 && (
+        {(mode === GameMode.Crazy || mode === GameMode.Chaos || mode === GameMode.Choice)
+          && activeEvents
+          && activeEvents.length > 0 && (
           <p className={styles.activeEventsNote} data-testid="game-over-active-events">
             Events active at game end: {activeEvents.map((e) => EVENT_DISPLAY_NAMES[e.type]).join(', ')}
           </p>

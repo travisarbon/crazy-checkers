@@ -86,8 +86,14 @@ export class DealersChoiceDecorator extends EventDecorator {
 
     this.requestMetadataUpdate(CrazyEvent.DealersChoice, updatedMetadata as unknown as Record<string, unknown>);
 
-    // Check if both skips used → remove event
-    if (updatedMetadata.whiteSkipUsed && updatedMetadata.blackSkipUsed) {
+    // Check if both skips used → remove event, unless permanent (Choice mode).
+    // Permanent events must persist for the full game so that the mode's
+    // identity (optional captures) never degrades into Extra Crazy behavior.
+    const eventEntry = this.activeEventsContext.find(
+      (e) => e.type === CrazyEvent.DealersChoice,
+    );
+    const isPermanent = eventEntry?.permanent === true;
+    if (!isPermanent && updatedMetadata.whiteSkipUsed && updatedMetadata.blackSkipUsed) {
       this.requestEventRemoval(CrazyEvent.DealersChoice);
     }
 

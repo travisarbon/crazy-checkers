@@ -443,10 +443,21 @@ export default function GameScreen({
         }
       }
 
-      // 3. Mid-move effects (detonations, color swaps from expired events)
-      if (expired.length > 0) {
+      // 3. Mid-move effects (detonations, color swaps, chain reactions, etc.)
+      // In Crazy/Chaos, these events trigger and expire in the same turn so
+      // they appear in `expired`. In Choice mode, events are permanent and
+      // never expire — we must also fire mid-move effects for persistent
+      // active events on every qualifying move. Combine both sets (dedup by
+      // identity) so each event animates exactly once.
+      const midMoveEvents: ActiveEvent[] = [...expired];
+      for (const event of newState.activeEvents) {
+        if (event.permanent !== true) continue;
+        if (midMoveEvents.includes(event)) continue;
+        midMoveEvents.push(event);
+      }
+      if (midMoveEvents.length > 0) {
         allSteps = allSteps.concat(
-          eventAnimations.buildMidMoveEffects(move, expired, boardBefore, newState.board),
+          eventAnimations.buildMidMoveEffects(move, midMoveEvents, boardBefore, newState.board),
         );
       }
 
@@ -513,7 +524,28 @@ export default function GameScreen({
       })
       .catch((error: unknown) => {
         if (cancelled) return;
+        // AI failures must NEVER silently fall through to human input — that
+        // leaves the UI waiting for a click on the CPU's side of the board.
+        // As a last resort, force a random legal move so the game always
+        // progresses. If no legal moves exist, stalemate detection will have
+        // already transitioned the game to GameOver on the previous turn.
         console.error('AI move computation failed:', error);
+        try {
+          let effective = state.board;
+          if (state.ruleSet.onTurnStart) {
+            effective = state.ruleSet.onTurnStart(state.board, state.activeColor);
+          }
+          const legal = state.ruleSet.getLegalMoves(effective, state.activeColor);
+          if (legal.length > 0) {
+            const pick = legal[Math.floor(Math.random() * legal.length)];
+            if (pick) {
+              const newState = makeMove(state, pick);
+              handleMoveRef.current(newState);
+            }
+          }
+        } catch (fallbackError) {
+          console.error('AI fallback also failed:', fallbackError);
+        }
       })
       .finally(() => {
         if (!cancelled) {
@@ -729,7 +761,9 @@ export default function GameScreen({
           isThinking={isAIThinking}
         />
         <CapturedPieces moveHistory={gameState.moveHistory} pendingCaptures={pendingCaptures} />
-        {(gameState.mode === GameMode.Crazy || gameState.mode === GameMode.Chaos) && (
+        {(gameState.mode === GameMode.Crazy ||
+          gameState.mode === GameMode.Chaos ||
+          gameState.mode === GameMode.Choice) && (
           <ActiveEventsIndicator
             activeEvents={gameState.activeEvents}
             activeColor={gameState.activeColor}

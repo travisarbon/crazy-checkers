@@ -371,11 +371,16 @@ export function makeMove(state: GameState, move: Move): GameState {
 
   // ── Event trigger (Crazy, Chaos, and Extra Crazy modes) ─────────────
   // Extra Crazy = Choice mode with no permanent event: any jump (1+ captures)
-  // triggers a single random event.
-  const isExtraCrazy = state.mode === GameMode.Choice
-    && !state.activeEvents.some(e => e.permanent === true);
+  // triggers a single random event. All other Choice modes must NOT trigger
+  // random events — their permanent event is their only event.
+  const hasPermanentEvent = state.activeEvents.some(e => e.permanent === true);
+  const isExtraCrazy = state.mode === GameMode.Choice && !hasPermanentEvent;
+  const isChoiceWithPermanent = state.mode === GameMode.Choice && hasPermanentEvent;
 
-  if (state.mode === GameMode.Crazy || state.mode === GameMode.Chaos || isExtraCrazy) {
+  if (
+    !isChoiceWithPermanent
+    && (state.mode === GameMode.Crazy || state.mode === GameMode.Chaos || isExtraCrazy)
+  ) {
     let triggeredEvents: CrazyEvent[] | null = null;
 
     if (isExtraCrazy) {

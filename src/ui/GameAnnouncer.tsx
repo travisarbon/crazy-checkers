@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import type { GameState, Move } from '../engine/types';
+import type { BoardState, GameState, Move } from '../engine/types';
 import { GameStatus, PieceColor, GameResultType, GameEndReason, PieceType } from '../engine/types';
 import { getBoardSquare } from '../engine/board';
 import { moveToString } from '../utils/notation';
@@ -16,7 +16,11 @@ interface GameAnnouncerProps {
   isAnimating: boolean;
 }
 
-function describeMoveEvent(move: Move, gameState: GameState): string {
+function describeMoveEvent(
+  move: Move,
+  gameState: GameState,
+  previousBoard: BoardState | null,
+): string {
   const parts: string[] = [];
 
   // Who moved
@@ -34,15 +38,20 @@ function describeMoveEvent(move: Move, gameState: GameState): string {
     parts.push(`${moverColor} moves: ${notation}`);
   }
 
-  // Check for kinging: look at the destination square on the current board
+  // Kinging: fired only when a pawn was promoted during this move.
+  // Compare the source-square piece type on the pre-move board against the
+  // destination-square piece type on the post-move board. If the source was
+  // a pawn and the destination is now a king, a promotion occurred.
   const destination = move.path[move.path.length - 1];
-  if (destination !== undefined) {
-    const piece = getBoardSquare(gameState.board, destination);
-    if (piece !== null && piece.type === PieceType.King) {
-      // Check if the piece was NOT a king before the move (from square on previous board)
-      // Since we only have current state post-move, we check if the move came from a pawn.
-      // A simple heuristic: if captures > 0 it could be any piece, but promotion only
-      // happens for pawns. We announce it when the piece at destination is a king.
+  if (destination !== undefined && previousBoard !== null) {
+    const pieceAfter = getBoardSquare(gameState.board, destination);
+    const pieceBefore = getBoardSquare(previousBoard, move.from);
+    if (
+      pieceBefore !== null &&
+      pieceAfter !== null &&
+      pieceBefore.type === PieceType.Pawn &&
+      pieceAfter.type === PieceType.King
+    ) {
       parts.push('Kinged!');
     }
   }
@@ -76,6 +85,7 @@ export default function GameAnnouncer({ gameState, isAnimating }: GameAnnouncerP
   const [announcement, setAnnouncement] = useState('');
   const [trackedPly, setTrackedPly] = useState(gameState.plyCount);
   const [trackedStatus, setTrackedStatus] = useState(gameState.status);
+  const [trackedBoard, setTrackedBoard] = useState(gameState.board);
 
   // Derive announcement from prop changes during render (no effect needed).
   // React's "you can set state during render if the value changed" pattern.
@@ -83,7 +93,7 @@ export default function GameAnnouncer({ gameState, isAnimating }: GameAnnouncerP
     if (gameState.plyCount !== trackedPly && gameState.plyCount > 0) {
       const lastMove = gameState.moveHistory[gameState.moveHistory.length - 1];
       if (lastMove) {
-        const moveDesc = describeMoveEvent(lastMove, gameState);
+        const moveDesc = describeMoveEvent(lastMove, gameState, trackedBoard);
 
         if (gameState.status === GameStatus.GameOver) {
           const gameOverDesc = describeGameOver(gameState);
@@ -95,6 +105,7 @@ export default function GameAnnouncer({ gameState, isAnimating }: GameAnnouncerP
       }
       setTrackedPly(gameState.plyCount);
       setTrackedStatus(gameState.status);
+      setTrackedBoard(gameState.board);
     } else if (gameState.status === GameStatus.GameOver && trackedStatus !== GameStatus.GameOver) {
       setAnnouncement(describeGameOver(gameState));
       setTrackedStatus(gameState.status);

@@ -94,11 +94,16 @@ export class HauntedDecorator extends EventDecorator {
     const metadata = this.getHauntedMetadata();
     if (!metadata) return result;
 
-    const currentCount = metadata.ghostCount + this._pendingGhosts.length;
-    if (currentCount >= 3) return result; // no more ghosts
+    // Permanent events (Choice mode) keep spawning ghosts indefinitely.
+    const isPermanent = this.isEventPermanent();
+
+    if (!isPermanent) {
+      const currentCount = metadata.ghostCount + this._pendingGhosts.length;
+      if (currentCount >= 3) return result; // no more ghosts
+    }
 
     for (const capSq of captured) {
-      if (metadata.ghostCount + this._pendingGhosts.length >= 3) break;
+      if (!isPermanent && metadata.ghostCount + this._pendingGhosts.length >= 3) break;
       this._pendingGhosts.push({ square: capSq as number, remainingPlies: 6 });
     }
 
@@ -141,12 +146,22 @@ export class HauntedDecorator extends EventDecorator {
       ghostCount: mergedCount,
     });
 
-    // Remove event when all ghosts expired and cap reached
-    if (updatedGhosts.length === 0 && mergedCount >= 3) {
+    // Remove event when all ghosts expired and cap reached, unless permanent
+    // (Choice mode). Permanent events must persist indefinitely so ghosts keep
+    // spawning on every capture for the full game.
+    const isPermanent = this.isEventPermanent();
+    if (!isPermanent && updatedGhosts.length === 0 && mergedCount >= 3) {
       this.requestEventRemoval(CrazyEvent.Haunted);
     }
 
     return result;
+  }
+
+  private isEventPermanent(): boolean {
+    const entry = this.activeEventsContext.find(
+      (e) => e.type === CrazyEvent.Haunted,
+    );
+    return entry?.permanent === true;
   }
 
   private getHauntedMetadata(): HauntedMetadata | undefined {
