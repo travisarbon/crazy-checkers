@@ -56,9 +56,12 @@ export class HotPotatoDecorator extends EventDecorator {
     // Delegate to inner first (chain order)
     let result = super.onTurnEnd(board, activeColor, move);
 
-    // Count how many HotPotato events target this player
+    // Count how many HotPotato events target this player.
+    // Permanent Choice mode events apply to BOTH players regardless of triggeredBy.
     const matchingEntries = this.activeEventsContext.filter(
-      e => e.type === this.getEventType() && e.triggeredBy === activeColor,
+      e => e.type === this.getEventType() && (
+        e.triggeredBy === activeColor || e.permanent === true
+      ),
     );
 
     if (matchingEntries.length === 0) return result;

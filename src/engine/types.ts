@@ -88,6 +88,14 @@ export interface ActiveEvent {
   readonly triggeredAtPly: number;
 
   /**
+   * Whether this event is a permanent Choice mode event that should never
+   * be consumed or removed. When true, condition-based events (e.g., Live
+   * Grenade) skip their self-removal logic, and player-targeted events
+   * (e.g., Hot Potato) apply to both players.
+   */
+  readonly permanent?: boolean;
+
+  /**
    * Optional event-specific data. Each event type defines its own metadata
    * shape. This field enables stateless decorators: instead of storing state
    * in instance variables, decorators read metadata from the ActiveEvent.

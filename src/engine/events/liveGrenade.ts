@@ -49,8 +49,14 @@ export class LiveGrenadeDecorator extends EventDecorator {
     // BOOM: destroy all pieces adjacent to the landing square
     const explodedBoard = explodeAdjacentPieces(result, landingSquare);
 
-    // Signal that this event should be removed (condition met)
-    this.requestEventRemoval(CrazyEvent.LiveGrenade);
+    // Signal that this event should be removed (condition met) —
+    // but NOT if the event is a permanent Choice mode event.
+    const isPermanent = this.activeEventsContext.some(
+      e => e.type === CrazyEvent.LiveGrenade && e.permanent === true,
+    );
+    if (!isPermanent) {
+      this.requestEventRemoval(CrazyEvent.LiveGrenade);
+    }
 
     return explodedBoard;
   }

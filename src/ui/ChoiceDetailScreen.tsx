@@ -6,9 +6,10 @@
  * for event relationship and strategy guidance.
  */
 
-import { GameMode } from '../engine/types';
-import type { CrazyEvent, PlayerSetup } from '../engine/types';
+import { CrazyEvent, GameMode, PieceType } from '../engine/types';
+import type { BoardState, PlayerSetup, SquareState } from '../engine/types';
 import type { TimeControlConfig } from '../engine/clock';
+import { createInitialBoard } from '../engine/board';
 import ModeScreenShell from './ModeScreenShell';
 import BoardPreviewLarge from './BoardPreviewLarge';
 import ExpandableDetailPanel from './ExpandableDetailPanel';
@@ -22,6 +23,27 @@ import styles from './ChoiceDetailScreen.module.css';
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
+
+/**
+ * Returns a board position that visually reflects the permanent event effect.
+ * For most events, this is the standard starting position. For events like
+ * Revolution (KingForADay), all pieces are shown as kings.
+ */
+function getEventModifiedPosition(event: CrazyEvent | null): BoardState | undefined {
+  if (event === CrazyEvent.KingForADay) {
+    // Revolution: all pieces are kings
+    const board = createInitialBoard();
+    const modified = [...board] as SquareState[];
+    for (let i = 0; i < modified.length; i++) {
+      const piece = modified[i];
+      if (piece != null && piece.type === PieceType.Pawn) {
+        modified[i] = { color: piece.color, type: PieceType.King };
+      }
+    }
+    return modified;
+  }
+  return undefined; // Use default starting position
+}
 
 /**
  * Optional highlight squares for specific Choice modes.
@@ -117,6 +139,7 @@ export default function ChoiceDetailScreen({
   // Mode-specific data
   const displayName = modeData.displayName;
   const highlights = CHOICE_HIGHLIGHT_SQUARES.get(choiceNumber) ?? [];
+  const eventModifiedPosition = getEventModifiedPosition(modeData.event);
   const eventName = modeData.event != null
     ? EVENT_DISPLAY_NAMES[modeData.event]
     : null;
@@ -132,6 +155,7 @@ export default function ChoiceDetailScreen({
           <div className={styles.boardSection}>
             <BoardPreviewLarge
               size={260}
+              position={eventModifiedPosition}
               highlightSquares={highlights as number[]}
               label={`${displayName} board preview showing the starting position`}
             />
@@ -169,8 +193,8 @@ export default function ChoiceDetailScreen({
             This Choice mode is based on{' '}
             <strong>{eventName}</strong>. In Crazy mode, {eventName}{' '}
             {formatDuration(eventDurationPlies)} and is triggered randomly on
-            multi-jumps. In <strong>{displayName}</strong>, the effect is
-            permanent and always active.
+            multi-jumps. In <strong>{displayName}</strong>, the effect applies
+            from the start and never expires.
           </div>
         ) : (
           <div className={styles.eventCallout}>
@@ -200,9 +224,8 @@ export default function ChoiceDetailScreen({
               {eventData.mechanicalEffect}
             </p>
             <p className={styles.contentParagraph}>
-              In <strong>{displayName}</strong> (Choice mode), this effect is
-              permanent from the start of the game rather than being triggered
-              randomly. {eventData.choiceModeDescription}
+              <strong>In {displayName}:</strong>{' '}
+              {eventData.choiceModeDescription}
             </p>
 
             {eventData.stackingNotes.length > 0 && (

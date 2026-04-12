@@ -34,12 +34,12 @@ export interface ChoiceModeDefinition {
 export const CHOICE_MODE_DATA: readonly ChoiceModeDefinition[] = [
   // Track 1 — Puzzle Mastery (Choice modes 1–8)
   { choiceNumber: 1, event: CrazyEvent.KingForADay, displayName: 'Revolution', description: 'All pawns are permanently promoted to kings', track: 'puzzle-mastery', unlockThreshold: 'Complete 1 challenge' },
-  { choiceNumber: 2, event: CrazyEvent.LiveGrenade, displayName: 'Boom Box', description: 'A ticking grenade that explodes after countdown', track: 'puzzle-mastery', unlockThreshold: 'Complete 15 challenges' },
-  { choiceNumber: 3, event: CrazyEvent.HotPotato, displayName: 'Imposter', description: 'A cursed piece that changes sides each turn', track: 'puzzle-mastery', unlockThreshold: 'Complete 29 challenges' },
-  { choiceNumber: 4, event: CrazyEvent.ChecksMix, displayName: 'Blender', description: 'All pieces randomly shuffle positions', track: 'puzzle-mastery', unlockThreshold: 'Complete 43 challenges' },
-  { choiceNumber: 5, event: CrazyEvent.OppositeDay, displayName: 'Mirror World', description: 'Pawns move backward instead of forward', track: 'puzzle-mastery', unlockThreshold: 'Complete 57 challenges' },
-  { choiceNumber: 6, event: CrazyEvent.UpInTheAir, displayName: 'Frequent Flyer', description: 'Random pieces teleport to new squares', track: 'puzzle-mastery', unlockThreshold: 'Complete 71 challenges' },
-  { choiceNumber: 7, event: CrazyEvent.NoTouching, displayName: 'Class Divides', description: 'Pieces in adjacent squares cannot capture', track: 'puzzle-mastery', unlockThreshold: 'Complete 85 challenges' },
+  { choiceNumber: 2, event: CrazyEvent.LiveGrenade, displayName: 'Boom Box', description: 'Every capture triggers an explosion destroying adjacent pieces', track: 'puzzle-mastery', unlockThreshold: 'Complete 15 challenges' },
+  { choiceNumber: 3, event: CrazyEvent.HotPotato, displayName: 'Imposter', description: 'Every piece that moves switches to the opponent\'s color', track: 'puzzle-mastery', unlockThreshold: 'Complete 29 challenges' },
+  { choiceNumber: 4, event: CrazyEvent.ChecksMix, displayName: 'Blender', description: 'All pieces shuffle to random positions each turn', track: 'puzzle-mastery', unlockThreshold: 'Complete 43 challenges' },
+  { choiceNumber: 5, event: CrazyEvent.OppositeDay, displayName: 'Mirror World', description: 'Anti-checkers: you win by losing all your pieces', track: 'puzzle-mastery', unlockThreshold: 'Complete 57 challenges' },
+  { choiceNumber: 6, event: CrazyEvent.UpInTheAir, displayName: 'Frequent Flyer', description: 'All pieces gain flying diagonal movement', track: 'puzzle-mastery', unlockThreshold: 'Complete 71 challenges' },
+  { choiceNumber: 7, event: CrazyEvent.NoTouching, displayName: 'Class Divides', description: 'Pawns cannot capture kings', track: 'puzzle-mastery', unlockThreshold: 'Complete 85 challenges' },
   { choiceNumber: 8, event: null, displayName: 'Extra Crazy', description: 'A random event triggers on every single jump', track: 'puzzle-mastery', unlockThreshold: 'Complete 99 challenges' },
 
   // Track 2 — Chaos Veteran (Choice modes 9–16)
@@ -66,9 +66,9 @@ export const CHOICE_MODE_DATA: readonly ChoiceModeDefinition[] = [
   { choiceNumber: 25, event: CrazyEvent.Ricochet, displayName: 'Pinball', description: 'Pieces bounce off the board edges after moving', track: 'lifer', unlockThreshold: 'Play 50 total games' },
   { choiceNumber: 26, event: CrazyEvent.Landmine, displayName: 'Minefield', description: 'Hidden mines explode when landed on', track: 'lifer', unlockThreshold: 'Win 5 games in a row vs. Hard CPU' },
   { choiceNumber: 27, event: CrazyEvent.TollRoad, displayName: 'Eye for an Eye', description: 'Crossing certain squares costs a piece', track: 'lifer', unlockThreshold: 'Win 10 games as Black vs. Hard CPU' },
-  { choiceNumber: 28, event: CrazyEvent.Stampede, displayName: 'Bull Rush', description: 'All pieces in a row charge forward simultaneously', track: 'lifer', unlockThreshold: 'Play 100 total games' },
+  { choiceNumber: 28, event: CrazyEvent.Stampede, displayName: 'Bull Rush', description: 'All pawns instantly advance one square forward', track: 'lifer', unlockThreshold: 'Play 100 total games' },
   { choiceNumber: 29, event: CrazyEvent.Sacrifice, displayName: 'Martyrdom', description: 'You can sacrifice your own piece for a tactical advantage', track: 'lifer', unlockThreshold: 'Win a game in 5 different modes' },
-  { choiceNumber: 30, event: CrazyEvent.SwapMeet, displayName: 'Switcheroo', description: 'Two random pieces swap positions', track: 'lifer', unlockThreshold: 'Win 25 games in Pass Around' },
+  { choiceNumber: 30, event: CrazyEvent.SwapMeet, displayName: 'Switcheroo', description: 'Two opposing pieces (one White, one Black) swap positions', track: 'lifer', unlockThreshold: 'Win 25 games in Pass Around' },
   { choiceNumber: 31, event: CrazyEvent.ChainReaction, displayName: 'Domino Effect', description: 'Captures trigger chain reactions on adjacent pieces', track: 'lifer', unlockThreshold: 'Achieve a 10-game win streak vs. Hard CPU' },
   { choiceNumber: 32, event: CrazyEvent.Backfire, displayName: 'Friendly Fire', description: 'Captures occasionally remove your own piece too', track: 'lifer', unlockThreshold: 'Play 200 total games' },
 

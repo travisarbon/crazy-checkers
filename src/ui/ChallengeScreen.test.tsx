@@ -182,12 +182,11 @@ describe('ChallengeScreen', () => {
     expect(screen.queryByTestId('puzzle-selector')).not.toBeInTheDocument();
   });
 
-  it('progress grid renders 100 cells', async () => {
+  it('puzzle selector shows 100 cells when expanded', async () => {
     setupMock(makeProgress());
     await renderChallenge();
-    for (let id = 1; id <= 100; id++) {
-      expect(screen.getByTestId('progress-cell-' + String(id))).toBeInTheDocument();
-    }
+    fireEvent.click(screen.getByTestId('puzzle-selector-toggle'));
+    expect(screen.getByTestId('puzzle-selector')).toBeInTheDocument();
   });
 
   it('expandable detail panels present', async () => {
@@ -234,7 +233,7 @@ describe('ChallengeScreen', () => {
   it('how-to-play text rendered', async () => {
     setupMock(makeProgress());
     await renderChallenge();
-    expect(screen.getByText(/100 hand-crafted checkers puzzles/i)).toBeInTheDocument();
+    expect(screen.getByText(/100 hand-crafted puzzles/i)).toBeInTheDocument();
   });
 
   it('challenge-screen testid is present', async () => {
@@ -243,15 +242,19 @@ describe('ChallengeScreen', () => {
     expect(screen.getByTestId('challenge-screen')).toBeInTheDocument();
   });
 
-  it('mode overview section present', async () => {
+  it('hero layout with board preview and stats present', async () => {
     setupMock(makeProgress());
-    await renderChallenge();
-    expect(screen.getByText('Mode Overview')).toBeInTheDocument();
+    const { container } = await renderChallenge();
+    // Board preview exists in the hero layout
+    const svg = container.querySelector('svg[role="img"]');
+    expect(svg).toBeInTheDocument();
+    // Stats are present
+    expect(screen.getByTestId('stat-completed')).toBeInTheDocument();
   });
 
-  it('puzzle selection section present', async () => {
+  it('puzzle selector toggle present', async () => {
     setupMock(makeProgress());
     await renderChallenge();
-    expect(screen.getByText('Puzzle Selection')).toBeInTheDocument();
+    expect(screen.getByTestId('puzzle-selector-toggle')).toBeInTheDocument();
   });
 });

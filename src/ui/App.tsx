@@ -31,6 +31,7 @@ import { PUZZLE_DATA } from '../data/puzzleData';
 import ChoiceGalleryScreen from './ChoiceGalleryScreen';
 import ChoiceDetailScreen from './ChoiceDetailScreen';
 import { createNewChoiceGame } from '../engine/game';
+import type { CrazyEvent } from '../engine/types';
 import ClassifiedGalleryScreen from './ClassifiedGalleryScreen';
 import ClassifiedDetailScreen from './ClassifiedDetailScreen';
 import CogitateScreen from './CogitateScreen';
@@ -53,6 +54,7 @@ type Screen =
       readonly timeControl: TimeControlConfig | null;
       readonly remainingTimeWhiteMs?: number;
       readonly remainingTimeBlackMs?: number;
+      readonly permanentEvent?: CrazyEvent | null;
     }
   | { readonly kind: 'config' }
   | { readonly kind: 'classic' }
@@ -315,8 +317,26 @@ export default function App() {
           initialRemainingWhiteMs={screen.remainingTimeWhiteMs}
           initialRemainingBlackMs={screen.remainingTimeBlackMs}
           onNewGame={() => {
-            setResumedGameState(null);
-            navigateToGame(screen.players, screen.flipped, screen.mode, screen.timeControl);
+            if (screen.mode === GameMode.Choice && screen.permanentEvent !== undefined) {
+              // Recreate the Choice game with the same permanent event
+              const ruleSet = createAmericanRules();
+              const initialState = createNewChoiceGame(ruleSet, screen.players, screen.permanentEvent ?? null);
+              setResumedGameState(initialState);
+              setGameKey((prev) => prev + 1);
+              setGameStartedAt(Date.now());
+              setScreen({
+                kind: 'game',
+                players: screen.players,
+                ruleSet: initialState.ruleSet,
+                flipped: screen.flipped,
+                mode: GameMode.Choice,
+                timeControl: screen.timeControl,
+                permanentEvent: screen.permanentEvent,
+              });
+            } else {
+              setResumedGameState(null);
+              navigateToGame(screen.players, screen.flipped, screen.mode, screen.timeControl);
+            }
           }}
           onMainMenu={() => {
             setResumedGameState(null);
@@ -428,6 +448,7 @@ export default function App() {
               flipped,
               mode: GameMode.Choice,
               timeControl,
+              permanentEvent,
             });
           }}
           defaultTimeControl={settings.timeControl}

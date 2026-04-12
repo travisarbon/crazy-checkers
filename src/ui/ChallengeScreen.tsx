@@ -13,6 +13,7 @@ import { getAllChallengeRecords, computeChallengeProgress } from '../persistence
 import type { ChallengeProgressSnapshot, PuzzleSummary } from '../persistence/challengeRecords';
 import { PUZZLE_DATA } from '../data/puzzleData';
 import { deserializeBoardState } from '../persistence/serialization';
+import shellStyles from './ModeScreenShell.module.css';
 import styles from './ChallengeScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -46,41 +47,6 @@ function StatCard({ label, value, testId }: { label: string; value: string; test
     <div className={styles.statCard} data-testid={testId}>
       <span className={styles.statLabel}>{label}</span>
       <span className={styles.statValue}>{value}</span>
-    </div>
-  );
-}
-
-function ProgressGrid({
-  perPuzzle,
-  nextPuzzleId,
-}: {
-  perPuzzle: ReadonlyMap<number, PuzzleSummary>;
-  nextPuzzleId: number;
-}) {
-  const cells: React.ReactNode[] = [];
-  for (let id = 1; id <= 100; id++) {
-    const summary = perPuzzle.get(id);
-    const solved = summary?.solved === true;
-    const isCurrent = id === nextPuzzleId && !solved;
-    const isAvailable = id <= nextPuzzleId && !solved;
-
-    let stateClass: string = styles.progressCell_locked ?? '';
-    if (solved) stateClass = styles.progressCell_solved ?? '';
-    else if (isCurrent) stateClass = styles.progressCell_current ?? '';
-    else if (isAvailable) stateClass = styles.progressCell_available ?? '';
-
-    cells.push(
-      <div
-        key={id}
-        className={(styles.progressCell ?? '') + ' ' + stateClass}
-        data-testid={'progress-cell-' + String(id)}
-      />,
-    );
-  }
-
-  return (
-    <div className={styles.progressGrid}>
-      {cells}
     </div>
   );
 }
@@ -190,102 +156,90 @@ export default function ChallengeScreen({ onBack, onStartPuzzle }: ChallengeScre
 
   return (
     <ModeScreenShell title="Challenge" onBack={onBack} testId="challenge-screen">
-      {/* Section 1: Mode Overview */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Mode Overview</h2>
-        <div className={styles.boardPreviewWrapper}>
-          <BoardPreviewLarge
-            position={previewBoard}
-            size={220}
-            label={
-              allComplete
-                ? 'Puzzle 100 board position'
-                : 'Puzzle ' + String(previewPuzzleId) + ' board position'
-            }
-          />
-          <p className={styles.boardCaption}>
-            {allComplete
-              ? 'All puzzles complete!'
-              : 'Puzzle ' + String(previewPuzzleId) + ' \u2014 ' + (previewPuzzle?.difficultyTier ?? 'unknown')}
+      {/* Hero row: board left, stats + actions right on desktop */}
+      <div className={shellStyles.heroRow}>
+        <div className={shellStyles.heroBoard}>
+          <div className={styles.boardPreviewWrapper}>
+            <BoardPreviewLarge
+              position={previewBoard}
+              size={220}
+              label={
+                allComplete
+                  ? 'Puzzle 100 board position'
+                  : 'Puzzle ' + String(previewPuzzleId) + ' board position'
+              }
+            />
+            <p className={styles.boardCaption}>
+              {allComplete
+                ? 'All puzzles complete!'
+                : 'Puzzle ' + String(previewPuzzleId) + ' \u2014 ' + (previewPuzzle?.difficultyTier ?? 'unknown')}
+            </p>
+          </div>
+        </div>
+        <div className={shellStyles.heroControls}>
+          <p className={styles.howToPlay}>
+            100 hand-crafted puzzles. Find the optimal move sequence, earn 1-3
+            stars based on speed.
           </p>
+          <div className={styles.statsGrid}>
+            <StatCard
+              label="Completed"
+              value={String(puzzlesCompleted) + ' / 100'}
+              testId="stat-completed"
+            />
+            <StatCard
+              label="Avg Rating"
+              value={puzzlesCompleted > 0 ? averageRating.toFixed(1) + ' \u2605' : '\u2014'}
+              testId="stat-avg-rating"
+            />
+            <StatCard
+              label="Best Time"
+              value={bestTimeMs !== null ? formatTimeShort(bestTimeMs) : '\u2014'}
+              testId="stat-best-time"
+            />
+            <StatCard
+              label="Streak"
+              value={String(currentStreak)}
+              testId="stat-streak"
+            />
+          </div>
+          <div className={styles.actionRow}>
+            {allComplete ? (
+              <span className={styles.completeMessage} data-testid="challenge-all-complete">
+                All 100 puzzles complete! Replay any puzzle below.
+              </span>
+            ) : (
+              onStartPuzzle && (
+                <button
+                  className={styles.continueButton}
+                  onClick={() => { onStartPuzzle(nextPuzzleId); }}
+                  data-testid="challenge-continue"
+                >
+                  {'Continue \u2014 Puzzle ' + String(nextPuzzleId)}
+                </button>
+              )
+            )}
+            <button
+              className={styles.selectButton}
+              onClick={() => { setShowPuzzleSelector((prev) => !prev); }}
+              data-testid="puzzle-selector-toggle"
+            >
+              {showPuzzleSelector ? 'Hide Puzzles' : 'Select Puzzle'}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Section 2: How to Play */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>How to Play</h2>
-        <p className={styles.howToPlay}>
-          Challenge mode presents 100 hand-crafted checkers puzzles. Each puzzle
-          has a specific board position and an optimal solution to find. Solve
-          puzzles sequentially to unlock the next one. You are rated 1-3 stars
-          based on how quickly you find the solution. Try to earn 3 stars on
-          every puzzle!
-        </p>
-      </div>
-
-      {/* Section 3: Progress Dashboard */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Progress</h2>
-        <div className={styles.statsGrid}>
-          <StatCard
-            label="Completed"
-            value={String(puzzlesCompleted) + ' / 100'}
-            testId="stat-completed"
-          />
-          <StatCard
-            label="Avg Rating"
-            value={puzzlesCompleted > 0 ? averageRating.toFixed(1) + ' \u2605' : '\u2014'}
-            testId="stat-avg-rating"
-          />
-          <StatCard
-            label="Best Time"
-            value={bestTimeMs !== null ? formatTimeShort(bestTimeMs) : '\u2014'}
-            testId="stat-best-time"
-          />
-          <StatCard
-            label="Streak"
-            value={String(currentStreak)}
-            testId="stat-streak"
-          />
-        </div>
-        <ProgressGrid perPuzzle={perPuzzle} nextPuzzleId={nextPuzzleId} />
-      </div>
-
-      {/* Section 4: Puzzle Selection */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Puzzle Selection</h2>
-        <div className={styles.actionRow}>
-          {allComplete ? (
-            <span className={styles.completeMessage} data-testid="challenge-all-complete">
-              All 100 puzzles complete! Replay any puzzle below.
-            </span>
-          ) : (
-            onStartPuzzle && (
-              <button
-                className={styles.continueButton}
-                onClick={() => { onStartPuzzle(nextPuzzleId); }}
-                data-testid="challenge-continue"
-              >
-                {'Continue \u2014 Puzzle ' + String(nextPuzzleId)}
-              </button>
-            )
-          )}
-          <button
-            className={styles.selectButton}
-            onClick={() => { setShowPuzzleSelector((prev) => !prev); }}
-            data-testid="puzzle-selector-toggle"
-          >
-            {showPuzzleSelector ? 'Hide Puzzles' : 'Select Puzzle'}
-          </button>
-        </div>
-        {showPuzzleSelector && (
+      {/* Puzzle selector (toggled) */}
+      {showPuzzleSelector && (
+        <div className={styles.section}>
           <PuzzleSelector
             perPuzzle={perPuzzle}
             nextPuzzleId={nextPuzzleId}
             onSelectPuzzle={handleSelectPuzzle}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Section 5: Performance History */}
       <ExpandableDetailPanel

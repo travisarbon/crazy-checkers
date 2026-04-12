@@ -59,6 +59,13 @@ export class KingForADayDecorator extends EventDecorator {
   override onTurnEnd(board: BoardState, activeColor: PieceColor, move: Move): BoardState {
     const result = super.onTurnEnd(board, activeColor, move);
 
+    // If the event is a permanent Choice mode event,
+    // skip reversion — all pieces stay as kings permanently.
+    const isPermanent = this.activeEventsContext.some(
+      e => e.type === CrazyEvent.KingForADay && e.permanent === true,
+    );
+    if (isPermanent) return result;
+
     // Read metadata from the active events context (set by CompositeEventRuleSet)
     const metadata = this.getKingForADayMetadata();
     const originalKingSquares = metadata?.originalKingSquares ?? [];

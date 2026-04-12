@@ -44,6 +44,7 @@ interface SerializableActiveEvent {
   readonly remainingPlies: number;
   readonly triggeredBy: string;
   readonly triggeredAtPly: number;
+  readonly permanent?: boolean;
   readonly metadata?: Readonly<Record<string, unknown>>;
 }
 
@@ -68,6 +69,7 @@ export function deserializeGameState(data: SerializableGameState): GameState {
     remainingPlies: e.remainingPlies,
     triggeredBy: e.triggeredBy as PieceColor,
     triggeredAtPly: e.triggeredAtPly,
+    ...(e.permanent === true ? { permanent: true } : {}),
     ...(e.metadata !== undefined ? { metadata: e.metadata } : {}),
   }));
 
@@ -75,7 +77,7 @@ export function deserializeGameState(data: SerializableGameState): GameState {
   if (!base) throw new Error(`Unknown ruleSetId: ${data.ruleSetId}`);
 
   let ruleSet: RuleSet;
-  if (mode === GameMode.Crazy) {
+  if (mode === GameMode.Crazy || mode === GameMode.Choice || mode === GameMode.Chaos) {
     const composite = createCompositeRuleSet(base);
     composite.setActiveEvents(activeEvents);
     ruleSet = composite;

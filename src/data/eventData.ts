@@ -96,7 +96,7 @@ export const EVENT_DATA: readonly EventDataEntry[] = [
   entry(4, CrazyEvent.ChecksMix, 2,
     'All pieces on the board are instantly shuffled to random valid dark squares. Piece colors and types are preserved. No pawns land on their own promotion row. No mandatory captures result from the shuffle.',
     'Blender',
-    'Pieces shuffle to random positions every 3 turns. Continuous board disruption makes long-term planning impossible.',
+    'All pieces shuffle to random positions at the start of every turn. Continuous board disruption makes long-term planning impossible.',
     ['Shuffle applies to kinged board during King for a Day', 'Live Grenade remains armed after shuffle', 'Hot Potato applies on shuffled positions'],
   ),
   // Event 5 — Opposite Day

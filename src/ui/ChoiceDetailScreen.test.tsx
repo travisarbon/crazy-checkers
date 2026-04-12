@@ -65,7 +65,10 @@ describe('ChoiceDetailScreen — Rendering and Layout', () => {
     renderScreen(1);
     const eventData = EVENT_DATA_MAP.get(CrazyEvent.KingForADay);
     expect(eventData).toBeDefined();
-    expect(screen.getByText(eventData?.choiceModeDescription ?? '')).toBeInTheDocument();
+    // The description appears in both the howToPlay paragraph and the detail panel,
+    // so use getAllByText to handle multiple matches
+    const matches = screen.getAllByText(eventData?.choiceModeDescription ?? '');
+    expect(matches.length).toBeGreaterThan(0);
   });
 
   it('back button calls onBack', () => {
@@ -98,7 +101,7 @@ describe('ChoiceDetailScreen — Event Relationship Callout', () => {
 
   it('callout shows permanent vs temporary comparison', () => {
     renderScreen(1);
-    expect(screen.getByText(/permanent and always active/)).toBeInTheDocument();
+    expect(screen.getByText(/applies from the start and never expires/)).toBeInTheDocument();
   });
 
   it('callout shows event duration text', () => {

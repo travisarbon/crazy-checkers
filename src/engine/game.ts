@@ -19,7 +19,7 @@ import {
 } from './types';
 import { BOARD_SIZE, createInitialBoard, getBoardSquare } from './board';
 import { computeZobristHash, isRepetition, updateZobristHash } from './zobrist';
-import { checkEventTrigger, createActiveEvent, EVENT_METADATA_FACTORIES, removeEventsByType, resolveConflicts, tickAllEvents } from './events';
+import { checkEventTrigger, createActiveEvent, EVENT_METADATA_FACTORIES, removeEventsByType, resolveConflicts, selectRandomEvent, tickAllEvents } from './events';
 import type { CompositeEventRuleSet } from './compositeRuleSet';
 import { createCompositeRuleSet } from './compositeRuleSet';
 
@@ -103,6 +103,7 @@ export function createNewChoiceGame(
     remainingPlies: -1,
     triggeredBy: PieceColor.White,
     triggeredAtPly: 0,
+    permanent: true,
     metadata,
   };
 
@@ -365,9 +366,24 @@ export function makeMove(state: GameState, move: Move): GameState {
     updatedEvents = resolveConflicts(updatedEvents);
   }
 
-  // ── Event trigger on multi-jump (Crazy and Chaos modes) ────────────
-  if (state.mode === GameMode.Crazy || state.mode === GameMode.Chaos) {
-    const triggeredEvents = checkEventTrigger(move, state.mode, state.eventRandomFn);
+  // ── Event trigger (Crazy, Chaos, and Extra Crazy modes) ─────────────
+  // Extra Crazy = Choice mode with no permanent event: any jump (1+ captures)
+  // triggers a single random event.
+  const isExtraCrazy = state.mode === GameMode.Choice
+    && !state.activeEvents.some(e => e.permanent === true);
+
+  if (state.mode === GameMode.Crazy || state.mode === GameMode.Chaos || isExtraCrazy) {
+    let triggeredEvents: CrazyEvent[] | null = null;
+
+    if (isExtraCrazy) {
+      // Extra Crazy: single random event on every jump (1+ captures)
+      if (move.captured.length >= 1) {
+        triggeredEvents = selectRandomEvent(state.eventRandomFn ?? Math.random);
+      }
+    } else {
+      triggeredEvents = checkEventTrigger(move, state.mode, state.eventRandomFn);
+    }
+
     if (triggeredEvents !== null) {
       const newEvents: ActiveEvent[] = [];
       for (const eventType of triggeredEvents) {

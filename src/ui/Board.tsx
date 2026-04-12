@@ -645,6 +645,7 @@ function Board({
             }
             animScale={animOverride?.scale ?? undefined}
             animScaleX={animOverride?.scaleX ?? undefined}
+            isTemporaryKing={eventOverlayState?.temporaryKingSquares.has(sq as number) ?? false}
           />
         ))}
 
