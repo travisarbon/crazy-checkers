@@ -68,6 +68,58 @@ export function createNewGame(
   };
 }
 
+/**
+ * Creates a new Choice mode game with a permanent event pre-seeded.
+ *
+ * The permanent event is created with remainingPlies = -1 (condition-based /
+ * never expires via ticking) and triggeredBy = PieceColor.White (convention
+ * for mode-selected events, as opposed to gameplay-triggered events).
+ *
+ * For Extra Crazy (permanentEvent = null), creates a standard Choice mode
+ * game with empty activeEvents. The event-on-every-jump behavior is handled
+ * by the event trigger logic in makeMove.
+ */
+export function createNewChoiceGame(
+  ruleSet: RuleSet,
+  players: PlayerSetup,
+  permanentEvent: CrazyEvent | null,
+  eventRandomFn?: () => number,
+): GameState {
+  const base = createNewGame(ruleSet, players, GameMode.Choice, eventRandomFn);
+
+  if (permanentEvent === null) {
+    // Extra Crazy: no permanent event, events trigger on every jump
+    return base;
+  }
+
+  // Create a permanent ActiveEvent
+  const metadataFactory = EVENT_METADATA_FACTORIES.get(permanentEvent);
+  const metadata = metadataFactory
+    ? metadataFactory(base.board, PieceColor.White)
+    : undefined;
+
+  const permanentActiveEvent: ActiveEvent = {
+    type: permanentEvent,
+    remainingPlies: -1,
+    triggeredBy: PieceColor.White,
+    triggeredAtPly: 0,
+    metadata,
+  };
+
+  const activeEvents = [permanentActiveEvent];
+
+  // Set the active events on the CompositeEventRuleSet so the first
+  // getLegalMoves call reflects the permanent event's rule modifications
+  if (isCompositeRuleSet(base.ruleSet)) {
+    base.ruleSet.setActiveEvents(activeEvents);
+  }
+
+  return {
+    ...base,
+    activeEvents,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Move equality
 // ---------------------------------------------------------------------------
