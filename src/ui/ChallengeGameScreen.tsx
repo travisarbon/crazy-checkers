@@ -97,7 +97,8 @@ export default function ChallengeGameScreen({
   const [isSolved, setIsSolved] = useState(false);
   const [movesPlayed, setMovesPlayed] = useState<string[]>([]);
   const [incorrectMoveSquare, setIncorrectMoveSquare] = useState<Square | null>(null);
-  const [statusMessage, setStatusMessage] = useState('Your turn');
+  const [statusMessage, setStatusMessage] = useState('Study the board...');
+  const [graceCountdown, setGraceCountdown] = useState(3);
   const [showCompletion, setShowCompletion] = useState(false);
   const [completionData, setCompletionData] = useState<CompletionData | null>(null);
 
@@ -113,9 +114,21 @@ export default function ChallengeGameScreen({
   // ── Timer ──────────────────────────────────────────────────
   const timer = usePuzzleTimer();
 
-  // Start timer on mount
+  // 3-second grace period before timer starts (Issue 18.5)
   useEffect(() => {
-    timer.start();
+    let count = 3;
+    const interval = setInterval(() => {
+      count--;
+      if (count > 0) {
+        setGraceCountdown(count);
+      } else {
+        clearInterval(interval);
+        setGraceCountdown(0);
+        setStatusMessage('Your turn');
+        timer.start();
+      }
+    }, 1000);
+    return () => { clearInterval(interval); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -253,7 +266,7 @@ export default function ChallengeGameScreen({
   // ── Interaction hook ───────────────────────────────────────
   const interaction = usePuzzleInteraction({
     gameState,
-    isBlocked: animationQueue.isAnimating || pendingOpponentMoveRef.current,
+    isBlocked: animationQueue.isAnimating || pendingOpponentMoveRef.current || graceCountdown > 0,
     isSolved,
     onCorrectMove: handleCorrectMove,
     onIncorrectMove: handleIncorrectMove,

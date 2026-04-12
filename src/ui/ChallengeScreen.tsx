@@ -178,8 +178,8 @@ export default function ChallengeScreen({ onBack, onStartPuzzle }: ChallengeScre
         </div>
         <div className={shellStyles.heroControls}>
           <p className={styles.howToPlay}>
-            100 hand-crafted puzzles. Find the optimal move sequence, earn 1-3
-            stars based on speed.
+            100 curated puzzles extracted from real checkers games. Find the
+            optimal move sequence, earn 1-3 stars based on speed.
           </p>
           <div className={styles.statsGrid}>
             <StatCard
@@ -272,9 +272,9 @@ export default function ChallengeScreen({ onBack, onStartPuzzle }: ChallengeScre
 
         <h3 className={styles.subsectionTitle}>Streak Tracking</h3>
         <p className={styles.contentParagraph}>
-          Your streak counts consecutive puzzles solved on the first attempt,
-          starting from Puzzle 1. A first-attempt failure resets the streak
-          counter. Challenge yourself to maintain the longest streak possible.
+          Your streak tracks how many puzzles in sequence (starting from
+          Puzzle 1) you solved correctly on your very first attempt. If you
+          fail any puzzle on your first try, the streak resets to 0.
         </p>
       </ExpandableDetailPanel>
     </ModeScreenShell>

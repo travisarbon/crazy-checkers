@@ -59,6 +59,19 @@
   animation: pulse-border 1.5s ease-in-out infinite;
 }
 
+/* Difficulty tier indicators (border-left accent, shown for unsolved cells) */
+.tier_easy {
+  border-left: 3px solid color-mix(in srgb, #4caf50 70%, transparent);
+}
+
+.tier_medium {
+  border-left: 3px solid color-mix(in srgb, #ff9800 70%, transparent);
+}
+
+.tier_hard {
+  border-left: 3px solid color-mix(in srgb, #f44336 70%, transparent);
+}
+
 .cellNumber {
   font-weight: 600;
   line-height: 1;

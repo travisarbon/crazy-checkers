@@ -233,7 +233,7 @@ describe('ChallengeScreen', () => {
   it('how-to-play text rendered', async () => {
     setupMock(makeProgress());
     await renderChallenge();
-    expect(screen.getByText(/100 hand-crafted puzzles/i)).toBeInTheDocument();
+    expect(screen.getByText(/100 curated puzzles/i)).toBeInTheDocument();
   });
 
   it('challenge-screen testid is present', async () => {

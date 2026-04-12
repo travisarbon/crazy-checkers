@@ -5,6 +5,7 @@
  */
 
 import type { PuzzleSummary } from '../persistence/challengeRecords';
+import { PUZZLE_DATA } from '../data/puzzleData';
 import styles from './PuzzleSelector.module.css';
 
 export interface PuzzleSelectorProps {
@@ -57,11 +58,26 @@ export default function PuzzleSelector({
     const isAvailable = id <= nextPuzzleId && !solved;
     const isLocked = !solved && !isAvailable;
 
+    // Difficulty tier from static puzzle data
+    const puzzleDef = PUZZLE_DATA[id - 1];
+    const tier = puzzleDef?.difficultyTier ?? 'easy';
+
     const classList = [styles.cell];
     if (solved) classList.push(styles.cell_solved);
     else if (isCurrent) classList.push(styles.cell_current, styles.cell_available);
     else if (isAvailable) classList.push(styles.cell_available);
     else classList.push(styles.cell_locked);
+
+    // Add difficulty tier indicator (visible when not solved)
+    if (!solved) {
+      const tierClass: Record<string, string | undefined> = {
+        easy: styles.tier_easy,
+        medium: styles.tier_medium,
+        hard: styles.tier_hard,
+      };
+      const cls = tierClass[tier];
+      if (cls) classList.push(cls);
+    }
 
     const ariaLabel = buildAriaLabel(
       id,
