@@ -9,6 +9,8 @@ export interface Milestone {
   name: string;
   threshold: number;
   completed: boolean;
+  /** Optional tooltip text shown on hover (e.g. milestone description). */
+  tooltip?: string;
 }
 
 export interface ProgressTrackerProps {
@@ -53,11 +55,12 @@ export default function ProgressTracker({
             key={m.name}
             className={m.completed ? styles.milestoneComplete : styles.milestoneIncomplete}
             aria-label={`${m.name}: ${m.completed ? 'completed' : 'not yet reached'}`}
+            title={m.tooltip ?? m.name}
           >
             <span className={styles.milestoneMarker}>
               {m.completed ? '✓' : '○'}
             </span>
-            <span className={styles.milestoneName}>{m.name}</span>
+            <span className={styles.milestoneName} title={m.tooltip ?? m.name}>{m.name}</span>
           </div>
         ))}
       </div>

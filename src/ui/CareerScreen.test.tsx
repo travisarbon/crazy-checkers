@@ -460,7 +460,7 @@ describe('CareerScreen — Section 1: Summary Statistics', () => {
     setupMocks(snapshot, makeUnlockEvaluation());
     await renderCareer();
     const totalCard = screen.getByTestId('stat-total-games');
-    expect(totalCard).toHaveAttribute('aria-label', expect.stringContaining('Total Games'));
+    expect(totalCard).toHaveAttribute('aria-label', expect.stringContaining('Games Played'));
     expect(totalCard).toHaveAttribute('aria-label', expect.stringContaining('100'));
   });
 });
@@ -517,7 +517,7 @@ describe('CareerScreen — Section 2: Unlock Progress', () => {
     expect(checkmarks.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('14: Track 4 uses milestone descriptions instead of Choice mode names', async () => {
+  it('14: Track 4 shows Choice mode names with milestone descriptions as tooltips', async () => {
     const m4 = makeDefaultTrack4Milestones();
     m4[0] = { choiceNumber: 25, description: 'Play 50 total games', condition: 'totalGamesPlayed >= 50', met: true, currentValue: 50, requiredValue: 50 };
     m4[1] = { choiceNumber: 26, description: 'Win 5 games in a row vs. Hard CPU', condition: 'maxHardWinStreak >= 5', met: true, currentValue: 5, requiredValue: 5 };
@@ -531,8 +531,9 @@ describe('CareerScreen — Section 2: Unlock Progress', () => {
     setupMocks(snapshot, evaluation);
     await renderCareer();
 
-    expect(screen.getByText('Play 50 total games')).toBeInTheDocument();
-    expect(screen.getByText('Win 5 games in a row vs. Hard CPU')).toBeInTheDocument();
+    // Mode names should be displayed as primary labels
+    expect(screen.getByText('Pinball')).toBeInTheDocument();
+    expect(screen.getByText('Minefield')).toBeInTheDocument();
   });
 
   it('15: next milestone text shown for incomplete tracks', async () => {

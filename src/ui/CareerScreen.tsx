@@ -27,7 +27,19 @@ import type {
   ChoiceModeUnlockStatus,
 } from '../persistence/unlockEvaluator';
 import { evaluateFullUnlocks } from '../persistence/unlockEvaluator';
+import { CHOICE_MODE_DATA } from '../persistence/choiceModeData';
 import styles from './CareerScreen.module.css';
+
+// ---------------------------------------------------------------------------
+// Lifer track Choice mode name lookup
+// ---------------------------------------------------------------------------
+
+/** Map from choiceNumber to displayName for Lifer track modes (25–32). */
+const LIFER_MODE_NAMES: ReadonlyMap<number, string> = new Map(
+  CHOICE_MODE_DATA
+    .filter((d) => d.track === 'lifer')
+    .map((d) => [d.choiceNumber, d.displayName]),
+);
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -63,10 +75,37 @@ function formatRecord(wins: number, losses: number, draws: number): string {
   return `${String(wins)}W / ${String(losses)}L / ${String(draws)}D`;
 }
 
+/** Format record with incomplete game count when W+L+D doesn't match total. */
+function formatRecordWithIncomplete(
+  wins: number,
+  losses: number,
+  draws: number,
+  totalGames: number,
+): string {
+  const completed = wins + losses + draws;
+  const incomplete = totalGames - completed;
+  const base = formatRecord(wins, losses, draws);
+  if (incomplete > 0) {
+    return `${base} (${String(incomplete)} incomplete)`;
+  }
+  return base;
+}
+
 /** Format a percentage (0-100) to one decimal place. */
 function formatPercent(value: number): string {
   if (Number.isNaN(value)) return '\u2014';
   return value.toFixed(1) + '%';
+}
+
+/** Format a mode stat summary with incomplete count if applicable. */
+function formatModeSummary(stat: ModeStatBlock): string {
+  const completed = stat.wins + stat.losses + stat.draws;
+  const incomplete = stat.gamesPlayed - completed;
+  const record = formatRecord(stat.wins, stat.losses, stat.draws);
+  if (incomplete > 0) {
+    return `${String(stat.gamesPlayed)} games \u2014 ${record} (${String(incomplete)} incomplete)`;
+  }
+  return `${String(stat.gamesPlayed)} games \u2014 ${record}`;
 }
 
 /** Format milliseconds as M:SS.T (tenths) for challenge times. */
@@ -102,11 +141,12 @@ function buildMilestonesForTrack(
   choiceModes: ReadonlyMap<number, ChoiceModeUnlockStatus>,
 ): Milestone[] {
   if (track.trackId === 'lifer' && track.milestoneDetails !== null) {
-    // Track 4: use milestone descriptions directly
+    // Track 4: show Choice mode names with milestone descriptions as tooltips
     return track.milestoneDetails.map((m) => ({
-      name: m.description,
+      name: LIFER_MODE_NAMES.get(m.choiceNumber) ?? `Choice ${String(m.choiceNumber)}`,
       threshold: m.requiredValue,
       completed: m.met,
+      tooltip: m.description,
     }));
   }
 
@@ -147,7 +187,9 @@ function buildNextMilestoneText(
     // Find the first unmet milestone
     const nextMilestone = track.milestoneDetails.find((m) => !m.met);
     if (nextMilestone) {
-      return `Next: ${nextMilestone.description}`;
+      const modeName = LIFER_MODE_NAMES.get(nextMilestone.choiceNumber)
+        ?? `Choice ${String(nextMilestone.choiceNumber)}`;
+      return `Next: ${modeName} \u2014 ${nextMilestone.description}`;
     }
     return null;
   }
@@ -559,7 +601,7 @@ function renderModeStatistics(
         title="Classic"
         summary={
           classicStat && classicStat.gamesPlayed > 0
-            ? `${String(classicStat.gamesPlayed)} games \u2014 ${formatRecord(classicStat.wins, classicStat.losses, classicStat.draws)}`
+            ? formatModeSummary(classicStat)
             : 'No games played'
         }
       >
@@ -577,7 +619,7 @@ function renderModeStatistics(
         title="Crazy"
         summary={
           crazyStat && crazyStat.gamesPlayed > 0
-            ? `${String(crazyStat.gamesPlayed)} games \u2014 ${formatRecord(crazyStat.wins, crazyStat.losses, crazyStat.draws)}`
+            ? formatModeSummary(crazyStat)
             : 'No games played'
         }
       >
@@ -625,12 +667,18 @@ function renderModeStatistics(
         title="Chaos"
         summary={
           chaosStat && chaosStat.gamesPlayed > 0
-            ? `${String(chaosStat.gamesPlayed)} games \u2014 ${formatRecord(chaosStat.wins, chaosStat.losses, chaosStat.draws)}`
-            : 'Not yet unlocked'
+            ? formatModeSummary(chaosStat)
+            : evaluation.chaosGate.unlockedByCode
+              ? 'Unlocked via code'
+              : 'Not yet unlocked'
         }
       >
         {chaosStat && chaosStat.gamesPlayed > 0 ? (
           <OpponentBreakdownTable modeStat={chaosStat} />
+        ) : evaluation.chaosGate.unlockedByCode ? (
+          <p className={styles.emptyMessage}>
+            Chaos mode unlocked via code. Play a game to see your statistics!
+          </p>
         ) : (
           <p className={styles.emptyMessage}>
             Chaos mode is not yet unlocked. Complete the Chaos Gate requirements to access it.
@@ -722,13 +770,13 @@ export default function CareerScreen({ onBack }: CareerScreenProps) {
         <h2 className={styles.sectionTitle}>Summary</h2>
         <div className={styles.statsGrid}>
           <StatCard
-            label="Total Games"
+            label="Games Played"
             value={formatNumber(summary.totalGames)}
             testId="stat-total-games"
           />
           <StatCard
             label="Record"
-            value={formatRecord(summary.wins, summary.losses, summary.draws)}
+            value={formatRecordWithIncomplete(summary.wins, summary.losses, summary.draws, summary.totalGames)}
             testId="stat-record"
           />
           <StatCard
