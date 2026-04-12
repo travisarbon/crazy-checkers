@@ -188,6 +188,17 @@ export function shuffleBoard(
 
   if (pieces.length === 0) return board;
 
+  // Sort pieces canonically so the shuffle is idempotent: the same piece
+  // set produces the same shuffle regardless of input board positions.
+  // Without this, applying onTurnStart twice in sequence (once by the
+  // worker, once by makeMove during search) produces different boards,
+  // causing the AI's selected move to be invalid on the final board.
+  pieces.sort((a, b) => {
+    if (a.color !== b.color) return a.color < b.color ? -1 : 1;
+    if (a.type !== b.type) return a.type < b.type ? -1 : 1;
+    return 0;
+  });
+
   let bestBoard: BoardState = board;
   let bestCaptureCount = Infinity;
 
