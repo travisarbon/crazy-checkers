@@ -122,6 +122,54 @@
   text-align: center;
 }
 
+.freePlayActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.actionButton {
+  flex: 1;
+  min-height: 40px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ui-bg);
+  background: var(--ui-accent);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.actionButton:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.actionButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.gameOverCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  margin-top: 0.75rem;
+  background: color-mix(in srgb, var(--ui-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 40%, transparent);
+  border-radius: 8px;
+  color: var(--ui-text, inherit);
+  font-size: 0.95rem;
+}
+
+.gameOverHint {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.75;
+  line-height: 1.4;
+}
+
 .liveRegion {
   position: absolute;
   left: -9999px;

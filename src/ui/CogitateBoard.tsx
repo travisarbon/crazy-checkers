@@ -16,6 +16,12 @@ import Board from './Board';
 import type { BoardGeometry, DiagramOverlayState } from '../cogitate/types';
 import { DRAUGHTS_BOARD_GEOMETRY } from '../cogitate/types';
 import type { EventOverlayState } from './useEventOverlays';
+import type {
+  AnimatingPiece,
+  FlashingSquaresState,
+  ExplosionState,
+  OverlayState,
+} from './useAnimationQueue';
 import styles from './CogitateBoard.module.css';
 
 const SQUARE_SIZE = 100;
@@ -52,6 +58,17 @@ export interface CogitateBoardProps {
   svgRef?: RefObject<SVGSVGElement | null>;
   /** Square currently selected as arrow origin (for diagram arrow drawing). */
   pendingArrowFrom?: Square | null;
+
+  // Move animation pass-through (Task 11.1 / Free Play integration).
+  animatingPieces?: ReadonlyMap<number, AnimatingPiece>;
+  fadingSquares?: ReadonlySet<number>;
+  isAnimating?: boolean;
+  animSpeedMultiplier?: number;
+  pieceShadow?: boolean;
+  flashingSquares?: FlashingSquaresState | null;
+  explosionState?: ExplosionState | null;
+  overlayState?: OverlayState | null;
+  lastMoveSquares?: { from: Square; to: Square } | null;
 }
 
 const OVERLAY_COLOR_MAP: Record<'green' | 'red' | 'blue', string> = {
@@ -92,6 +109,15 @@ function CogitateBoard({
   validPlacementSquares,
   svgRef,
   pendingArrowFrom = null,
+  animatingPieces,
+  fadingSquares,
+  isAnimating,
+  animSpeedMultiplier,
+  pieceShadow,
+  flashingSquares,
+  explosionState,
+  overlayState,
+  lastMoveSquares,
 }: CogitateBoardProps) {
   void geometry;
   void onEditorDragDrop;
@@ -258,6 +284,16 @@ function CogitateBoard({
           selectablePieces={editorMode ? ALL_PLAYABLE_SQUARES : undefined}
           onSquareClick={boardClickHandler}
           eventOverlayState={eventOverlayState}
+          animatingPieces={animatingPieces}
+          fadingSquares={fadingSquares}
+          isAnimating={isAnimating}
+          animSpeedMultiplier={animSpeedMultiplier}
+          pieceShadow={pieceShadow}
+          flashingSquares={flashingSquares}
+          explosionState={explosionState}
+          overlayState={overlayState}
+          lastMoveSquares={lastMoveSquares ?? null}
+          marchingOrdersGrid={eventOverlayState?.marchingOrdersGrid ?? undefined}
         />
       </div>
       {(overlays || (validPlacementSquares && validPlacementSquares.size > 0) || pendingArrowFrom !== null) && (

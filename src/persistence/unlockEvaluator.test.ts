@@ -1242,6 +1242,95 @@ describe('evaluateFullUnlockState — Chaos Gate', () => {
     expect(evaluation.chaosGate.unlocked).toBe(true);
     expect(evaluation.masterUnlockActive).toBe(true);
   });
+
+  // -------------------------------------------------------------------------
+  // Task 22.2 — Chaos Gate verification tests (plan §7.1)
+  // -------------------------------------------------------------------------
+
+  it('Task 22.2: individual gate fields (current, required, met) when all gates met', () => {
+    const snapshot = makeCareerSnapshot({
+      puzzlesCompleted: 100,
+      track2Value: 36,
+      track3Value: 43,
+      track4MilestonesMet: 8,
+      track5Value: 64,
+      classifiedHardWins: 64,
+    });
+    const evaluation = evaluateFullUnlockState(snapshot, new Set());
+
+    expect(evaluation.chaosGate.gates.challengesCompleted.current).toBe(100);
+    expect(evaluation.chaosGate.gates.challengesCompleted.required).toBe(100);
+    expect(evaluation.chaosGate.gates.challengesCompleted.met).toBe(true);
+
+    expect(evaluation.chaosGate.gates.choiceModesUnlocked.current).toBe(40);
+    expect(evaluation.chaosGate.gates.choiceModesUnlocked.required).toBe(40);
+    expect(evaluation.chaosGate.gates.choiceModesUnlocked.met).toBe(true);
+
+    expect(evaluation.chaosGate.gates.classifiedUnlocked.met).toBe(true);
+
+    expect(evaluation.chaosGate.gates.classifiedHardWins.current).toBe(64);
+    expect(evaluation.chaosGate.gates.classifiedHardWins.required).toBe(64);
+    expect(evaluation.chaosGate.gates.classifiedHardWins.met).toBe(true);
+  });
+
+  it('Task 22.2: partial progression — challenges and choice done, no classified wins → locked', () => {
+    const snapshot = makeCareerSnapshot({
+      puzzlesCompleted: 100,
+      track2Value: 36,
+      track3Value: 43,
+      track4MilestonesMet: 8,
+      track5Value: 64,
+      classifiedHardWins: 0,
+    });
+    const evaluation = evaluateFullUnlockState(snapshot, new Set());
+
+    expect(evaluation.chaosGate.gates.challengesCompleted.met).toBe(true);
+    expect(evaluation.chaosGate.gates.choiceModesUnlocked.met).toBe(true);
+    expect(evaluation.chaosGate.gates.classifiedUnlocked.met).toBe(true);
+    expect(evaluation.chaosGate.gates.classifiedHardWins.met).toBe(false);
+    expect(evaluation.chaosGate.unlocked).toBe(false);
+  });
+
+  it('Task 22.2: Phase 3 realistic ceiling — everything except classified wins → chaos locked', () => {
+    // In Phase 3 no Classified games are playable, so classifiedHardWins is
+    // always 0 and Chaos is unreachable by normal progression.
+    const snapshot = makeCareerSnapshot({
+      puzzlesCompleted: 100,
+      track2Value: 36,
+      track3Value: 43,
+      track4MilestonesMet: 8,
+      track5Value: 64,
+      classifiedHardWins: 0,
+    });
+    const evaluation = evaluateFullUnlockState(snapshot, new Set());
+
+    expect(evaluation.totalChoiceModesUnlocked).toBe(40);
+    expect(evaluation.chaosGate.unlocked).toBe(false);
+    expect(evaluation.snapshot.chaosUnlocked).toBe(false);
+  });
+
+  it('Task 22.2: code override coexists with partial progression — chaosGate reports real gate state', () => {
+    const snapshot = makeCareerSnapshot({
+      puzzlesCompleted: 50,
+      track2Value: 10,
+      classifiedHardWins: 0,
+    });
+    const evaluation = evaluateFullUnlockState(snapshot, new Set(['chaos']));
+
+    expect(evaluation.chaosGate.unlocked).toBe(true);
+    expect(evaluation.chaosGate.unlockedByCode).toBe(true);
+    expect(evaluation.chaosGate.gates.challengesCompleted.met).toBe(false);
+    expect(evaluation.chaosGate.gates.challengesCompleted.current).toBe(50);
+    expect(evaluation.chaosGate.gates.choiceModesUnlocked.met).toBe(false);
+    expect(evaluation.chaosGate.gates.classifiedHardWins.met).toBe(false);
+  });
+
+  it('Task 22.2: classifiedHardWins.required matches the classified registry count', () => {
+    const snapshot = makeCareerSnapshot();
+    const evaluation = evaluateFullUnlockState(snapshot, new Set());
+    // The Phase 3 registry has 64 placeholder Classified games.
+    expect(evaluation.chaosGate.gates.classifiedHardWins.required).toBe(64);
+  });
 });
 
 // ---------------------------------------------------------------------------

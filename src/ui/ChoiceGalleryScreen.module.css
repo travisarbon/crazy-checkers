@@ -160,6 +160,17 @@
   padding: 2rem 0;
 }
 
+.emptyState {
+  text-align: center;
+  opacity: 0.7;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  padding: 2rem 1rem;
+  margin: 1rem 0 0;
+  border: 1px dashed color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-radius: 10px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 479px) {
   .gallery {

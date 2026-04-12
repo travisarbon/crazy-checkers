@@ -488,7 +488,7 @@ export default function App() {
       break;
 
     case 'code':
-      content = <CodeScreen onBack={navigateToMenu} />;
+      content = <CodeScreen onBack={navigateToMenu} onCodeRedeemed={refreshUnlocks} />;
       break;
   }
 

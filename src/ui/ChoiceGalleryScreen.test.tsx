@@ -168,12 +168,14 @@ describe('ChoiceGalleryScreen -- rendering and layout', () => {
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
-  it('3: renders all 40 gallery cards after loading', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('3: renders only unlocked gallery cards after loading', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation([1, 2, 3]));
     await renderGallery();
-    for (let i = 1; i <= 40; i++) {
-      expect(screen.getByTestId(`choice-card-${String(i)}`)).toBeInTheDocument();
-    }
+    expect(screen.getByTestId('choice-card-1')).toBeInTheDocument();
+    expect(screen.getByTestId('choice-card-2')).toBeInTheDocument();
+    expect(screen.getByTestId('choice-card-3')).toBeInTheDocument();
+    expect(screen.queryByTestId('choice-card-4')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('choice-card-40')).not.toBeInTheDocument();
   });
 
   it('4: back button calls onBack', async () => {
@@ -202,28 +204,26 @@ describe('ChoiceGalleryScreen -- rendering and layout', () => {
 // 6.2 — Locked/Unlocked Card States
 // ────────────────────────────────────────────────────────────
 
-describe('ChoiceGalleryScreen -- locked/unlocked card states', () => {
-  it('7: locked cards have disabled state', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+describe('ChoiceGalleryScreen -- locked cards are hidden', () => {
+  it('7: locked cards are not rendered at all', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation([1]));
     await renderGallery();
-    for (let i = 1; i <= 40; i++) {
-      const card = screen.getByTestId(`choice-card-${String(i)}`);
-      expect(card).toBeDisabled();
+    for (let i = 2; i <= 40; i++) {
+      expect(screen.queryByTestId(`choice-card-${String(i)}`)).not.toBeInTheDocument();
     }
   });
 
-  it('8: locked cards show unlock hint text', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('8: no lock icon or unlock hint is shown in the gallery', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation([1]));
     await renderGallery();
-    const card1 = screen.getByTestId('choice-card-1');
-    expect(card1).toHaveTextContent('Complete 1 challenge');
+    expect(screen.queryByText('\uD83D\uDD12')).not.toBeInTheDocument();
+    expect(screen.queryByText('Complete 1 challenge')).not.toBeInTheDocument();
   });
 
-  it('9: locked cards show lock icon', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('9: empty-state hint appears when nothing is unlocked', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation([]));
     await renderGallery();
-    const card1 = screen.getByTestId('choice-card-1');
-    expect(card1).toHaveTextContent('\uD83D\uDD12');
+    expect(screen.getByTestId('choice-empty')).toBeInTheDocument();
   });
 
   it('10: unlocked cards are interactive (not disabled)', async () => {
@@ -233,13 +233,12 @@ describe('ChoiceGalleryScreen -- locked/unlocked card states', () => {
     expect(card1).not.toBeDisabled();
   });
 
-  it('11: unlocked cards show description instead of hint', async () => {
+  it('11: unlocked cards show description', async () => {
     mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation([1]));
     await renderGallery();
     const card1 = screen.getByTestId('choice-card-1');
     const modeData = CHOICE_MODE_DATA[0];
     expect(card1).toHaveTextContent(modeData?.description ?? '');
-    expect(card1).not.toHaveTextContent('Complete 1 challenge');
   });
 
   it('12: unlocked cards have correct aria-label with description', async () => {
@@ -251,54 +250,26 @@ describe('ChoiceGalleryScreen -- locked/unlocked card states', () => {
     expect(card1.getAttribute('aria-label')).toContain(modeData?.description ?? '');
   });
 
-  it('13: locked cards have correct aria-label with unlock threshold', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('13: unlocked cards show mode name, number, and track badge', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation([1, 9, 17, 25, 33]));
     await renderGallery();
-    const card2 = screen.getByTestId('choice-card-2');
-    expect(card2.getAttribute('aria-label')).toContain('Boom Box');
-    expect(card2.getAttribute('aria-label')).toContain('locked');
-    expect(card2.getAttribute('aria-label')).toContain('Complete 15 challenges');
-  });
-
-  it('14: all cards show mode name', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation([1]));
-    await renderGallery();
-    // Check a few representative cards
     expect(screen.getByTestId('choice-card-1')).toHaveTextContent('Revolution');
-    expect(screen.getByTestId('choice-card-2')).toHaveTextContent('Boom Box');
-    expect(screen.getByTestId('choice-card-40')).toHaveTextContent('Rank and File');
-  });
-
-  it('15: all cards show mode number', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
-    await renderGallery();
     expect(screen.getByTestId('choice-card-1')).toHaveTextContent('#1');
-    expect(screen.getByTestId('choice-card-40')).toHaveTextContent('#40');
-  });
-
-  it('16: all cards show track badge', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
-    await renderGallery();
-    // Track 1 cards (1-8) should have PM badge
     expect(screen.getByTestId('choice-card-1')).toHaveTextContent('PM');
-    // Track 2 cards (9-16) should have CV badge
     expect(screen.getByTestId('choice-card-9')).toHaveTextContent('CV');
-    // Track 3 cards (17-24) should have RB badge
     expect(screen.getByTestId('choice-card-17')).toHaveTextContent('RB');
-    // Track 4 cards (25-32) should have L badge
     expect(screen.getByTestId('choice-card-25')).toHaveTextContent('L');
-    // Track 5 cards (33-40) should have WP badge
     expect(screen.getByTestId('choice-card-33')).toHaveTextContent('WP');
   });
 
-  it('17: partially unlocked gallery shows mix of states', async () => {
+  it('17: partially unlocked gallery shows only unlocked cards', async () => {
     mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation([1, 2, 3]));
     await renderGallery();
-    expect(screen.getByTestId('choice-card-1')).not.toBeDisabled();
-    expect(screen.getByTestId('choice-card-2')).not.toBeDisabled();
-    expect(screen.getByTestId('choice-card-3')).not.toBeDisabled();
-    expect(screen.getByTestId('choice-card-4')).toBeDisabled();
-    expect(screen.getByTestId('choice-card-40')).toBeDisabled();
+    expect(screen.getByTestId('choice-card-1')).toBeInTheDocument();
+    expect(screen.getByTestId('choice-card-2')).toBeInTheDocument();
+    expect(screen.getByTestId('choice-card-3')).toBeInTheDocument();
+    expect(screen.queryByTestId('choice-card-4')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('choice-card-40')).not.toBeInTheDocument();
   });
 });
 
@@ -314,10 +285,10 @@ describe('ChoiceGalleryScreen -- GalleryDialogBox', () => {
     expect(screen.getByTestId('gallery-dialog')).toBeInTheDocument();
   });
 
-  it('19: clicking locked card does nothing', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('19: locked cards are not present so cannot be clicked', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation([1]));
     await renderGallery();
-    fireEvent.click(screen.getByTestId('choice-card-2'));
+    expect(screen.queryByTestId('choice-card-2')).not.toBeInTheDocument();
     expect(screen.queryByTestId('gallery-dialog')).not.toBeInTheDocument();
   });
 
@@ -475,7 +446,7 @@ describe('ChoiceGalleryScreen -- dialog cycling navigation', () => {
 // ────────────────────────────────────────────────────────────
 
 describe('ChoiceGalleryScreen -- edge cases', () => {
-  it('36: renders with all modes locked when evaluation fails', async () => {
+  it('36: renders empty state when evaluation fails', async () => {
     mockEvaluateUnlocks.mockRejectedValue(new Error('DB error'));
     const backCb = vi.fn();
     const detailCb = vi.fn();
@@ -485,10 +456,11 @@ describe('ChoiceGalleryScreen -- edge cases', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('choice-loading')).not.toBeInTheDocument();
     });
-    // All 40 cards should be disabled
+    // No cards should be rendered
     for (let i = 1; i <= 40; i++) {
-      expect(screen.getByTestId(`choice-card-${String(i)}`)).toBeDisabled();
+      expect(screen.queryByTestId(`choice-card-${String(i)}`)).not.toBeInTheDocument();
     }
+    expect(screen.getByTestId('choice-empty')).toBeInTheDocument();
     expect(screen.getByTestId('unlock-summary')).toHaveTextContent('0 / 40 modes unlocked');
   });
 
@@ -502,15 +474,12 @@ describe('ChoiceGalleryScreen -- edge cases', () => {
     expect(screen.getByTestId('unlock-summary')).toHaveTextContent('40 / 40 modes unlocked');
   });
 
-  it('38: gallery cards have correct tabindex ordering', async () => {
+  it('38: only unlocked cards are tabbable', async () => {
     mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation([1]));
     await renderGallery();
-    // Unlocked card is tabbable (not disabled)
     const card1 = screen.getByTestId('choice-card-1');
     expect(card1).not.toBeDisabled();
-    // Disabled cards are not tabbable
-    const card2 = screen.getByTestId('choice-card-2');
-    expect(card2).toBeDisabled();
+    expect(screen.queryByTestId('choice-card-2')).not.toBeInTheDocument();
   });
 
   it('40: unmounting during load does not cause state update', () => {

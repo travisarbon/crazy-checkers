@@ -49,6 +49,12 @@ import CogitateBoard from '../CogitateBoard';
 import EvaluationBar from '../EvaluationBar';
 import GameHistoryBrowser from '../GameHistoryBrowser';
 import MoveTimeline from '../MoveTimeline';
+import ActiveEventsIndicator from '../ActiveEventsIndicator';
+import EventAnnouncement from '../EventAnnouncement';
+import { useAnimationQueue, buildAnimationSequence, type AnimationStep } from '../useAnimationQueue';
+import { useEventAnimations } from '../useEventAnimations';
+import { useEventOverlays } from '../useEventOverlays';
+import { getEffectiveBoard } from '../../engine/game';
 import type { Difficulty } from '../../ai/difficulty';
 import { deserializeBoardState } from '../../persistence/serialization';
 import GameModeSelector from './GameModeSelector';
@@ -73,6 +79,33 @@ interface PlayingSetup {
 }
 
 const DEFAULT_MODE_ID = 'classic';
+
+function eventKey(e: ActiveEvent): string {
+  return `${e.type}:${String(e.triggeredAtPly)}`;
+}
+
+function getNewlyTriggeredFreePlayEvents(
+  prev: readonly ActiveEvent[],
+  next: readonly ActiveEvent[],
+): readonly ActiveEvent[] {
+  const prevKeys = new Set(prev.map(eventKey));
+  return next.filter((e) => !prevKeys.has(eventKey(e)));
+}
+
+function getNewlyExpiredFreePlayEvents(
+  prev: readonly ActiveEvent[],
+  next: readonly ActiveEvent[],
+): readonly ActiveEvent[] {
+  const nextKeys = new Set(next.map(eventKey));
+  return prev.filter((e) => !nextKeys.has(eventKey(e)));
+}
+
+function formatFreePlayResult(type: string): string {
+  if (type === 'WHITE_WIN') return 'White wins';
+  if (type === 'BLACK_WIN') return 'Black wins';
+  if (type === 'DRAW') return 'Draw';
+  return type;
+}
 
 function serializeActiveEvents(events: readonly ActiveEvent[]): SerializedActiveEvent[] {
   return events.map((e) => ({
@@ -583,8 +616,34 @@ function FreePlayGameView({
     if (arrowFrom !== null) setArrowFrom(null);
   }
   const [gameState, setGameState] = useState(initialState);
+  const [undoStack, setUndoStack] = useState<GameState[]>([]);
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [evaluation, setEvaluation] = useState<NormalizedEvaluation | null>(null);
+  const [announcementEvents, setAnnouncementEvents] = useState<readonly ActiveEvent[]>([]);
+  const pendingStateRef = useRef<GameState | null>(null);
+
+  // Animation queue — commits pending state when the sequence completes.
+  const animationQueue = useAnimationQueue({
+    speedMultiplier: 1.0,
+    flipped: setup.flipped,
+    onComplete: () => {
+      if (pendingStateRef.current) {
+        setGameState(pendingStateRef.current);
+        pendingStateRef.current = null;
+      }
+    },
+  });
+  const eventAnimations = useEventAnimations({ flipped: setup.flipped });
+
+  // Persistent event overlay state (event badges/markers on the board).
+  const eventOverlayState = useEventOverlays(
+    gameState.activeEvents,
+    animationQueue.animationBoard ?? gameState.board,
+    animationQueue.isAnimating ? null : selectedSquare,
+    gameState.activeColor,
+  );
+
+  const displayBoard = animationQueue.animationBoard ?? gameState.board;
 
   const legalMoves = useMemo(
     () => gameState.ruleSet.getLegalMoves(gameState.board, gameState.activeColor),
@@ -616,28 +675,92 @@ function FreePlayGameView({
     return active === PlayerType.CpuEasy || active === PlayerType.CpuHard;
   }, [gameState]);
 
+  // Apply a move with full animation + event-announcement pipeline.
+  const applyMove = useCallback(
+    (prevState: GameState, nextState: GameState) => {
+      setUndoStack((prev) => [...prev, prevState]);
+
+      const triggered = getNewlyTriggeredFreePlayEvents(
+        prevState.activeEvents,
+        nextState.activeEvents,
+      );
+      const expired = getNewlyExpiredFreePlayEvents(
+        prevState.activeEvents,
+        nextState.activeEvents,
+      );
+
+      if (triggered.length > 0) {
+        setAnnouncementEvents((prev) =>
+          prev.length > 0 ? [...prev, ...triggered] : triggered,
+        );
+      }
+
+      const move = nextState.moveHistory[nextState.moveHistory.length - 1];
+      if (!move) {
+        setGameState(nextState);
+        return;
+      }
+
+      const boardBefore = getEffectiveBoard(prevState);
+      let steps: AnimationStep[] = [];
+
+      if (triggered.length > 0) {
+        steps = steps.concat(
+          eventAnimations.buildActivationSequence(triggered, boardBefore, nextState.board),
+        );
+      }
+      steps = steps.concat(buildAnimationSequence(move, boardBefore, nextState.board));
+
+      const midMoveEvents: ActiveEvent[] = [...expired];
+      for (const event of nextState.activeEvents) {
+        if (event.permanent !== true) continue;
+        if (midMoveEvents.includes(event)) continue;
+        midMoveEvents.push(event);
+      }
+      if (midMoveEvents.length > 0) {
+        steps = steps.concat(
+          eventAnimations.buildMidMoveEffects(move, midMoveEvents, boardBefore, nextState.board),
+        );
+      }
+      if (expired.length > 0) {
+        steps = steps.concat(
+          eventAnimations.buildExpirationSequence(expired, nextState.board),
+        );
+      }
+
+      if (steps.length > 0) {
+        pendingStateRef.current = nextState;
+        animationQueue.enqueue(steps, boardBefore, prevState.activeColor);
+      } else {
+        setGameState(nextState);
+      }
+    },
+    [animationQueue, eventAnimations],
+  );
+
   // AI move loop.
   useEffect(() => {
     if (gameState.status !== GameStatus.InProgress || !isAITurn) return;
+    if (animationQueue.isAnimating) return;
+    if (pendingStateRef.current !== null) return;
     const state = { cancelled: false };
     void (async () => {
       try {
         const move = await requestAIMove(gameState, setup.difficulty);
         if (state.cancelled) return;
-        setGameState((prev) => {
-          if (prev.status !== GameStatus.InProgress) return prev;
-          try {
-            return makeMove(prev, move);
-          } catch {
-            return prev;
-          }
-        });
+        if (gameState.status !== GameStatus.InProgress) return;
+        try {
+          const next = makeMove(gameState, move);
+          applyMove(gameState, next);
+        } catch {
+          // ignore invalid moves
+        }
       } catch (err) {
         console.warn('[FreePlay] AI move failed', err);
       }
     })();
     return () => { state.cancelled = true; };
-  }, [gameState, isAITurn, setup.difficulty]);
+  }, [gameState, isAITurn, setup.difficulty, animationQueue.isAnimating, applyMove]);
 
   // Live evaluation.
   useEffect(() => {
@@ -705,6 +828,7 @@ function FreePlayGameView({
       }
       if (gameState.status !== GameStatus.InProgress) return;
       if (isAITurn) return;
+      if (animationQueue.isAnimating) return;
 
       const sqNum = sq as number;
       if (selectedSquare !== null && legalDestinations.has(sqNum)) {
@@ -719,7 +843,8 @@ function FreePlayGameView({
         );
         setSelectedSquare(null);
         try {
-          setGameState((prev) => makeMove(prev, best));
+          const next = makeMove(gameState, best);
+          applyMove(gameState, next);
         } catch (err) {
           console.warn('[FreePlay] move failed', err);
         }
@@ -749,8 +874,27 @@ function FreePlayGameView({
       legalDestinations,
       legalMoves,
       selectablePieces,
+      animationQueue.isAnimating,
+      applyMove,
     ],
   );
+
+  // Undo handler: step back one ply (pass-and-play) or two plies (vs CPU).
+  const handleUndo = useCallback(() => {
+    if (animationQueue.isAnimating) return;
+    if (undoStack.length === 0) return;
+    setAnnouncementEvents([]);
+    const isCpuGame =
+      gameState.players.white !== PlayerType.Human ||
+      gameState.players.black !== PlayerType.Human;
+    const steps = isCpuGame && undoStack.length >= 2 ? 2 : 1;
+    const target = undoStack[undoStack.length - steps];
+    if (!target) return;
+    setGameState(target);
+    setUndoStack((prev) => prev.slice(0, -steps));
+    setSelectedSquare(null);
+    pendingStateRef.current = null;
+  }, [animationQueue.isAnimating, undoStack, gameState.players]);
 
   const movesAsNotation = useMemo(
     () => gameState.moveHistory.map((m) => moveToString(m)),
@@ -783,15 +927,22 @@ function FreePlayGameView({
               className={styles.evalBarVertical}
             />
             <CogitateBoard
-              board={gameState.board}
-              interactive={activeTool !== null || (gameState.status === GameStatus.InProgress && !isAITurn)}
+              board={displayBoard}
+              interactive={activeTool !== null || (gameState.status === GameStatus.InProgress && !isAITurn && !animationQueue.isAnimating)}
               onSquareClick={handleSquareClick}
-              selectedSquare={selectedSquare}
-              legalMoveSquares={legalDestinations}
+              selectedSquare={animationQueue.isAnimating ? null : selectedSquare}
+              legalMoveSquares={animationQueue.isAnimating ? undefined : legalDestinations}
               flipped={setup.flipped}
               overlays={diagramOverlays}
               svgRef={svgRef}
               pendingArrowFrom={arrowFrom}
+              animatingPieces={animationQueue.animatingPieces}
+              fadingSquares={animationQueue.fadingSquares}
+              isAnimating={animationQueue.isAnimating}
+              flashingSquares={animationQueue.flashingSquares}
+              explosionState={animationQueue.explosionState}
+              overlayState={animationQueue.overlayState}
+              eventOverlayState={eventOverlayState}
             />
           </div>
           <EvaluationBar
@@ -803,18 +954,66 @@ function FreePlayGameView({
         </div>
 
         <aside className={styles.sidePanel}>
+          {(gameState.mode === GameMode.Crazy ||
+            gameState.mode === GameMode.Chaos ||
+            gameState.mode === GameMode.Choice) && (
+            <ActiveEventsIndicator
+              activeEvents={gameState.activeEvents}
+              activeColor={gameState.activeColor}
+            />
+          )}
           <MoveTimeline
             moves={movesAsNotation}
             currentPly={movesAsNotation.length}
             onPlySelect={() => { /* Not navigable during live play */ }}
           />
+          <div className={styles.freePlayActions}>
+            <button
+              type="button"
+              className={styles.actionButton}
+              onClick={handleUndo}
+              disabled={undoStack.length === 0 || animationQueue.isAnimating}
+              data-testid="freeplay-undo"
+              aria-label="Undo last move"
+            >
+              Undo
+            </button>
+          </div>
           {gameState.status === GameStatus.GameOver && gameState.result && (
-            <div className={styles.gameOverBanner} data-testid="freeplay-game-over">
-              Game Over — {gameState.result.type} ({gameState.result.reason})
+            <div
+              className={styles.gameOverCard}
+              role="status"
+              aria-live="polite"
+              data-testid="freeplay-game-over"
+            >
+              <strong>Game Over</strong>
+              <span>
+                {formatFreePlayResult(gameState.result.type)}
+                {` \u2014 ${gameState.result.reason.toLowerCase()}`}
+              </span>
+              <p className={styles.gameOverHint}>
+                Use Undo to revisit earlier moves, or go back to the editor to try a new position.
+              </p>
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={handleUndo}
+                disabled={undoStack.length === 0 || animationQueue.isAnimating}
+              >
+                Undo Last Move
+              </button>
             </div>
           )}
         </aside>
       </div>
+
+      {announcementEvents.length > 0 && (
+        <EventAnnouncement
+          events={announcementEvents}
+          isAnimating={animationQueue.isAnimating}
+          onDismiss={() => { setAnnouncementEvents([]); }}
+        />
+      )}
 
       <DiagramToolbar
         activeTool={activeTool}

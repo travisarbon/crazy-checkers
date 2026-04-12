@@ -247,6 +247,39 @@ describe('MenuScreen', () => {
     expect(screen.queryByText('Chaos Checkers')).not.toBeInTheDocument();
   });
 
+  it('Task 22.2: title reverts to "Crazy Checkers" when chaosUnlocked changes true → false', () => {
+    const { rerender } = renderMenu({
+      unlockSnapshot: ALL_UNLOCKED,
+      chaosUnlocked: true,
+    });
+    expect(screen.getByText('Chaos Checkers')).toBeInTheDocument();
+
+    rerender(
+      <MenuScreen
+        onConfigure={vi.fn()}
+        onNavigate={vi.fn()}
+        unlockSnapshot={ALL_LOCKED}
+        newlyUnlocked={NO_NEW}
+        onUnlockAnimationEnd={vi.fn()}
+        chaosUnlocked={false}
+      />,
+    );
+    expect(screen.getByText('Crazy Checkers')).toBeInTheDocument();
+    expect(screen.queryByText('Chaos Checkers')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Chaos' })).not.toBeInTheDocument();
+  });
+
+  it('Task 22.2: screen reader announcement includes title change text when Chaos newly unlocked', () => {
+    renderMenu({
+      unlockSnapshot: ALL_UNLOCKED,
+      chaosUnlocked: true,
+      newlyUnlocked: { choice: false, classified: false, chaos: true },
+    });
+    expect(
+      screen.getByText(/Chaos mode unlocked!.*Chaos Checkers/i),
+    ).toBeInTheDocument();
+  });
+
   it('unlocked hidden modes are navigable via onNavigate', () => {
     const onNavigate = vi.fn();
     renderMenu({

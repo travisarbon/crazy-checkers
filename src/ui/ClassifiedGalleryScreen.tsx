@@ -378,10 +378,13 @@ export default function ClassifiedGalleryScreen({
         </>
       )}
 
-      {/* Wave sections */}
+      {/* Wave sections — locked games and empty waves are hidden entirely */}
       {WAVE_META.map((waveMeta) => {
         const waveGames = getClassifiedByWave(waveMeta.wave);
-        if (waveGames.length === 0) return null;
+        const visibleGames = waveGames.filter((entry) =>
+          getCardState(entry, classifiedUnlocked, gamesUnlockedCount) !== 'locked',
+        );
+        if (visibleGames.length === 0) return null;
 
         return (
           <section
@@ -396,7 +399,7 @@ export default function ClassifiedGalleryScreen({
               </span>
               <h2 className={styles.waveTitle}>{waveMeta.title}</h2>
               <span className={styles.waveCount}>
-                {String(waveGames.length)} games
+                {String(visibleGames.length)} / {String(waveGames.length)} games
               </span>
               <p className={styles.waveSubtitle}>{waveMeta.subtitle}</p>
             </div>
@@ -407,7 +410,7 @@ export default function ClassifiedGalleryScreen({
               role="grid"
               aria-label={`${waveMeta.title} games`}
             >
-              {waveGames.map((entry) => {
+              {visibleGames.map((entry) => {
                 const state = getCardState(
                   entry, classifiedUnlocked, gamesUnlockedCount,
                 );
@@ -427,6 +430,13 @@ export default function ClassifiedGalleryScreen({
           </section>
         );
       })}
+
+      {classifiedUnlocked && gamesUnlockedCount === 0 && (
+        <p className={styles.emptyState} data-testid="classified-empty">
+          No Classified games unlocked yet. Win against the Hard CPU in other
+          modes to unlock games here, wave by wave.
+        </p>
+      )}
 
       {/* GalleryDialogBox for selected game */}
       {selectedGame !== null && selectedEntry !== null && (

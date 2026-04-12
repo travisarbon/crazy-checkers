@@ -174,36 +174,35 @@ describe('ClassifiedGalleryScreen -- rendering and layout', () => {
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
-  it('3: renders all 8 wave section headers after loading', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('3: renders wave section headers only for waves with unlocked games', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(
+      makeUnlockEvaluation({ classifiedUnlocked: true, classifiedHardWins: 3 }),
+    );
     await renderGallery();
+    // Wave 1 has games 1-14, so with 3 hard wins only wave 1 is visible
     expect(screen.getByText('The Draughts Family')).toBeInTheDocument();
-    expect(screen.getByText('Hunt & Capture')).toBeInTheDocument();
-    expect(screen.getByText('Race & Connection')).toBeInTheDocument();
-    expect(screen.getByText('Territory & Enclosure')).toBeInTheDocument();
-    expect(screen.getByText('Deep Strategy & Unique Systems')).toBeInTheDocument();
-    expect(screen.getByText('The Chess Family')).toBeInTheDocument();
-    expect(screen.getByText('The Shogi Family')).toBeInTheDocument();
-    expect(screen.getByText('The Final Unlocks')).toBeInTheDocument();
+    expect(screen.queryByText('Hunt & Capture')).not.toBeInTheDocument();
+    expect(screen.queryByText('The Final Unlocks')).not.toBeInTheDocument();
   });
 
-  it('4: renders correct game count per wave in headers', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('4: wave header shows "visible / total" game counts', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(
+      makeUnlockEvaluation({ classifiedUnlocked: true, classifiedHardWins: 3 }),
+    );
     await renderGallery();
-    expect(screen.getByText('14 games')).toBeInTheDocument();
-    expect(screen.getByText('13 games')).toBeInTheDocument();
-    expect(screen.getByText('10 games')).toBeInTheDocument();
-    expect(screen.getByText('6 games')).toBeInTheDocument();
-    expect(screen.getByText('9 games')).toBeInTheDocument();
-    expect(screen.getByText('2 games')).toBeInTheDocument();
+    expect(screen.getByText('3 / 14 games')).toBeInTheDocument();
   });
 
-  it('5: renders all 64 game cards across all waves', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('5: renders only unlocked card entries across visible waves', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(
+      makeUnlockEvaluation({ classifiedUnlocked: true, classifiedHardWins: 3 }),
+    );
     await renderGallery();
-    for (let i = 1; i <= 64; i++) {
-      expect(screen.getByTestId(`classified-card-${String(i)}`)).toBeInTheDocument();
-    }
+    expect(screen.getByTestId('classified-card-1')).toBeInTheDocument();
+    expect(screen.getByTestId('classified-card-2')).toBeInTheDocument();
+    expect(screen.getByTestId('classified-card-3')).toBeInTheDocument();
+    expect(screen.queryByTestId('classified-card-4')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('classified-card-64')).not.toBeInTheDocument();
   });
 
   it('6: back button calls onBack', async () => {
@@ -221,8 +220,10 @@ describe('ClassifiedGalleryScreen -- rendering and layout', () => {
     expect(screen.getByText(/abstract strategy board games/)).toBeInTheDocument();
   });
 
-  it('8: renders wave subtitles', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('8: renders wave subtitles for visible waves', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(
+      makeUnlockEvaluation({ classifiedUnlocked: true, classifiedHardWins: 3 }),
+    );
     await renderGallery();
     expect(screen.getByText(/divergence from American Rules/)).toBeInTheDocument();
   });
@@ -266,38 +267,35 @@ describe('ClassifiedGalleryScreen -- unlock status display', () => {
 // 6.3 — Card States
 // ────────────────────────────────────────────────────────────
 
-describe('ClassifiedGalleryScreen -- card states', () => {
-  it('13: all cards locked when Classified mode not unlocked', async () => {
+describe('ClassifiedGalleryScreen -- locked cards are hidden', () => {
+  it('13: no cards render when Classified mode not unlocked', async () => {
     mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation({ classifiedUnlocked: false }));
     await renderGallery();
     for (let i = 1; i <= 64; i++) {
-      const card = screen.getByTestId(`classified-card-${String(i)}`);
-      expect(card).toBeDisabled();
+      expect(screen.queryByTestId(`classified-card-${String(i)}`)).not.toBeInTheDocument();
     }
   });
 
-  it('14: all cards show lock icon when mode locked', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation({ classifiedUnlocked: false }));
+  it('14: no lock icon anywhere in the gallery', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(
+      makeUnlockEvaluation({ classifiedUnlocked: true, classifiedHardWins: 3 }),
+    );
     await renderGallery();
-    const card1 = screen.getByTestId('classified-card-1');
-    expect(card1).toHaveTextContent('\uD83D\uDD12');
+    expect(screen.queryByText('\uD83D\uDD12')).not.toBeInTheDocument();
   });
 
-  it('15: cards show Coming Soon when game unlocked but not implemented', async () => {
+  it('15: unlocked-but-unimplemented games show Coming Soon', async () => {
     mockEvaluateUnlocks.mockResolvedValue(
       makeUnlockEvaluation({ classifiedUnlocked: true, classifiedHardWins: 5 }),
     );
     await renderGallery();
-    // First 5 games are unlocked but not implemented -- show "Coming Soon"
     for (let i = 1; i <= 5; i++) {
       const card = screen.getByTestId(`classified-card-${String(i)}`);
       expect(card).toHaveTextContent('Coming Soon');
       expect(card).not.toHaveTextContent('\uD83D\uDD12');
     }
-    // Game 6 is still locked
-    const card6 = screen.getByTestId('classified-card-6');
-    expect(card6).toHaveTextContent('\uD83D\uDD12');
-    expect(card6).not.toHaveTextContent('Coming Soon');
+    // Game 6 is still locked → not rendered
+    expect(screen.queryByTestId('classified-card-6')).not.toBeInTheDocument();
   });
 
   it('16: cards are interactive when game is implemented and unlocked', async () => {
@@ -310,29 +308,36 @@ describe('ClassifiedGalleryScreen -- card states', () => {
     expect(card1).not.toBeDisabled();
   });
 
-  it('17: all cards show game name', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('17: visible cards show game name', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(
+      makeUnlockEvaluation({ classifiedUnlocked: true, classifiedHardWins: 1 }),
+    );
     await renderGallery();
     expect(screen.getByTestId('classified-card-1')).toHaveTextContent('Russian Draughts');
-    expect(screen.getByTestId('classified-card-64')).toHaveTextContent('Chess');
   });
 
-  it('18: all cards show board geometry', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('18: visible cards show board geometry', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(
+      makeUnlockEvaluation({ classifiedUnlocked: true, classifiedHardWins: 1 }),
+    );
     await renderGallery();
     const card1 = screen.getByTestId('classified-card-1');
     expect(card1.textContent).toMatch(/8\u00d78/);
   });
 
-  it('19: all cards show family badge', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('19: visible cards show family badge', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(
+      makeUnlockEvaluation({ classifiedUnlocked: true, classifiedHardWins: 1 }),
+    );
     await renderGallery();
     const card1 = screen.getByTestId('classified-card-1');
     expect(card1).toHaveTextContent('Draughts');
   });
 
-  it('20: card testids match game index', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('20: all 64 cards render when classifiedHardWins covers every wave', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(
+      makeUnlockEvaluation({ classifiedUnlocked: true, classifiedHardWins: 64 }),
+    );
     await renderGallery();
     for (let i = 1; i <= 64; i++) {
       expect(screen.getByTestId(`classified-card-${String(i)}`)).toBeInTheDocument();
@@ -355,10 +360,10 @@ describe('ClassifiedGalleryScreen -- GalleryDialogBox', () => {
     expect(screen.getByTestId('gallery-dialog')).toBeInTheDocument();
   });
 
-  it('22: clicking locked card does nothing', async () => {
+  it('22: locked cards are not rendered so cannot be clicked', async () => {
     mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation({ classifiedUnlocked: false }));
     await renderGallery();
-    fireEvent.click(screen.getByTestId('classified-card-1'));
+    expect(screen.queryByTestId('classified-card-1')).not.toBeInTheDocument();
     expect(screen.queryByTestId('gallery-dialog')).not.toBeInTheDocument();
   });
 
@@ -540,7 +545,7 @@ describe('ClassifiedGalleryScreen -- dialog cycling navigation', () => {
 // ────────────────────────────────────────────────────────────
 
 describe('ClassifiedGalleryScreen -- edge cases', () => {
-  it('38: renders with all games locked when evaluation fails', async () => {
+  it('38: renders locked banner and no cards when evaluation fails', async () => {
     mockEvaluateUnlocks.mockRejectedValue(new Error('DB error'));
     const backCb = vi.fn();
     const detailCb = vi.fn();
@@ -551,7 +556,7 @@ describe('ClassifiedGalleryScreen -- edge cases', () => {
       expect(screen.queryByTestId('classified-loading')).not.toBeInTheDocument();
     });
     for (let i = 1; i <= 64; i++) {
-      expect(screen.getByTestId(`classified-card-${String(i)}`)).toBeDisabled();
+      expect(screen.queryByTestId(`classified-card-${String(i)}`)).not.toBeInTheDocument();
     }
     expect(screen.getByTestId('classified-unlock-status')).toHaveTextContent('Classified mode: Locked');
   });
@@ -577,8 +582,10 @@ describe('ClassifiedGalleryScreen -- edge cases', () => {
     resolvePromise(makeUnlockEvaluation());
   });
 
-  it('41: wave sections render in correct order (1 through 8)', async () => {
-    mockEvaluateUnlocks.mockResolvedValue(makeUnlockEvaluation());
+  it('41: wave sections render in correct order when fully unlocked', async () => {
+    mockEvaluateUnlocks.mockResolvedValue(
+      makeUnlockEvaluation({ classifiedUnlocked: true, classifiedHardWins: 64 }),
+    );
     await renderGallery();
     const sections = screen.getAllByRole('region');
     const waveLabels = sections.map((s) => s.getAttribute('aria-label') ?? '');

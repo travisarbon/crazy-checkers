@@ -222,4 +222,57 @@ describe('GameOverDialog', () => {
     expect(eventsNote).toHaveTextContent('King for a Day');
     expect(eventsNote).toHaveTextContent('Opposite Day');
   });
+
+  // --- Chaos mode (Task 22.2) ---
+
+  it('Chaos mode game over shows "Chaos Mode" label', () => {
+    const result: GameResult = { type: GameResultType.WhiteWin, reason: GameEndReason.NoPiecesLeft };
+    render(
+      <GameOverDialog
+        result={result}
+        lastActiveColor={PieceColor.Black}
+        mode={GameMode.Chaos}
+        activeEvents={[]}
+        onNewGame={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId('game-over-mode-label')).toHaveTextContent('Chaos Mode');
+    expect(screen.queryByTestId('game-over-active-events')).not.toBeInTheDocument();
+  });
+
+  it('Chaos mode game over lists active events at game end', () => {
+    const result: GameResult = { type: GameResultType.BlackWin, reason: GameEndReason.NoPiecesLeft };
+    const events: ActiveEvent[] = [
+      { type: CrazyEvent.KingForADay, remainingPlies: 3, triggeredBy: PieceColor.White, triggeredAtPly: 12 },
+      { type: CrazyEvent.OppositeDay, remainingPlies: 6, triggeredBy: PieceColor.Black, triggeredAtPly: 14 },
+    ];
+    render(
+      <GameOverDialog
+        result={result}
+        lastActiveColor={PieceColor.White}
+        mode={GameMode.Chaos}
+        activeEvents={events}
+        onNewGame={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId('game-over-mode-label')).toHaveTextContent('Chaos Mode');
+    const eventsNote = screen.getByTestId('game-over-active-events');
+    expect(eventsNote).toHaveTextContent('King for a Day');
+    expect(eventsNote).toHaveTextContent('Opposite Day');
+  });
+
+  it('Chaos mode game over with empty active events omits event list', () => {
+    const result: GameResult = { type: GameResultType.Draw, reason: GameEndReason.Repetition };
+    render(
+      <GameOverDialog
+        result={result}
+        lastActiveColor={PieceColor.White}
+        mode={GameMode.Chaos}
+        activeEvents={[]}
+        onNewGame={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId('game-over-mode-label')).toHaveTextContent('Chaos Mode');
+    expect(screen.queryByTestId('game-over-active-events')).not.toBeInTheDocument();
+  });
 });

@@ -302,17 +302,27 @@ export default function ChoiceGalleryScreen({
         {String(totalUnlocked)} / 40 modes unlocked
       </p>
 
-      {/* Gallery grid */}
+      {/* Gallery grid — locked modes are hidden entirely */}
       <div className={styles.gallery} role="grid" aria-label="Choice mode gallery">
-        {CHOICE_MODE_DATA.map((mode) => (
-          <GalleryCard
-            key={mode.choiceNumber}
-            mode={mode}
-            unlockStatus={unlockEvaluation?.choiceModes.get(mode.choiceNumber)}
-            onClick={() => { handleCardClick(mode.choiceNumber); }}
-          />
-        ))}
+        {CHOICE_MODE_DATA
+          .filter((mode) =>
+            unlockEvaluation?.choiceModes.get(mode.choiceNumber)?.unlocked ?? false,
+          )
+          .map((mode) => (
+            <GalleryCard
+              key={mode.choiceNumber}
+              mode={mode}
+              unlockStatus={unlockEvaluation?.choiceModes.get(mode.choiceNumber)}
+              onClick={() => { handleCardClick(mode.choiceNumber); }}
+            />
+          ))}
       </div>
+      {totalUnlocked === 0 && (
+        <p className={styles.emptyState} data-testid="choice-empty">
+          No Choice modes unlocked yet. Complete challenges, win Crazy games, and
+          progress through the five tracks to unlock new modes here.
+        </p>
+      )}
 
       {/* GalleryDialogBox for selected mode */}
       {selectedMode !== null && selectedModeData !== null && (
