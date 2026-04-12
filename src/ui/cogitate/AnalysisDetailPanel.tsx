@@ -15,6 +15,8 @@ export interface AnalysisDetailPanelProps {
   readonly isAnalyzing: boolean;
   readonly onDeepAnalyze?: () => void;
   readonly deepAnalyzeAvailable?: boolean;
+  /** Whether a deep analysis is currently running for this panel. */
+  readonly isDeepAnalyzing?: boolean;
   readonly className?: string;
 }
 
@@ -49,6 +51,7 @@ function AnalysisDetailPanel({
   isAnalyzing,
   onDeepAnalyze,
   deepAnalyzeAvailable = true,
+  isDeepAnalyzing = false,
   className,
 }: AnalysisDetailPanelProps) {
   const moveNumber = Math.floor(plyIndex / 2) + 1;
@@ -159,10 +162,11 @@ function AnalysisDetailPanel({
           type="button"
           className={styles.deepAnalyzeButton}
           onClick={onDeepAnalyze}
-          disabled={!deepAnalyzeAvailable}
+          disabled={!deepAnalyzeAvailable || isDeepAnalyzing}
+          aria-busy={isDeepAnalyzing}
           data-testid="analysis-detail-deep-analyze"
         >
-          Deep Analyze
+          {isDeepAnalyzing ? 'Deep Analyzing…' : 'Deep Analyze'}
         </button>
       )}
     </section>

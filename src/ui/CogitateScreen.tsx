@@ -14,8 +14,18 @@ import { useToolAvailability } from './cogitate/useToolAvailability';
 import { useCogitateHistory, type CogitateView } from './cogitate/useCogitateHistory';
 import styles from './CogitateScreen.module.css';
 
+export type CogitateInitialView =
+  | 'cogitate-replay'
+  | 'cogitate-analysis'
+  | 'cogitate-training'
+  | 'cogitate-freeplay';
+
 interface CogitateScreenProps {
   onBack: () => void;
+  /** Optional: open a specific tool on mount (e.g. when launched from Review). */
+  initialView?: CogitateInitialView;
+  /** Optional: pre-select a specific game in the launched tool. */
+  initialGameId?: string;
 }
 
 type ToolIcon = 'replay' | 'analysis' | 'training' | 'freeplay';
@@ -122,8 +132,12 @@ function ToolCard({
   );
 }
 
-export default function CogitateScreen({ onBack }: CogitateScreenProps) {
-  const [view, setView] = useState<CogitateView>({ kind: 'cogitate-home' });
+export default function CogitateScreen({ onBack, initialView, initialGameId }: CogitateScreenProps) {
+  const [view, setView] = useState(
+    initialView
+      ? ({ kind: initialView } as CogitateView)
+      : ({ kind: 'cogitate-home' } as CogitateView),
+  );
   const [refreshKey, setRefreshKey] = useState(0);
   const availability = useToolAvailability(refreshKey);
   useCogitateHistory({ view, setView });
@@ -179,11 +193,14 @@ export default function CogitateScreen({ onBack }: CogitateScreenProps) {
     previousViewRef.current = 'cogitate-home';
   }, [view.kind, availability.isLoaded]);
 
+  const initialGameIdForView =
+    view.kind === initialView ? initialGameId : undefined;
+
   if (view.kind === 'cogitate-replay') {
-    return <ReplayTool onBack={goHome} />;
+    return <ReplayTool onBack={goHome} initialGameId={initialGameIdForView} />;
   }
   if (view.kind === 'cogitate-analysis') {
-    return <AnalysisTool onBack={goHome} />;
+    return <AnalysisTool onBack={goHome} initialGameId={initialGameIdForView} />;
   }
   if (view.kind === 'cogitate-training') {
     return <TrainingTool onBack={goHome} />;

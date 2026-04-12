@@ -99,16 +99,21 @@ describe('GameOverDialog', () => {
     expect(onNewGame).toHaveBeenCalledOnce();
   });
 
-  it('Review button is disabled', () => {
+  it('Review button is disabled while the game history is still saving', () => {
     renderDialog();
     const reviewBtn = screen.getByTestId('game-over-review');
     expect(reviewBtn).toBeDisabled();
+    expect(reviewBtn).toHaveAttribute('title', expect.stringContaining('Saving'));
   });
 
-  it('Review button has placeholder title', () => {
-    renderDialog();
+  it('Review button is enabled and fires onReview when provided', () => {
+    const onReview = vi.fn();
+    renderDialog({ onReview });
     const reviewBtn = screen.getByTestId('game-over-review');
-    expect(reviewBtn).toHaveAttribute('title', expect.stringContaining('future update'));
+    expect(reviewBtn).not.toBeDisabled();
+    expect(reviewBtn).toHaveAttribute('title', expect.stringContaining('Cogitate'));
+    fireEvent.click(reviewBtn);
+    expect(onReview).toHaveBeenCalledOnce();
   });
 
   // --- ARIA / accessibility ---

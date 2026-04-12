@@ -384,6 +384,7 @@ function AnalysisView({
   }, []);
 
   const handleDeepAnalyze = useCallback(() => {
+    if (deepAnalyzing) return;
     if (nav.currentPly === 0) return;
     const ply = selectedPlyIndex;
     const snapshot = game.boardStates[ply];
@@ -417,7 +418,7 @@ function AnalysisView({
         setDeepAnalyzing(false);
       }
     })();
-  }, [adapter, game.activeEventsPerPly, game.boardStates, nav.currentPly, selectedPlyIndex]);
+  }, [adapter, deepAnalyzing, game.activeEventsPerPly, game.boardStates, nav.currentPly, selectedPlyIndex]);
 
   const announcement = useMemo(() => {
     if (nav.currentPly === 0) return 'Starting position.';
@@ -581,7 +582,8 @@ function AnalysisView({
               playedMoveNotation={playedMoveNotation}
               isAnalyzing={analysisStatus === 'running' && selectedResult === null}
               onDeepAnalyze={handleDeepAnalyze}
-              deepAnalyzeAvailable={!deepAnalyzing && nav.currentPly > 0}
+              deepAnalyzeAvailable={nav.currentPly > 0}
+              isDeepAnalyzing={deepAnalyzing}
             />
           </div>
         </aside>

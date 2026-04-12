@@ -60,6 +60,8 @@ interface GameScreenProps {
   initialRemainingBlackMs?: number;
   onNewGame: () => void;
   onMainMenu?: () => void;
+  /** Called with the persisted game history id when the user taps Review. */
+  onReview?: (gameId: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -183,6 +185,7 @@ export default function GameScreen({
   initialRemainingBlackMs,
   onNewGame,
   onMainMenu,
+  onReview,
 }: GameScreenProps) {
   // --- State ---
   const [gameState, setGameState] = useState<GameState>(
@@ -250,13 +253,21 @@ export default function GameScreen({
     );
   }, [gameState, flipped, timeControl, gameClock.clockState]);
 
+  // Id of the completed game after it is persisted to history. Used by the
+  // Review button in the game-over dialog to open the saved game in Cogitate.
+  const [reviewGameId, setReviewGameId] = useState<string | null>(null);
+
   // --- Clear auto-save and record game on completion ---
   useEffect(() => {
     if (gameState.status === GameStatus.GameOver) {
       clearSavedGame();
-      recordGame(gameState, gameState.mode, gameStartedAt).catch((err: unknown) => {
-        console.warn('Failed to record game history:', err);
-      });
+      recordGame(gameState, gameState.mode, gameStartedAt)
+        .then((id) => {
+          setReviewGameId(id);
+        })
+        .catch((err: unknown) => {
+          console.warn('Failed to record game history:', err);
+        });
 
       // Game over SFX
       if (audioManager && gameState.result) {
@@ -816,6 +827,13 @@ export default function GameScreen({
           clockState={gameClock.clockState}
           onNewGame={onNewGame}
           onMainMenu={onMainMenu}
+          onReview={
+            onReview && reviewGameId
+              ? () => {
+                  onReview(reviewGameId);
+                }
+              : undefined
+          }
         />
       )}
     </div>

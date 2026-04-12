@@ -135,6 +135,7 @@ export default function GameOverDialog({
   activeEvents,
   clockState,
   onNewGame,
+  onReview,
   onMainMenu,
 }: GameOverDialogProps) {
   const primaryRef = useRef<HTMLButtonElement>(null);
@@ -259,8 +260,9 @@ export default function GameOverDialog({
           </button>
           <button
             className={styles.secondaryButton}
-            disabled
-            title="Coming in a future update"
+            onClick={onReview}
+            disabled={!onReview}
+            title={onReview ? 'Replay this game in Cogitate' : 'Saving game history…'}
             data-testid="game-over-review"
           >
             Review

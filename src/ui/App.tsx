@@ -34,7 +34,7 @@ import { createNewChoiceGame } from '../engine/game';
 import type { CrazyEvent } from '../engine/types';
 import ClassifiedGalleryScreen from './ClassifiedGalleryScreen';
 import ClassifiedDetailScreen from './ClassifiedDetailScreen';
-import CogitateScreen from './CogitateScreen';
+import CogitateScreen, { type CogitateInitialView } from './CogitateScreen';
 import CareerScreen from './CareerScreen';
 import CodeScreen from './CodeScreen';
 import { useUnlockState } from './hooks/useUnlockState';
@@ -66,7 +66,11 @@ type Screen =
   | { readonly kind: 'choice-detail'; readonly eventId: string }
   | { readonly kind: 'classified' }
   | { readonly kind: 'classified-detail'; readonly gameId: number }
-  | { readonly kind: 'cogitate' }
+  | {
+      readonly kind: 'cogitate';
+      readonly initialView?: CogitateInitialView;
+      readonly initialGameId?: string;
+    }
   | { readonly kind: 'career' }
   | { readonly kind: 'code' };
 
@@ -342,6 +346,14 @@ export default function App() {
             setResumedGameState(null);
             navigateToMenu();
           }}
+          onReview={(gameId: string) => {
+            setResumedGameState(null);
+            navigateToScreen({
+              kind: 'cogitate',
+              initialView: 'cogitate-replay',
+              initialGameId: gameId,
+            });
+          }}
         />
       );
       break;
@@ -480,7 +492,13 @@ export default function App() {
       break;
 
     case 'cogitate':
-      content = <CogitateScreen onBack={navigateToMenu} />;
+      content = (
+        <CogitateScreen
+          onBack={navigateToMenu}
+          initialView={screen.initialView}
+          initialGameId={screen.initialGameId}
+        />
+      );
       break;
 
     case 'career':
