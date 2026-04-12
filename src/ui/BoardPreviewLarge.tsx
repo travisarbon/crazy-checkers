@@ -120,17 +120,15 @@ export default function BoardPreviewLarge({
       />,
     );
 
-    // King indicator — concentric inner circle
+    // King indicator — crown icon (matches Piece.tsx crown path)
     if (piece.type === PieceType.King) {
+      const crownScale = radius / 16;
       pieces.push(
-        <circle
+        <path
           key={`king-${String(sq)}`}
-          cx={cx}
-          cy={cy}
-          r={radius * 0.5}
-          fill="none"
-          stroke={stroke}
-          strokeWidth={1.5}
+          d="M -12,6 L -8,-6 L -4,2 L 0,-6 L 4,2 L 8,-6 L 12,6 Z"
+          transform={`translate(${String(cx)}, ${String(cy + radius * 0.15)}) scale(${String(crownScale)})`}
+          fill="var(--ui-accent, gold)"
           data-testid={`king-${String(sq)}`}
         />,
       );

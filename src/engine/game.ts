@@ -346,8 +346,11 @@ export function makeMove(state: GameState, move: Move): GameState {
     result = boardResult;
   }
 
-  // Threefold repetition
-  if (status === GameStatus.InProgress && isRepetition(newPositionHashes, newHash, 3)) {
+  // Threefold repetition — skip when permanent events are active (Choice mode)
+  // because event hooks (onTurnStart, onTurnEnd) transform the board in ways
+  // that make Zobrist hashes unreliable for position comparison.
+  const hasPermanentEvents = updatedEvents.some(e => e.permanent === true);
+  if (status === GameStatus.InProgress && !hasPermanentEvents && isRepetition(newPositionHashes, newHash, 3)) {
     status = GameStatus.GameOver;
     result = { type: GameResultType.Draw, reason: GameEndReason.Repetition };
   }

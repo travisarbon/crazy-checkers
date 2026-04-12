@@ -6,10 +6,9 @@
  * for event relationship and strategy guidance.
  */
 
-import { CrazyEvent, GameMode, PieceType } from '../engine/types';
-import type { BoardState, PlayerSetup, SquareState } from '../engine/types';
+import { GameMode } from '../engine/types';
+import type { CrazyEvent, PlayerSetup } from '../engine/types';
 import type { TimeControlConfig } from '../engine/clock';
-import { createInitialBoard } from '../engine/board';
 import ModeScreenShell from './ModeScreenShell';
 import BoardPreviewLarge from './BoardPreviewLarge';
 import ExpandableDetailPanel from './ExpandableDetailPanel';
@@ -17,48 +16,13 @@ import GameSetupSection from './GameSetupSection';
 import { CHOICE_MODE_DATA } from '../persistence/choiceModeData';
 import { EVENT_DATA_MAP } from '../data/eventData';
 import { EVENT_DISPLAY_NAMES, EVENT_DURATIONS } from '../engine/events';
+import { getEventModifiedPosition, CHOICE_HIGHLIGHT_SQUARES } from './choicePreviewData';
 import shellStyles from './ModeScreenShell.module.css';
 import styles from './ChoiceDetailScreen.module.css';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-/**
- * Returns a board position that visually reflects the permanent event effect.
- * For most events, this is the standard starting position. For events like
- * Revolution (KingForADay), all pieces are shown as kings.
- */
-function getEventModifiedPosition(event: CrazyEvent | null): BoardState | undefined {
-  if (event === CrazyEvent.KingForADay) {
-    // Revolution: all pieces are kings
-    const board = createInitialBoard();
-    const modified = [...board] as SquareState[];
-    for (let i = 0; i < modified.length; i++) {
-      const piece = modified[i];
-      if (piece != null && piece.type === PieceType.Pawn) {
-        modified[i] = { color: piece.color, type: PieceType.King };
-      }
-    }
-    return modified;
-  }
-  return undefined; // Use default starting position
-}
-
-/**
- * Optional highlight squares for specific Choice modes.
- * Most modes use the standard starting position with no highlights.
- */
-const CHOICE_HIGHLIGHT_SQUARES: ReadonlyMap<number, readonly number[]> = new Map([
-  // Sanctuary (#12): near-corner safe haven squares
-  [12, [1, 4, 29, 32]],
-  // Tar Pit (#14): edge squares (simplified representation)
-  [14, [1, 2, 3, 4, 5, 12, 13, 20, 21, 28, 29, 30, 31, 32]],
-  // Minefield (#26): center squares
-  [26, [14, 15, 18, 19]],
-  // Portal (#37): example wormhole-linked squares
-  [37, [10, 23, 7, 26]],
-]);
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -18,6 +18,7 @@ import type {
 } from '../persistence/unlockEvaluator';
 import { evaluateFullUnlocks } from '../persistence/unlockEvaluator';
 import { CrazyEvent } from '../engine/types';
+import { getEventModifiedPosition, CHOICE_HIGHLIGHT_SQUARES } from './choicePreviewData';
 import styles from './ChoiceGalleryScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -148,7 +149,12 @@ function GalleryCard({
     >
       <span className={styles.modeNumber}>#{String(mode.choiceNumber)}</span>
       <div className={styles.cardPreview}>
-        <BoardPreviewLarge size={80} label={`${mode.displayName} board preview`} />
+        <BoardPreviewLarge
+          size={80}
+          position={getEventModifiedPosition(mode.event ?? null)}
+          highlightSquares={CHOICE_HIGHLIGHT_SQUARES.get(mode.choiceNumber) as number[] | undefined}
+          label={`${mode.displayName} board preview`}
+        />
       </div>
       <span className={styles.modeName}>{mode.displayName}</span>
       <span className={[styles.trackBadge, trackBadgeClass].join(' ')}>{trackShort}</span>
@@ -315,6 +321,8 @@ export default function ChoiceGalleryScreen({
           visualization={
             <BoardPreviewLarge
               size={180}
+              position={getEventModifiedPosition(selectedModeData.event ?? null)}
+              highlightSquares={CHOICE_HIGHLIGHT_SQUARES.get(selectedModeData.choiceNumber) as number[] | undefined}
               label={`${selectedModeData.displayName} board preview`}
             />
           }

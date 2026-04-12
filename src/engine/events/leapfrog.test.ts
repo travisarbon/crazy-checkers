@@ -226,6 +226,27 @@ describe('getLeapfrogJumpChains', () => {
     expect(chains).toHaveLength(0);
   });
 
+  it('chains friendly leapfrog followed by enemy capture', () => {
+    // White pawn at sq 22 (r5,c2)
+    // Friendly white at sq 18 (r4,c3) — ForwardRight adjacent
+    // Landing at sq 15 (r3,c4) — empty
+    // Enemy black at sq 11 (r2,c5) — ForwardRight from sq 15
+    // Landing at sq 8 (r1,c6) — empty
+    const board = buildBoard([
+      { sq: 22, color: W, type: P },
+      { sq: 18, color: W, type: P },
+      { sq: 11, color: B, type: P },
+    ]);
+    const chains = getLeapfrogJumpChains(board, square(22), PieceColor.White, PieceType.Pawn);
+    // Should find a chain: 22 → 15 (leapfrog friendly 18) → 8 (capture enemy 11)
+    const mixedChain = chains.find(
+      c => c.captured.length > 0 && c.path.length === 2,
+    );
+    expect(mixedChain).toBeDefined();
+    expect(mixedChain?.path.map(s => s as number)).toEqual([15, 8]);
+    expect(mixedChain?.captured.map(s => s as number)).toEqual([11]);
+  });
+
   it('does not jump when landing square is occupied', () => {
     // White pawn at sq 22, friendly at sq 18, but sq 15 is occupied
     const board = buildBoard([
