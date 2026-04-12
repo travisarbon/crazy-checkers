@@ -2,8 +2,9 @@
  * Shrinking Board — production event decorator (Event 39).
  *
  * Permanent event. Upon activation, the outermost ring of the board is
- * removed. Every 4 plies, the next ring inward is removed. Pieces on
- * removed squares get one full turn cycle to escape before elimination.
+ * removed. Every 10 plies (5 rounds), the next ring inward is removed.
+ * Pieces on removed squares get one full turn cycle to escape before
+ * elimination.
  *
  * Promotion rows dynamically shift inward as rings are removed — the
  * outermost playable rows become the new promotion rows.
@@ -205,8 +206,8 @@ export class ShrinkingBoardDecorator extends EventDecorator {
     let newRingLevel = metadata.nextRingLevel;
     let newLastShrinkPly = metadata.lastShrinkPly;
 
-    // Shrink every 4 plies
-    if (newRingLevel <= 3 && newPly >= newRingLevel * 4) {
+    // Shrink every 10 plies (5 rounds)
+    if (newRingLevel <= 3 && newPly >= newRingLevel * 10) {
       const ring = RING_SQUARES[newRingLevel];
       if (ring) newRemoved = [...newRemoved, ...ring];
       newLastShrinkPly = newPly;

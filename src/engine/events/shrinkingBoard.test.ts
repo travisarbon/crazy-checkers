@@ -216,23 +216,23 @@ describe('ShrinkingBoardDecorator', () => {
     expect(result3).toBe(true);
   });
 
-  it('shrinks every 4 plies', () => {
+  it('shrinks every 10 plies (5 rounds)', () => {
     const ring0 = RING_SQUARES[0] ?? [];
     // Set up with pliesSinceActivation just before next shrink
     const board = buildBoard([
       { sq: 14, color: W, type: P },
       { sq: 19, color: B, type: P },
     ]);
-    // nextRingLevel=1, will shrink when newPly >= 1*4 = 4
-    const event = createSBEvent(ring0, 3, 1, 0);
+    // nextRingLevel=1, will shrink when newPly >= 1*10 = 10
+    const event = createSBEvent(ring0, 9, 1, 0);
     const state = crazyStateWithBoard(board, W, [event]);
     const newState = makeMove(state, firstMove(state));
 
     const sbEvent = newState.activeEvents.find(e => e.type === CrazyEvent.ShrinkingBoard);
     expect(sbEvent).toBeDefined();
     const metadata = sbEvent?.metadata as unknown as ShrinkingBoardMetadata | undefined;
-    // After move, pliesSinceActivation should be 4, triggering ring 1 removal
-    if (metadata && metadata.pliesSinceActivation >= 4) {
+    // After move, pliesSinceActivation should be 10, triggering ring 1 removal
+    if (metadata && metadata.pliesSinceActivation >= 10) {
       const ring1 = RING_SQUARES[1] ?? [];
       for (const sq of ring1) {
         expect(metadata.removedSquares).toContain(sq);

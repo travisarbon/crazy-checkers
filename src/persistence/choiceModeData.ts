@@ -70,7 +70,7 @@ export const CHOICE_MODE_DATA: readonly ChoiceModeDefinition[] = [
   { choiceNumber: 29, event: CrazyEvent.Sacrifice, displayName: 'Martyrdom', description: 'When you lose a piece, your most advanced pawn promotes to king', track: 'lifer', unlockThreshold: 'Win a game in 5 different modes' },
   { choiceNumber: 30, event: CrazyEvent.SwapMeet, displayName: 'Switcheroo', description: 'Two opposing pieces (one White, one Black) swap positions', track: 'lifer', unlockThreshold: 'Win 25 games in Pass Around' },
   { choiceNumber: 31, event: CrazyEvent.ChainReaction, displayName: 'Domino Effect', description: 'Captures trigger chain reactions on adjacent pieces', track: 'lifer', unlockThreshold: 'Achieve a 10-game win streak vs. Hard CPU' },
-  { choiceNumber: 32, event: CrazyEvent.Backfire, displayName: 'Friendly Fire', description: 'The capturing piece is always removed after making a capture', track: 'lifer', unlockThreshold: 'Play 200 total games' },
+  { choiceNumber: 32, event: CrazyEvent.Backfire, displayName: 'Friendly Fire', description: 'You can jump over and capture your own pieces', track: 'lifer', unlockThreshold: 'Play 200 total games' },
 
   // Track 5 — World Player (Choice modes 33–40)
   { choiceNumber: 33, event: CrazyEvent.TimeBomb, displayName: 'Ticking Clock', description: 'Bomb markers are placed on pieces — marked pieces explode after a countdown', track: 'world-player', unlockThreshold: 'Win 1 Classified game vs. Hard CPU' },

@@ -306,7 +306,7 @@ export const EVENT_DATA: readonly EventDataEntry[] = [
   entry(34, CrazyEvent.Backfire, 2,
     'Pieces can capture their own friendly pieces for 1 round. Jumping over a friendly piece removes it just like an enemy capture. Mandatory capture applies to all jumps including friendly ones.',
     'Friendly Fire',
-    'Pieces can permanently capture allies. Friendly fire adds a dangerous new dimension to every jump.',
+    'You can permanently jump over and capture your own pieces. Friendly fire adds a dangerous new dimension to every jump.',
     ['Friendly captures trigger Conscription (captured allies switch sides — effectively removed)', 'Mandatory capture includes friendly jumps'],
   ),
   // Event 35 — Sentry
