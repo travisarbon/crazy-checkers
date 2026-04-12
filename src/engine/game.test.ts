@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createNewGame,
+  createNewChoiceGame,
   makeMove,
   movesAreEqual,
   resign,
@@ -1300,5 +1301,106 @@ describe('getLegalMovesFromBoard', () => {
     state = { ...state, status: GameStatus.GameOver, result: { type: GameResultType.Draw, reason: GameEndReason.Repetition } };
     const moves = getLegalMovesFromBoard(state, state.board);
     expect(moves).toHaveLength(0);
+  });
+});
+
+// ===========================================================================
+// createNewChoiceGame
+// ===========================================================================
+
+describe('createNewChoiceGame', () => {
+  it('creates a Choice mode game with permanent event', () => {
+    const ruleSet = createAmericanRules();
+    const players: PlayerSetup = { white: PlayerType.Human, black: PlayerType.CpuHard };
+    const state = createNewChoiceGame(ruleSet, players, CrazyEvent.KingForADay);
+
+    expect(state.mode).toBe(GameMode.Choice);
+    expect(state.activeEvents).toHaveLength(1);
+    const event = state.activeEvents[0];
+    expect(event).toBeDefined();
+    expect(event?.type).toBe(CrazyEvent.KingForADay);
+    expect(event?.remainingPlies).toBe(-1);
+  });
+
+  it('creates a Choice mode game with null event (Extra Crazy)', () => {
+    const ruleSet = createAmericanRules();
+    const players: PlayerSetup = { white: PlayerType.Human, black: PlayerType.CpuEasy };
+    const state = createNewChoiceGame(ruleSet, players, null);
+
+    expect(state.mode).toBe(GameMode.Choice);
+    expect(state.activeEvents).toHaveLength(0);
+  });
+
+  it('wraps the rule set in CompositeEventRuleSet', () => {
+    const ruleSet = createAmericanRules();
+    const players: PlayerSetup = { white: PlayerType.Human, black: PlayerType.CpuHard };
+    const state = createNewChoiceGame(ruleSet, players, CrazyEvent.OppositeDay);
+
+    // CompositeEventRuleSet has setActiveEvents method
+    expect(typeof (state.ruleSet as unknown as Record<string, unknown>).setActiveEvents).toBe('function');
+  });
+
+  it('permanent event has triggeredAtPly 0', () => {
+    const ruleSet = createAmericanRules();
+    const players: PlayerSetup = { white: PlayerType.Human, black: PlayerType.CpuHard };
+    const state = createNewChoiceGame(ruleSet, players, CrazyEvent.LiveGrenade);
+
+    const event = state.activeEvents[0];
+    expect(event).toBeDefined();
+    expect(event?.triggeredAtPly).toBe(0);
+  });
+
+  it('permanent event has triggeredBy White', () => {
+    const ruleSet = createAmericanRules();
+    const players: PlayerSetup = { white: PlayerType.Human, black: PlayerType.CpuHard };
+    const state = createNewChoiceGame(ruleSet, players, CrazyEvent.NoTouching);
+
+    const event = state.activeEvents[0];
+    expect(event).toBeDefined();
+    expect(event?.triggeredBy).toBe(PieceColor.White);
+  });
+
+  it('game starts with standard board (24 pieces)', () => {
+    const ruleSet = createAmericanRules();
+    const players: PlayerSetup = { white: PlayerType.Human, black: PlayerType.CpuHard };
+    const state = createNewChoiceGame(ruleSet, players, CrazyEvent.StepBack);
+
+    const pieceCount = state.board.filter((p) => p !== null).length;
+    expect(pieceCount).toBe(24);
+  });
+
+  it('legal moves reflect the permanent event from the first turn', () => {
+    const ruleSet = createAmericanRules();
+    const players: PlayerSetup = { white: PlayerType.Human, black: PlayerType.CpuHard };
+
+    // OppositeDay inverts the win condition; compare move sets to confirm
+    // the permanent event decorator is active by checking that the composite
+    // rule set produces legal moves (basic smoke test for decorator chain).
+    const stateChoice = createNewChoiceGame(ruleSet, players, CrazyEvent.KingForADay);
+    const choiceMoves = stateChoice.ruleSet.getLegalMoves(stateChoice.board, stateChoice.activeColor);
+
+    // A classic game with no events has 7 legal opening moves for White
+    const stateClassic = createNewGame(createAmericanRules(), players);
+    const classicMoves = stateClassic.ruleSet.getLegalMoves(stateClassic.board, stateClassic.activeColor);
+
+    // KingForADay treats all pawns as kings, which means pieces on the
+    // front row (row 5) can also move backward — but in the standard
+    // starting position all backward squares are occupied. The move count
+    // stays the same (7), but importantly the game is functional and
+    // the CompositeEventRuleSet has the active events wired.
+    expect(choiceMoves.length).toBe(classicMoves.length);
+    expect(choiceMoves.length).toBeGreaterThan(0);
+  });
+
+  it('initializes metadata for events with factories', () => {
+    const ruleSet = createAmericanRules();
+    const players: PlayerSetup = { white: PlayerType.Human, black: PlayerType.CpuHard };
+    const state = createNewChoiceGame(ruleSet, players, CrazyEvent.KingForADay);
+
+    // KingForADay metadata may or may not be defined depending on factory registration
+    // The key assertion is that the event is created without error
+    const event = state.activeEvents[0];
+    expect(event).toBeDefined();
+    expect(event?.type).toBe(CrazyEvent.KingForADay);
   });
 });

@@ -29,6 +29,8 @@ import ChallengeScreen from './ChallengeScreen';
 import ChallengeGameScreen from './ChallengeGameScreen';
 import { PUZZLE_DATA } from '../data/puzzleData';
 import ChoiceGalleryScreen from './ChoiceGalleryScreen';
+import ChoiceDetailScreen from './ChoiceDetailScreen';
+import { createNewChoiceGame } from '../engine/game';
 import ClassifiedGalleryScreen from './ClassifiedGalleryScreen';
 import CogitateScreen from './CogitateScreen';
 import CareerScreen from './CareerScreen';
@@ -407,13 +409,34 @@ export default function App() {
       );
       break;
 
-    case 'choice-detail':
+    case 'choice-detail': {
+      const choiceNum = Number(screen.eventId);
       content = (
-        <ModeScreenShell title="Choice Detail" onBack={() => { navigateToScreen({ kind: 'choice' }); }}>
-          <p>Choice detail for event: {screen.eventId}</p>
-        </ModeScreenShell>
+        <ChoiceDetailScreen
+          choiceNumber={choiceNum}
+          onBack={() => { navigateToScreen({ kind: 'choice' }); }}
+          onStartGame={(players, flipped, _mode, timeControl, permanentEvent) => {
+            const ruleSet = createAmericanRules();
+            const initialState = createNewChoiceGame(ruleSet, players, permanentEvent ?? null);
+            setResumedGameState(initialState);
+            setGameKey((prev) => prev + 1);
+            setGameStartedAt(Date.now());
+            setScreen({
+              kind: 'game',
+              players,
+              ruleSet: initialState.ruleSet,
+              flipped,
+              mode: GameMode.Choice,
+              timeControl,
+            });
+          }}
+          defaultTimeControl={settings.timeControl}
+          savedGameExists={savedGameExistsForMode(GameMode.Choice)}
+          onResumeSavedGame={pendingResume?.mode === GameMode.Choice ? handleResume : undefined}
+        />
       );
       break;
+    }
 
     case 'classified':
       content = <ClassifiedGalleryScreen onBack={navigateToMenu} />;

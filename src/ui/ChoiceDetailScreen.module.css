@@ -1,0 +1,81 @@
+/* ChoiceDetailScreen — mode-specific styling */
+
+.boardSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.boardCaption {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  text-align: center;
+}
+
+.section {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.howToPlay {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.eventCallout {
+  border-left: 3px solid var(--ui-accent);
+  padding-left: 0.75rem;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.eventCalloutLabel {
+  font-weight: 600;
+  color: var(--ui-accent);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.subsectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ui-accent);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.subsectionTitle:first-child {
+  margin-top: 0;
+}
+
+.contentParagraph {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
+.stackingList {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0 0;
+}
+
+.stackingList li {
+  margin-bottom: 0.3rem;
+}
+
+.errorState {
+  text-align: center;
+  opacity: 0.55;
+  padding: 2rem 0;
+}
+
+@media (max-width: 479px) {
+  .section {
+    padding: 1rem;
+  }
+}
