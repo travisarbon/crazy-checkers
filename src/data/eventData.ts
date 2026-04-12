@@ -89,14 +89,14 @@ export const EVENT_DATA: readonly EventDataEntry[] = [
   entry(3, CrazyEvent.HotPotato, 2,
     'After a piece moves, it switches to the opponent\'s color. The piece retains its type (pawn or king). Lasts for 1 round. Strategic movement becomes critical as every move strengthens the opponent.',
     'Imposter',
-    'Every piece that moves permanently switches color. The game becomes about forcing the opponent to move while preserving your own pieces.',
+    'Every 3 turns, the piece that moved switches to the opponent\'s color. Periodic forced color-switching creates a spy-like dynamic where pieces keep switching allegiance.',
     ['Double switch with Conscription returns piece to original color', 'Piece destruction (Live Grenade) takes precedence over color switch'],
   ),
   // Event 4 — Checks Mix
   entry(4, CrazyEvent.ChecksMix, 2,
     'All pieces on the board are instantly shuffled to random valid dark squares. Piece colors and types are preserved. No pawns land on their own promotion row. No mandatory captures result from the shuffle.',
     'Blender',
-    'All pieces shuffle to random positions at the start of every turn. Continuous board disruption makes long-term planning impossible.',
+    'Every 3 turns, all pieces shuffle to random positions. Periodic board randomization prevents long-term positional planning.',
     ['Shuffle applies to kinged board during King for a Day', 'Live Grenade remains armed after shuffle', 'Hot Potato applies on shuffled positions'],
   ),
   // Event 5 — Opposite Day

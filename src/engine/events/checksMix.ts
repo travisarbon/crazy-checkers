@@ -12,6 +12,7 @@
  */
 
 import type { BoardState, Move, PieceColor, RuleSet, SquareState } from '../types';
+import type { ActiveEvent } from '../types';
 import { CrazyEvent, PieceType, square } from '../types';
 import { BOARD_SIZE, isPromotionSquare } from '../board';
 import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } from '../events';
@@ -223,6 +224,9 @@ export function shuffleBoard(
 // Decorator
 // ---------------------------------------------------------------------------
 
+/** Interval for permanent Blender: shuffle every 3 turns (6 plies). */
+const PERMANENT_SHUFFLE_INTERVAL = 6;
+
 export class ChecksMixDecorator extends EventDecorator {
   getEventType(): CrazyEvent {
     return CrazyEvent.ChecksMix;
@@ -233,8 +237,21 @@ export class ChecksMixDecorator extends EventDecorator {
   }
 
   /**
+   * Returns the permanent ChecksMix entry if present, or null.
+   */
+  private getPermanentEntry(): ActiveEvent | null {
+    for (const e of this.activeEventsContext) {
+      if (e.type === CrazyEvent.ChecksMix && e.permanent === true) return e;
+    }
+    return null;
+  }
+
+  /**
    * Applies all active Checks Mix shuffles to the board.
    * Called from onTurnStart; extracted as a named helper for clarity.
+   *
+   * For permanent events (Choice mode), only shuffles every 3 turns
+   * (6 plies) per the Events and Choice Mode Playbook.
    */
   private applyShuffles(board: BoardState, activeColor: PieceColor): BoardState {
     const checksMixEntries = this.activeEventsContext.filter(
@@ -243,20 +260,22 @@ export class ChecksMixDecorator extends EventDecorator {
     if (checksMixEntries.length === 0) return board;
 
     // Use base rules (no event decorators) for mandatory-capture validation.
-    // Other active events like Backfire expand the set of legal captures
-    // (e.g., friendly-fire jumps), which would cause ChecksMix to reject
-    // valid shuffles by mistaking event-generated jumps for real captures.
     const baseRules = this.getBaseRuleSet();
 
     let result = board;
     for (const entry of checksMixEntries) {
-      const metadata = entry.metadata as unknown as { seed: number } | undefined;
+      const metadata = entry.metadata as unknown as { seed: number; plyCounter?: number } | undefined;
       if (metadata === undefined) continue;
 
-      // Always compute the shuffle from the live board state using the seed.
-      // This prevents stale placement when another event modifies the board
-      // between Checks Mix creation and application.
-      result = shuffleBoard(result, activeColor, metadata.seed, (b, c) =>
+      // Permanent events (Choice mode): only shuffle every N plies
+      if (entry.permanent === true) {
+        const counter = metadata.plyCounter ?? 0;
+        if (counter === 0 || counter % PERMANENT_SHUFFLE_INTERVAL !== 0) {
+          continue; // Not time to shuffle yet
+        }
+      }
+
+      result = shuffleBoard(result, activeColor, metadata.seed + (metadata.plyCounter ?? 0), (b, c) =>
         baseRules.getLegalMoves(b, c),
       );
     }
@@ -266,6 +285,27 @@ export class ChecksMixDecorator extends EventDecorator {
   override onTurnStart(board: BoardState, activeColor: PieceColor): BoardState {
     const result = super.onTurnStart(board, activeColor);
     return this.applyShuffles(result, activeColor);
+  }
+
+  /**
+   * For permanent events, increment the ply counter each turn so the
+   * periodic shuffle fires every 3 turns (6 plies).
+   */
+  override onTurnEnd(board: BoardState, activeColor: PieceColor, move: Move): BoardState {
+    const result = super.onTurnEnd(board, activeColor, move);
+
+    const permanentEntry = this.getPermanentEntry();
+    if (permanentEntry !== null) {
+      const metadata = permanentEntry.metadata as unknown as { seed: number; plyCounter?: number } | undefined;
+      if (metadata !== undefined) {
+        this.requestMetadataUpdate(CrazyEvent.ChecksMix, {
+          ...metadata,
+          plyCounter: (metadata.plyCounter ?? 0) + 1,
+        } as unknown as Readonly<Record<string, unknown>>);
+      }
+    }
+
+    return result;
   }
 }
 
@@ -284,9 +324,8 @@ EVENT_METADATA_FACTORIES.set(
     const rng = randomFn ?? Math.random;
     const seed = Math.floor(rng() * 0xffffffff);
 
-    // Store only the seed — the shuffle is computed lazily in onTurnStart
-    // using the live board state. This prevents stale placement when another
-    // event modifies the board between creation and application.
-    return { seed };
+    // Store the seed (shuffle computed lazily in onTurnStart using live board)
+    // and plyCounter (for periodic firing in permanent Choice mode).
+    return { seed, plyCounter: 0 };
   },
 );

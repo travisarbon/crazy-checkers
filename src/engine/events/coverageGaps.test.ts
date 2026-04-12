@@ -283,17 +283,17 @@ describe('HotPotatoDecorator — edge cases', () => {
     expect(newState.status).toBe(GameStatus.InProgress);
   });
 
-  it('metadata factory returns undefined when move has no path (line 101)', () => {
+  it('metadata factory returns plyCounter when move has no path (line 101)', () => {
     const factory = EVENT_METADATA_FACTORIES.get(CrazyEvent.HotPotato);
     expect(factory).toBeDefined();
 
     const board = buildBoard([{ sq: 22, color: W, type: P }]);
-    // No move provided
+    // No move provided — returns plyCounter for permanent Choice mode
     const result = factory!(board, PieceColor.White);
-    expect(result).toBeUndefined();
+    expect(result).toEqual({ plyCounter: 0 });
   });
 
-  it('metadata factory returns hotSquare from move path', () => {
+  it('metadata factory returns hotSquare and plyCounter from move path', () => {
     const factory = EVENT_METADATA_FACTORIES.get(CrazyEvent.HotPotato);
     const board = buildBoard([{ sq: 22, color: W, type: P }]);
     const move: Move = {
@@ -302,7 +302,7 @@ describe('HotPotatoDecorator — edge cases', () => {
       captured: [],
     };
     const result = factory!(board, PieceColor.White, undefined, move);
-    expect(result).toEqual({ hotSquare: 18 });
+    expect(result).toEqual({ hotSquare: 18, plyCounter: 0 });
   });
 
   it('even count of matching Hot Potato events cancels out (double switch)', () => {

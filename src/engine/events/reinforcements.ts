@@ -8,7 +8,7 @@
  * Stateless: seed stored in metadata for deterministic consistency.
  */
 
-import type { BoardState, RuleSet, Square } from '../types';
+import type { BoardState, Move, RuleSet, Square } from '../types';
 import { CrazyEvent, PieceColor, PieceType } from '../types';
 import { getBoardSquare, getSquaresWithColor, isPromotionSquare, setBoardSquare } from '../board';
 import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } from '../events';
@@ -35,6 +35,16 @@ export class ReinforcementsDecorator extends EventDecorator {
       return result;
     }
 
+    // Permanent events (Choice mode): only fire every 5 turns (10 plies)
+    const permanentEntry = this.activeEventsContext.find(
+      e => e.type === CrazyEvent.Reinforcements && e.permanent === true,
+    );
+    if (permanentEntry) {
+      const metadata = (permanentEntry.metadata ?? {}) as Record<string, unknown>;
+      const counter = typeof metadata.plyCounter === 'number' ? metadata.plyCounter : 0;
+      if (counter === 0 || counter % 10 !== 0) return result;
+    }
+
     for (const color of [PieceColor.White, PieceColor.Black]) {
       const currentCount = getSquaresWithColor(result, color).length;
       const maxReinforcements = Math.min(2, 12 - currentCount);
@@ -53,6 +63,22 @@ export class ReinforcementsDecorator extends EventDecorator {
 
     return result;
   }
+
+  override onTurnEnd(board: BoardState, activeColor: PieceColor, move: Move): BoardState {
+    const result = super.onTurnEnd(board, activeColor, move);
+    const permanentEntry = this.activeEventsContext.find(
+      e => e.type === CrazyEvent.Reinforcements && e.permanent === true,
+    );
+    if (permanentEntry) {
+      const metadata = (permanentEntry.metadata ?? {}) as Record<string, unknown>;
+      const counter = typeof metadata.plyCounter === 'number' ? metadata.plyCounter : 0;
+      this.requestMetadataUpdate(CrazyEvent.Reinforcements, {
+        ...metadata,
+        plyCounter: counter + 1,
+      } as unknown as Readonly<Record<string, unknown>>);
+    }
+    return result;
+  }
 }
 
 // Register decorator factory
@@ -66,5 +92,6 @@ EVENT_METADATA_FACTORIES.set(
   CrazyEvent.Reinforcements,
   (_board, _activeColor, randomFn) => ({
     seed: Math.floor((randomFn?.() ?? Math.random()) * 0xffffffff),
+    plyCounter: 0,
   }),
 );

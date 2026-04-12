@@ -35,8 +35,8 @@ export const CHOICE_MODE_DATA: readonly ChoiceModeDefinition[] = [
   // Track 1 — Puzzle Mastery (Choice modes 1–8)
   { choiceNumber: 1, event: CrazyEvent.KingForADay, displayName: 'Revolution', description: 'All pawns are permanently promoted to kings', track: 'puzzle-mastery', unlockThreshold: 'Complete 1 challenge' },
   { choiceNumber: 2, event: CrazyEvent.LiveGrenade, displayName: 'Boom Box', description: 'Every capture triggers an explosion destroying adjacent pieces', track: 'puzzle-mastery', unlockThreshold: 'Complete 15 challenges' },
-  { choiceNumber: 3, event: CrazyEvent.HotPotato, displayName: 'Imposter', description: 'Every piece that moves switches to the opponent\'s color', track: 'puzzle-mastery', unlockThreshold: 'Complete 29 challenges' },
-  { choiceNumber: 4, event: CrazyEvent.ChecksMix, displayName: 'Blender', description: 'All pieces shuffle to random positions each turn', track: 'puzzle-mastery', unlockThreshold: 'Complete 43 challenges' },
+  { choiceNumber: 3, event: CrazyEvent.HotPotato, displayName: 'Imposter', description: 'Every 3 turns, the moving piece switches color', track: 'puzzle-mastery', unlockThreshold: 'Complete 29 challenges' },
+  { choiceNumber: 4, event: CrazyEvent.ChecksMix, displayName: 'Blender', description: 'Every 3 turns, all pieces shuffle to random positions', track: 'puzzle-mastery', unlockThreshold: 'Complete 43 challenges' },
   { choiceNumber: 5, event: CrazyEvent.OppositeDay, displayName: 'Mirror World', description: 'Anti-checkers: you win by losing all your pieces', track: 'puzzle-mastery', unlockThreshold: 'Complete 57 challenges' },
   { choiceNumber: 6, event: CrazyEvent.UpInTheAir, displayName: 'Frequent Flyer', description: 'All pieces gain flying diagonal movement', track: 'puzzle-mastery', unlockThreshold: 'Complete 71 challenges' },
   { choiceNumber: 7, event: CrazyEvent.NoTouching, displayName: 'Class Divides', description: 'Pawns cannot capture kings', track: 'puzzle-mastery', unlockThreshold: 'Complete 85 challenges' },

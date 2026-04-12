@@ -8,7 +8,7 @@
  * Uses seeded PRNG for deterministic replay.
  */
 
-import type { BoardState, RuleSet } from '../types';
+import type { BoardState, Move, RuleSet } from '../types';
 import { CrazyEvent, PieceColor } from '../types';
 import { getBoardSquare, getSquaresWithColor, setBoardSquare } from '../board';
 import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } from '../events';
@@ -28,6 +28,13 @@ export class SwapMeetDecorator extends EventDecorator {
 
     const entry = this.getActiveEntry(this.activeEventsContext);
     if (!entry) return result;
+
+    // Permanent events (Choice mode): only fire every 4 turns (8 plies)
+    if (entry.permanent === true) {
+      const metadata = (entry.metadata ?? {}) as Record<string, unknown>;
+      const counter = typeof metadata.plyCounter === 'number' ? metadata.plyCounter : 0;
+      if (counter === 0 || counter % 8 !== 0) return result;
+    }
 
     const metadata = entry.metadata as { seed: number } | undefined;
     if (metadata === undefined) return result;
@@ -67,6 +74,22 @@ export class SwapMeetDecorator extends EventDecorator {
 
     return result;
   }
+
+  override onTurnEnd(board: BoardState, activeColor: PieceColor, move: Move): BoardState {
+    const result = super.onTurnEnd(board, activeColor, move);
+    const permanentEntry = this.activeEventsContext.find(
+      e => e.type === CrazyEvent.SwapMeet && e.permanent === true,
+    );
+    if (permanentEntry) {
+      const metadata = (permanentEntry.metadata ?? {}) as Record<string, unknown>;
+      const counter = typeof metadata.plyCounter === 'number' ? metadata.plyCounter : 0;
+      this.requestMetadataUpdate(CrazyEvent.SwapMeet, {
+        ...metadata,
+        plyCounter: counter + 1,
+      } as unknown as Readonly<Record<string, unknown>>);
+    }
+    return result;
+  }
 }
 
 // Register decorator factory
@@ -80,5 +103,6 @@ EVENT_METADATA_FACTORIES.set(
   CrazyEvent.SwapMeet,
   (_board, _activeColor, randomFn) => ({
     seed: Math.floor((randomFn?.() ?? Math.random()) * 0xffffffff),
+    plyCounter: 0,
   }),
 );

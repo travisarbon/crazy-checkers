@@ -9,7 +9,7 @@
  * Processing order: most-advanced pawns first to avoid collisions.
  */
 
-import type { BoardState, RuleSet, Square } from '../types';
+import type { BoardState, Move, RuleSet, Square } from '../types';
 import { CrazyEvent, PieceColor, PieceType } from '../types';
 import { BOARD_SIZE, getBoardSquare, gridToSquare, isPromotionSquare, setBoardSquare, squareToGrid } from '../board';
 import { EventDecorator, EVENT_DECORATOR_REGISTRY, EVENT_METADATA_FACTORIES } from '../events';
@@ -28,6 +28,16 @@ export class StampedeDecorator extends EventDecorator {
 
     if (!this.isActive(this.activeEventsContext)) {
       return result;
+    }
+
+    // Permanent events (Choice mode): only fire every 3 turns (6 plies)
+    const permanentEntry = this.activeEventsContext.find(
+      e => e.type === CrazyEvent.Stampede && e.permanent === true,
+    );
+    if (permanentEntry) {
+      const metadata = (permanentEntry.metadata ?? {}) as Record<string, unknown>;
+      const counter = typeof metadata.plyCounter === 'number' ? metadata.plyCounter : 0;
+      if (counter === 0 || counter % 6 !== 0) return result;
     }
 
     // Collect all pawns
@@ -84,6 +94,22 @@ export class StampedeDecorator extends EventDecorator {
 
     return result;
   }
+
+  override onTurnEnd(board: BoardState, activeColor: PieceColor, move: Move): BoardState {
+    const result = super.onTurnEnd(board, activeColor, move);
+    const permanentEntry = this.activeEventsContext.find(
+      e => e.type === CrazyEvent.Stampede && e.permanent === true,
+    );
+    if (permanentEntry) {
+      const metadata = (permanentEntry.metadata ?? {}) as Record<string, unknown>;
+      const counter = typeof metadata.plyCounter === 'number' ? metadata.plyCounter : 0;
+      this.requestMetadataUpdate(CrazyEvent.Stampede, {
+        ...metadata,
+        plyCounter: counter + 1,
+      } as unknown as Readonly<Record<string, unknown>>);
+    }
+    return result;
+  }
 }
 
 // Register decorator factory
@@ -97,5 +123,6 @@ EVENT_METADATA_FACTORIES.set(
   CrazyEvent.Stampede,
   (_board, _activeColor, randomFn) => ({
     seed: Math.floor((randomFn?.() ?? Math.random()) * 0xffffffff),
+    plyCounter: 0,
   }),
 );

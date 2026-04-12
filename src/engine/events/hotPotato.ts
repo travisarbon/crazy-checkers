@@ -43,6 +43,9 @@ export function switchPieceColor(board: BoardState, sq: Square): BoardState {
   return setBoardSquare(board, sq, newPiece);
 }
 
+/** Interval for permanent Imposter: fire every 3 turns (6 plies). */
+const PERMANENT_FIRE_INTERVAL = 6;
+
 export class HotPotatoDecorator extends EventDecorator {
   getEventType(): CrazyEvent {
     return CrazyEvent.HotPotato;
@@ -65,6 +68,25 @@ export class HotPotatoDecorator extends EventDecorator {
     );
 
     if (matchingEntries.length === 0) return result;
+
+    // For permanent events, use periodic firing (every 3 turns = 6 plies)
+    const permanentEntry = matchingEntries.find(e => e.permanent === true);
+    if (permanentEntry) {
+      const metadata = (permanentEntry.metadata ?? {}) as Record<string, unknown>;
+      const counter: number = typeof metadata.plyCounter === 'number' ? metadata.plyCounter : 0;
+      const nextCounter = counter + 1;
+
+      // Always increment the counter
+      this.requestMetadataUpdate(CrazyEvent.HotPotato, {
+        ...metadata,
+        plyCounter: nextCounter,
+      } as unknown as Readonly<Record<string, unknown>>);
+
+      // Only apply the color switch every N plies
+      if (nextCounter % PERMANENT_FIRE_INTERVAL !== 0) {
+        return result;
+      }
+    }
 
     const landingSquare = move.path[move.path.length - 1];
     if (landingSquare === undefined) return result;
@@ -99,9 +121,9 @@ export interface HotPotatoMetadata {
 EVENT_METADATA_FACTORIES.set(
   CrazyEvent.HotPotato,
   (_board, _activeColor, _randomFn?, move?) => {
-    if (!move) return undefined;
+    if (!move) return { plyCounter: 0 }; // Permanent Choice mode (no triggering move)
     const landingSquare = move.path[move.path.length - 1];
-    if (landingSquare === undefined) return undefined;
-    return { hotSquare: landingSquare as number };
+    if (landingSquare === undefined) return { plyCounter: 0 };
+    return { hotSquare: landingSquare as number, plyCounter: 0 };
   },
 );

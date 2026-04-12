@@ -633,17 +633,17 @@ describe('HotPotatoDecorator', () => {
 
       const m = move(22, [17]);
       const metadata = factory(board, W, undefined, m);
-      expect(metadata).toEqual({ hotSquare: 17 });
+      expect(metadata).toEqual({ hotSquare: 17, plyCounter: 0 });
     });
 
-    it('metadata factory returns undefined when no move provided', () => {
+    it('metadata factory returns plyCounter when no move provided', () => {
       const board = buildBoard([{ sq: 22, color: W, type: P }]);
       const factory = EVENT_METADATA_FACTORIES.get(CrazyEvent.HotPotato);
       expect(factory).toBeDefined();
       if (!factory) return;
 
       const metadata = factory(board, W);
-      expect(metadata).toBeUndefined();
+      expect(metadata).toEqual({ plyCounter: 0 });
     });
 
     it('serialization round-trip preserves HotPotato event', () => {
