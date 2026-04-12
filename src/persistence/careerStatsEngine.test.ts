@@ -1136,13 +1136,14 @@ describe('Edge Cases', () => {
     expect(Number.isNaN(snapshot.summary.winRate)).toBe(false);
   });
 
-  it('Choice game missing activeEventsPerPly is excluded', () => {
+  it('Choice game missing activeEventsPerPly falls back to Classic and is counted', () => {
     const records = [
       makeGameRecord({ mode: 'CHOICE', completedAt: 1 }),
     ];
     const snapshot = computeCareerSnapshot(records);
-    // Resolves to unknown mode which has excludeFromCareer: true
-    expect(snapshot.summary.totalGames).toBe(0);
+    // Falls back to 'classic' so Cogitate adapter resolution still works;
+    // the game is counted under Classic rather than silently excluded.
+    expect(snapshot.summary.totalGames).toBe(1);
   });
 
   it('exactly at track threshold counts as met', () => {

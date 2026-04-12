@@ -317,7 +317,10 @@ export function extractPermanentEvent(record: GameRecord): CrazyEvent | null {
 
 /** Map a GameRecord to its corresponding registry entry. */
 export function resolveGameRecord(record: GameRecord): ModeRegistryEntry {
-  switch (record.mode) {
+  const mode = record.mode;
+
+  // Engine-enum form (canonical): 'CLASSIC', 'CRAZY', 'CHAOS', 'CHOICE'.
+  switch (mode) {
     case 'CLASSIC':
       return getModeOrFallback('classic');
     case 'CRAZY':
@@ -330,9 +333,28 @@ export function resolveGameRecord(record: GameRecord): ModeRegistryEntry {
         const choiceEntry = findChoiceEntryByEvent(permanentEvent);
         if (choiceEntry) return choiceEntry;
       }
-      return UNKNOWN_MODE_ENTRY;
+      // Legacy/degraded Choice records without event data — fall back to
+      // classic so adapter resolution still succeeds.
+      return getModeOrFallback('classic');
     }
-    default:
-      return getModeOrFallback(record.mode.toLowerCase());
   }
+
+  // Free Play records use IDs like `freeplay-classic` or
+  // `freeplay-choice-friendly-fire`.
+  if (mode.startsWith('freeplay-')) {
+    const base = mode.slice('freeplay-'.length);
+    const entry = getMode(base);
+    if (entry) return entry;
+    return getModeOrFallback('classic');
+  }
+
+  // Registry ID form (lowercase): direct lookup.
+  const direct = getMode(mode);
+  if (direct) return direct;
+
+  // Legacy lowercase forms.
+  const lower = getMode(mode.toLowerCase());
+  if (lower) return lower;
+
+  return UNKNOWN_MODE_ENTRY;
 }

@@ -143,6 +143,45 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
   const editor = usePositionEditor({ adapter });
   const diagram = useDiagramState();
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const [arrowFrom, setArrowFrom] = useState<Square | null>(null);
+
+  const handleBoardClick = useCallback(
+    (sq: Square) => {
+      if (diagram.activeTool === 'highlight') {
+        diagram.toggleHighlight(sq);
+        return;
+      }
+      if (diagram.activeTool === 'annotation') {
+        const existing =
+          typeof window !== 'undefined'
+            ? window.prompt('Annotation text (leave blank to remove):', '')
+            : null;
+        if (existing === null) return;
+        diagram.setAnnotation(sq, existing);
+        return;
+      }
+      if (diagram.activeTool === 'arrow') {
+        if (arrowFrom === null) {
+          setArrowFrom(sq);
+        } else if ((arrowFrom as number) === (sq as number)) {
+          setArrowFrom(null);
+        } else {
+          diagram.addArrow(arrowFrom, sq);
+          setArrowFrom(null);
+        }
+        return;
+      }
+      editor.handleSquareClick(sq);
+    },
+    [arrowFrom, diagram, editor],
+  );
+
+  // Reset pending arrow state when tool changes.
+  const [trackedTool, setTrackedTool] = useState(diagram.activeTool);
+  if (trackedTool !== diagram.activeTool) {
+    setTrackedTool(diagram.activeTool);
+    if (arrowFrom !== null) setArrowFrom(null);
+  }
 
   // Mode change: reset editor state to the new adapter's starting position.
   // State-setter-during-render pattern — avoids the cascading-effect anti-pattern.
@@ -250,6 +289,8 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
         onExportPNG={handleExportPNG}
         isExporting={isExporting}
         onToggleHighlight={diagram.toggleHighlight}
+        onAddArrow={diagram.addArrow}
+        onSetAnnotation={diagram.setAnnotation}
         onBackToEditor={handleBackToEditor}
         gameStartedAt={gameStartedAt ?? 0}
         svgRef={svgRef}
@@ -287,9 +328,10 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
             <CogitateBoard
               board={editor.board}
               editorMode
-              onEditorSquareClick={editor.handleSquareClick}
+              onEditorSquareClick={handleBoardClick}
               overlays={diagram.overlays}
               svgRef={svgRef}
+              pendingArrowFrom={arrowFrom}
             />
           </div>
           <EvaluationBar
@@ -507,6 +549,8 @@ interface FreePlayGameViewProps {
   readonly onExportPNG: () => void;
   readonly isExporting: boolean;
   readonly onToggleHighlight: (sq: Square) => void;
+  readonly onAddArrow: (from: Square, to: Square) => void;
+  readonly onSetAnnotation: (sq: Square, text: string) => void;
   readonly onBackToEditor: () => void;
   readonly gameStartedAt: number;
   readonly svgRef: React.RefObject<SVGSVGElement | null>;
@@ -526,10 +570,18 @@ function FreePlayGameView({
   onExportPNG,
   isExporting,
   onToggleHighlight,
+  onAddArrow,
+  onSetAnnotation,
   onBackToEditor,
   gameStartedAt,
   svgRef,
 }: FreePlayGameViewProps) {
+  const [arrowFrom, setArrowFrom] = useState<Square | null>(null);
+  const [trackedToolLocal, setTrackedToolLocal] = useState(activeTool);
+  if (trackedToolLocal !== activeTool) {
+    setTrackedToolLocal(activeTool);
+    if (arrowFrom !== null) setArrowFrom(null);
+  }
   const [gameState, setGameState] = useState(initialState);
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [evaluation, setEvaluation] = useState<NormalizedEvaluation | null>(null);
@@ -632,6 +684,25 @@ function FreePlayGameView({
         onToggleHighlight(sq);
         return;
       }
+      if (activeTool === 'annotation') {
+        const text = typeof window !== 'undefined'
+          ? window.prompt('Annotation text (leave blank to remove):', '')
+          : null;
+        if (text === null) return;
+        onSetAnnotation(sq, text);
+        return;
+      }
+      if (activeTool === 'arrow') {
+        if (arrowFrom === null) {
+          setArrowFrom(sq);
+        } else if ((arrowFrom as number) === (sq as number)) {
+          setArrowFrom(null);
+        } else {
+          onAddArrow(arrowFrom, sq);
+          setArrowFrom(null);
+        }
+        return;
+      }
       if (gameState.status !== GameStatus.InProgress) return;
       if (isAITurn) return;
 
@@ -669,6 +740,9 @@ function FreePlayGameView({
     [
       activeTool,
       onToggleHighlight,
+      onSetAnnotation,
+      onAddArrow,
+      arrowFrom,
       gameState,
       isAITurn,
       selectedSquare,
@@ -710,13 +784,14 @@ function FreePlayGameView({
             />
             <CogitateBoard
               board={gameState.board}
-              interactive={gameState.status === GameStatus.InProgress && !isAITurn}
+              interactive={activeTool !== null || (gameState.status === GameStatus.InProgress && !isAITurn)}
               onSquareClick={handleSquareClick}
               selectedSquare={selectedSquare}
               legalMoveSquares={legalDestinations}
               flipped={setup.flipped}
               overlays={diagramOverlays}
               svgRef={svgRef}
+              pendingArrowFrom={arrowFrom}
             />
           </div>
           <EvaluationBar

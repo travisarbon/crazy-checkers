@@ -21,6 +21,10 @@ import styles from './CogitateBoard.module.css';
 const SQUARE_SIZE = 100;
 const BOARD_EXTENT = 800;
 
+const ALL_PLAYABLE_SQUARES: ReadonlySet<number> = new Set(
+  Array.from({ length: 32 }, (_, i) => i + 1),
+);
+
 export interface CogitateBoardProps {
   board: BoardState;
   geometry?: BoardGeometry;
@@ -46,6 +50,8 @@ export interface CogitateBoardProps {
   validPlacementSquares?: ReadonlySet<number>;
   /** SVG ref exposed for PNG export of the overlay layer. */
   svgRef?: RefObject<SVGSVGElement | null>;
+  /** Square currently selected as arrow origin (for diagram arrow drawing). */
+  pendingArrowFrom?: Square | null;
 }
 
 const OVERLAY_COLOR_MAP: Record<'green' | 'red' | 'blue', string> = {
@@ -85,6 +91,7 @@ function CogitateBoard({
   onEditorRemovePiece,
   validPlacementSquares,
   svgRef,
+  pendingArrowFrom = null,
 }: CogitateBoardProps) {
   void geometry;
   void onEditorDragDrop;
@@ -93,7 +100,8 @@ function CogitateBoard({
   const overlayElements = useMemo(() => {
     const hasOverlays = overlays !== null;
     const hasPlacement = (validPlacementSquares?.size ?? 0) > 0;
-    if (!hasOverlays && !hasPlacement) return null;
+    const hasPending = pendingArrowFrom !== null;
+    if (!hasOverlays && !hasPlacement && !hasPending) return null;
     return (
       <g>
         <defs>
@@ -186,6 +194,23 @@ function CogitateBoard({
           );
         })}
 
+        {pendingArrowFrom !== null && (() => {
+          const { cx, cy } = squareCenter(pendingArrowFrom, flipped);
+          return (
+            <circle
+              cx={cx}
+              cy={cy}
+              r={SQUARE_SIZE / 2 - 6}
+              fill="none"
+              stroke="#f1c40f"
+              strokeWidth={4}
+              strokeDasharray="6 4"
+              opacity={0.9}
+              data-testid="cogitate-arrow-pending"
+            />
+          );
+        })()}
+
         {overlays?.annotations.map((a, idx) => {
           const { cx, cy } = squareCenter(a.square, flipped);
           return (
@@ -202,7 +227,7 @@ function CogitateBoard({
         })}
       </g>
     );
-  }, [overlays, flipped, validPlacementSquares]);
+  }, [overlays, flipped, validPlacementSquares, pendingArrowFrom]);
 
   const boardClickHandler = editorMode
     ? onEditorSquareClick
@@ -230,11 +255,12 @@ function CogitateBoard({
           flipped={flipped}
           selectedSquare={selectedSquare ?? null}
           legalMoveSquares={legalMoveSquares}
+          selectablePieces={editorMode ? ALL_PLAYABLE_SQUARES : undefined}
           onSquareClick={boardClickHandler}
           eventOverlayState={eventOverlayState}
         />
       </div>
-      {(overlays || (validPlacementSquares && validPlacementSquares.size > 0)) && (
+      {(overlays || (validPlacementSquares && validPlacementSquares.size > 0) || pendingArrowFrom !== null) && (
         <svg
           ref={svgRef ?? undefined}
           className={styles.overlaySvg}

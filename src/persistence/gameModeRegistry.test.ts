@@ -272,9 +272,9 @@ describe('GameRecord Resolution', () => {
     expect(resolveGameRecord(record).displayName).toBe('Mirror World');
   });
 
-  it('resolves CHOICE record without activeEventsPerPly to fallback', () => {
+  it('resolves CHOICE record without activeEventsPerPly to Classic fallback', () => {
     const record = makeRecord({ mode: 'CHOICE' });
-    expect(resolveGameRecord(record).displayName).toBe('Unknown Mode');
+    expect(resolveGameRecord(record).displayName).toBe('Classic');
   });
 
   it('resolves classified-1 record to Russian Draughts', () => {

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { GameRecord } from '../persistence/gameHistory';
 import { getAllGameRecords } from '../persistence/gameHistory';
 import { getMode } from '../persistence/gameModeRegistry';
+import { formatPlayerLabel, normalizeModeId } from '../utils/formatting';
 import styles from './GameHistoryBrowser.module.css';
 
 export interface GameHistoryBrowserProps {
@@ -39,7 +40,7 @@ function formatRelative(timestamp: number, now = Date.now()): string {
 }
 
 function formatPlayers(record: GameRecord): string {
-  return `${record.playerWhite} vs ${record.playerBlack}`;
+  return `${formatPlayerLabel(record.playerWhite)} vs ${formatPlayerLabel(record.playerBlack)}`;
 }
 
 function formatResult(record: GameRecord): string {
@@ -87,13 +88,22 @@ export default function GameHistoryBrowser({
   }, [filterMode]);
 
   const availableModes = useMemo(() => {
-    const set = new Set<string>();
-    for (const g of games) set.add(g.mode);
-    return Array.from(set).sort();
+    // Deduplicate by normalized registry ID so that legacy enum values
+    // ('CLASSIC') and canonical IDs ('classic') collapse into a single entry.
+    const seen = new Map<string, string>();
+    for (const g of games) {
+      const norm = normalizeModeId(g.mode);
+      if (!seen.has(norm)) {
+        seen.set(norm, g.mode);
+      }
+    }
+    return Array.from(seen.values()).sort();
   }, [games]);
 
   const filtered = useMemo(() => {
-    const base = activeFilter ? games.filter((g) => g.mode === activeFilter) : games;
+    const base = activeFilter
+      ? games.filter((g) => normalizeModeId(g.mode) === normalizeModeId(activeFilter))
+      : games;
     const sorted = [...base].sort((a, b) =>
       sortOrder === 'newest' ? b.completedAt - a.completedAt : a.completedAt - b.completedAt,
     );
@@ -137,11 +147,14 @@ export default function GameHistoryBrowser({
             data-testid="game-history-filter"
           >
             <option value="">All modes</option>
-            {availableModes.map((mode) => (
-              <option key={mode} value={mode}>
-                {getMode(mode)?.displayName ?? mode}
-              </option>
-            ))}
+            {availableModes.map((mode) => {
+              const entry = getMode(normalizeModeId(mode));
+              return (
+                <option key={mode} value={mode}>
+                  {entry?.displayName ?? mode}
+                </option>
+              );
+            })}
           </select>
         </label>
         <label>
@@ -189,7 +202,7 @@ export default function GameHistoryBrowser({
                   }}
                 >
                   <span className={styles.modeBadge}>
-                    {getMode(game.mode)?.displayName ?? game.mode}
+                    {getMode(normalizeModeId(game.mode))?.displayName ?? game.mode}
                   </span>
                   <span className={styles.meta}>
                     <span>{formatPlayers(game)}</span>

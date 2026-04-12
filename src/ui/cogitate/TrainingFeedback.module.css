@@ -46,7 +46,7 @@
 }
 
 .label {
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text, #111);
   font-weight: 600;
 }
 
@@ -56,17 +56,17 @@
 
 .score {
   font-variant-numeric: tabular-nums;
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text, #111);
 }
 
 .diffRow {
   font-size: 0.9rem;
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text, #111);
 }
 
 .context {
   font-size: 0.85rem;
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text, #111);
   border-top: 1px solid var(--ui-border, #444);
   padding-top: 0.5rem;
 }
@@ -80,7 +80,7 @@
 
 .alternativesHeading {
   font-weight: 600;
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text, #111);
   margin: 0;
 }
 
@@ -96,7 +96,7 @@
 
 .altScore {
   font-variant-numeric: tabular-nums;
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text, #111);
 }
 
 .highlightPlayerAlt {

@@ -36,7 +36,7 @@ describe('TrainingTool', () => {
     const tool = screen.getByTestId('training-tool');
     expect(tool.dataset.phase).toBe('select');
     expect(screen.getByTestId('training-train-all')).toBeInTheDocument();
-    expect(screen.getByTestId('training-mode-chip-CLASSIC')).toBeInTheDocument();
+    expect(screen.getByTestId('training-select-home-shortcut')).toBeInTheDocument();
   });
 
   it('calls onBack when the back button is clicked', () => {
@@ -54,11 +54,9 @@ describe('TrainingTool', () => {
     });
   });
 
-  it('toggles mode filter chips', () => {
+  it('filters game list via the shared game history browser', () => {
     render(<TrainingTool onBack={() => undefined} />);
-    const chip = screen.getByTestId('training-mode-chip-CRAZY');
-    expect(chip.getAttribute('aria-pressed')).toBe('false');
-    fireEvent.click(chip);
-    expect(chip.getAttribute('aria-pressed')).toBe('true');
+    // Mode filtering now lives exclusively in GameHistoryBrowser's dropdown.
+    expect(screen.getByTestId('game-history-browser')).toBeInTheDocument();
   });
 });

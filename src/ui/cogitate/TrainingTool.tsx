@@ -22,6 +22,8 @@ import {
   loadTrainingPositions,
   type TrainingPosition,
 } from '../../cogitate/trainingEngine';
+import { getAllGameRecords } from '../../persistence/gameHistory';
+import type { GameRecord } from '../../persistence/gameHistory';
 import type { NormalizedEvaluation } from '../../cogitate/types';
 import CogitateBoard from '../CogitateBoard';
 import EvaluationBar from '../EvaluationBar';
@@ -40,12 +42,12 @@ export interface TrainingToolProps {
 
 type ToolPhase = 'select' | 'training';
 
-const MODE_FILTER_OPTIONS: ReadonlyArray<{ label: string; value: string }> = [
-  { label: 'Classic', value: 'CLASSIC' },
-  { label: 'Crazy', value: 'CRAZY' },
-  { label: 'Chaos', value: 'CHAOS' },
-  { label: 'Choice', value: 'CHOICE' },
-];
+async function loadTrainingEligibleGames(): Promise<GameRecord[]> {
+  const all = await getAllGameRecords();
+  return all.filter(
+    (g) => g.trainingPositions !== undefined && g.trainingPositions.length > 0,
+  );
+}
 
 export default function TrainingTool({
   onBack,
@@ -55,7 +57,6 @@ export default function TrainingTool({
   const [positions, setPositions] = useState<TrainingPosition[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [modeFilter, setModeFilter] = useState<string[]>([]);
 
   const loadPositionsFor = useCallback(async (gameId?: string) => {
     setIsLoading(true);
@@ -64,7 +65,6 @@ export default function TrainingTool({
       const loaded = await loadTrainingPositions(
         {
           ...(gameId ? { gameId } : {}),
-          ...(modeFilter.length > 0 ? { modeFilter } : {}),
         },
         getAdapter,
       );
@@ -83,7 +83,7 @@ export default function TrainingTool({
     } finally {
       setIsLoading(false);
     }
-  }, [modeFilter]);
+  }, []);
 
   useEffect(() => {
     if (initialGameId) {
@@ -110,34 +110,15 @@ export default function TrainingTool({
             &larr; Back
           </button>
           <h2 className={styles.title}>Training — choose a source</h2>
+          <button
+            type="button"
+            className={styles.homeLink}
+            onClick={onBack}
+            data-testid="training-select-home-shortcut"
+          >
+            Cogitate home
+          </button>
         </header>
-
-        <div className={styles.modeChips} role="group" aria-label="Filter by mode">
-          {MODE_FILTER_OPTIONS.map((opt) => {
-            const active = modeFilter.includes(opt.value);
-            const classes = [styles.modeChip, active ? styles.modeChipActive : '']
-              .filter(Boolean)
-              .join(' ');
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                className={classes}
-                aria-pressed={active}
-                onClick={() => {
-                  setModeFilter((prev) =>
-                    prev.includes(opt.value)
-                      ? prev.filter((m) => m !== opt.value)
-                      : [...prev, opt.value],
-                  );
-                }}
-                data-testid={`training-mode-chip-${opt.value}`}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
 
         <div className={styles.actionBar}>
           <button
@@ -165,6 +146,7 @@ export default function TrainingTool({
               void loadPositionsFor(game.id);
             }}
             selectedGameId={null}
+            loadGames={loadTrainingEligibleGames}
           />
         </div>
       </div>

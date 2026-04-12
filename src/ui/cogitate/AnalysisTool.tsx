@@ -40,6 +40,7 @@ import {
   requestAnalysis as defaultRequestAnalysis,
 } from '../../ai/workerClient';
 import { PieceColor } from '../../engine/types';
+import { formatPlayerLabel } from '../../utils/formatting';
 import CogitateBoard from '../CogitateBoard';
 import EvaluationBar, { formatEvaluationScore } from '../EvaluationBar';
 import MoveTimeline from '../MoveTimeline';
@@ -446,7 +447,7 @@ function AnalysisView({
           &larr; Games
         </button>
         <h2 className={styles.title}>
-          Analysis: {modeDisplayName} — {game.playerWhite} vs {game.playerBlack}
+          Analysis: {modeDisplayName} — {formatPlayerLabel(game.playerWhite)} vs {formatPlayerLabel(game.playerBlack)}
         </h2>
         <button
           type="button"
@@ -563,9 +564,9 @@ function AnalysisView({
           >
             <MoveTimeline
               moves={game.moves}
-              currentPly={nav.currentPly}
+              currentPly={nav.currentPly - 1}
               moveQualities={qualities}
-              onPlySelect={nav.goToPly}
+              onPlySelect={(ply) => { nav.goToPly(ply + 1); }}
             />
           </div>
           <div

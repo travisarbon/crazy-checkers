@@ -11,7 +11,7 @@
 .sectionTitle {
   font-weight: 600;
   margin: 0 0 0.25rem 0;
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text, #111);
   font-size: 0.8rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -69,7 +69,7 @@
 
 .selectedLabel {
   font-size: 0.8rem;
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text, #111);
 }
 
 .sideToMove {

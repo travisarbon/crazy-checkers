@@ -31,6 +31,7 @@ import { useEventOverlays } from '../useEventOverlays';
 import ActiveEventsIndicator from './ActiveEventsIndicator';
 import { useReplayNavigation } from './useReplayNavigation';
 import { formatEvaluationScore } from '../EvaluationBar';
+import { formatPlayerLabel } from '../../utils/formatting';
 import styles from './ReplayTool.module.css';
 
 export interface ReplayToolProps {
@@ -293,7 +294,7 @@ function ReplayView({ game, adapter, onBackToSelect, onBackToHome }: ReplayViewP
           &larr; Games
         </button>
         <h2 className={styles.title}>
-          Replay: {modeDisplayName} — {game.playerWhite} vs {game.playerBlack}
+          Replay: {modeDisplayName} — {formatPlayerLabel(game.playerWhite)} vs {formatPlayerLabel(game.playerBlack)}
         </h2>
         <button
           type="button"
@@ -349,8 +350,8 @@ function ReplayView({ game, adapter, onBackToSelect, onBackToHome }: ReplayViewP
             <div className={styles.timelineDesktop}>
               <MoveTimeline
                 moves={game.moves}
-                currentPly={nav.currentPly}
-                onPlySelect={nav.goToPly}
+                currentPly={nav.currentPly - 1}
+                onPlySelect={(ply) => { nav.goToPly(ply + 1); }}
               />
             </div>
             <details className={styles.timelineMobile}>
@@ -359,8 +360,8 @@ function ReplayView({ game, adapter, onBackToSelect, onBackToHome }: ReplayViewP
               </summary>
               <MoveTimeline
                 moves={game.moves}
-                currentPly={nav.currentPly}
-                onPlySelect={nav.goToPly}
+                currentPly={nav.currentPly - 1}
+                onPlySelect={(ply) => { nav.goToPly(ply + 1); }}
                 compact
               />
             </details>
@@ -474,11 +475,11 @@ function GameMetadataHeader({ game, modeDisplayName }: GameMetadataHeaderProps) 
       </div>
       <div>
         <dt>White</dt>
-        <dd>{game.playerWhite}</dd>
+        <dd>{formatPlayerLabel(game.playerWhite)}</dd>
       </div>
       <div>
         <dt>Black</dt>
-        <dd>{game.playerBlack}</dd>
+        <dd>{formatPlayerLabel(game.playerBlack)}</dd>
       </div>
       <div>
         <dt>Result</dt>
