@@ -274,7 +274,7 @@ function makeChaosGateStatus(overrides?: Partial<ChaosGateStatus>): ChaosGateSta
       challengesCompleted: { current: 0, required: 100, met: false },
       choiceModesUnlocked: { current: 0, required: 40, met: false },
       classifiedUnlocked: { met: false },
-      classifiedHardWins: { current: 0, required: 60, met: false },
+      classifiedHardWins: { current: 0, required: 64, met: false },
     },
     ...overrides,
   };
@@ -838,7 +838,7 @@ describe('CareerScreen — Section 4: Chaos Gate', () => {
           challengesCompleted: { current: 1, required: 100, met: false },
           choiceModesUnlocked: { current: 0, required: 40, met: false },
           classifiedUnlocked: { met: false },
-          classifiedHardWins: { current: 0, required: 60, met: false },
+          classifiedHardWins: { current: 0, required: 64, met: false },
         },
       }),
     });
@@ -858,7 +858,7 @@ describe('CareerScreen — Section 4: Chaos Gate', () => {
           challengesCompleted: { current: 1, required: 100, met: false },
           choiceModesUnlocked: { current: 0, required: 40, met: false },
           classifiedUnlocked: { met: false },
-          classifiedHardWins: { current: 0, required: 60, met: false },
+          classifiedHardWins: { current: 0, required: 64, met: false },
         },
       }),
     });
@@ -881,7 +881,7 @@ describe('CareerScreen — Section 4: Chaos Gate', () => {
           challengesCompleted: { current: 50, required: 100, met: false },
           choiceModesUnlocked: { current: 0, required: 40, met: false },
           classifiedUnlocked: { met: false },
-          classifiedHardWins: { current: 0, required: 60, met: false },
+          classifiedHardWins: { current: 0, required: 64, met: false },
         },
       }),
     });
@@ -902,7 +902,7 @@ describe('CareerScreen — Section 4: Chaos Gate', () => {
           challengesCompleted: { current: 1, required: 100, met: false },
           choiceModesUnlocked: { current: 12, required: 40, met: false },
           classifiedUnlocked: { met: false },
-          classifiedHardWins: { current: 0, required: 60, met: false },
+          classifiedHardWins: { current: 0, required: 64, met: false },
         },
       }),
     });
@@ -922,7 +922,7 @@ describe('CareerScreen — Section 4: Chaos Gate', () => {
           challengesCompleted: { current: 50, required: 100, met: false },
           choiceModesUnlocked: { current: 0, required: 40, met: false },
           classifiedUnlocked: { met: false },
-          classifiedHardWins: { current: 0, required: 60, met: false },
+          classifiedHardWins: { current: 0, required: 64, met: false },
         },
       }),
     });
@@ -942,7 +942,7 @@ describe('CareerScreen — Section 4: Chaos Gate', () => {
           challengesCompleted: { current: 100, required: 100, met: true },
           choiceModesUnlocked: { current: 0, required: 40, met: false },
           classifiedUnlocked: { met: true },
-          classifiedHardWins: { current: 0, required: 60, met: false },
+          classifiedHardWins: { current: 0, required: 64, met: false },
         },
       }),
     });
@@ -954,7 +954,7 @@ describe('CareerScreen — Section 4: Chaos Gate', () => {
 
   it('38: all gates met shows Chaos Mode Unlocked banner', async () => {
     const snapshot = makeCareerSnapshot({
-      chaosGate: { challengesCompleted: 100, choiceModesUnlocked: 40, classifiedUnlocked: true, classifiedHardWins: 60 },
+      chaosGate: { challengesCompleted: 100, choiceModesUnlocked: 40, classifiedUnlocked: true, classifiedHardWins: 64 },
     });
     const evaluation = makeUnlockEvaluation({
       totalChoiceModesUnlocked: 40,
@@ -964,7 +964,7 @@ describe('CareerScreen — Section 4: Chaos Gate', () => {
           challengesCompleted: { current: 100, required: 100, met: true },
           choiceModesUnlocked: { current: 40, required: 40, met: true },
           classifiedUnlocked: { met: true },
-          classifiedHardWins: { current: 60, required: 60, met: true },
+          classifiedHardWins: { current: 64, required: 64, met: true },
         },
       }),
     });
@@ -985,7 +985,7 @@ describe('CareerScreen — Section 4: Chaos Gate', () => {
           challengesCompleted: { current: 25, required: 100, met: false },
           choiceModesUnlocked: { current: 0, required: 40, met: false },
           classifiedUnlocked: { met: false },
-          classifiedHardWins: { current: 0, required: 60, met: false },
+          classifiedHardWins: { current: 0, required: 64, met: false },
         },
       }),
     });
@@ -1178,7 +1178,7 @@ describe('CareerScreen — Integration Tests', () => {
           challengesCompleted: { current: 25, required: 100, met: false },
           choiceModesUnlocked: { current: 3, required: 40, met: false },
           classifiedUnlocked: { met: false },
-          classifiedHardWins: { current: 0, required: 60, met: false },
+          classifiedHardWins: { current: 0, required: 64, met: false },
         },
       }),
     });

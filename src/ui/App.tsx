@@ -32,10 +32,10 @@ import ChoiceGalleryScreen from './ChoiceGalleryScreen';
 import ChoiceDetailScreen from './ChoiceDetailScreen';
 import { createNewChoiceGame } from '../engine/game';
 import ClassifiedGalleryScreen from './ClassifiedGalleryScreen';
+import ClassifiedDetailScreen from './ClassifiedDetailScreen';
 import CogitateScreen from './CogitateScreen';
 import CareerScreen from './CareerScreen';
 import CodeScreen from './CodeScreen';
-import ModeScreenShell from './ModeScreenShell';
 import { useUnlockState } from './hooks/useUnlockState';
 
 // ---------------------------------------------------------------------------
@@ -439,14 +439,22 @@ export default function App() {
     }
 
     case 'classified':
-      content = <ClassifiedGalleryScreen onBack={navigateToMenu} />;
+      content = (
+        <ClassifiedGalleryScreen
+          onBack={navigateToMenu}
+          onNavigateToDetail={(gameIndex) => {
+            navigateToScreen({ kind: 'classified-detail', gameId: gameIndex });
+          }}
+        />
+      );
       break;
 
     case 'classified-detail':
       content = (
-        <ModeScreenShell title="Classified Detail" onBack={() => { navigateToScreen({ kind: 'classified' }); }}>
-          <p>Classified detail for game: {screen.gameId}</p>
-        </ModeScreenShell>
+        <ClassifiedDetailScreen
+          gameIndex={screen.gameId}
+          onBack={() => { navigateToScreen({ kind: 'classified' }); }}
+        />
       );
       break;
 

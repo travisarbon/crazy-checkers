@@ -1042,10 +1042,10 @@ describe('computeCareerSnapshot — Classified Waves', () => {
     expect(snapshot.classifiedWaves[1]?.totalGamesInWave).toBe(13); // Wave 2
     expect(snapshot.classifiedWaves[2]?.totalGamesInWave).toBe(10); // Wave 3
     expect(snapshot.classifiedWaves[3]?.totalGamesInWave).toBe(5);  // Wave 4
-    expect(snapshot.classifiedWaves[4]?.totalGamesInWave).toBe(5);  // Wave 5
-    expect(snapshot.classifiedWaves[5]?.totalGamesInWave).toBe(5);  // Wave 6
+    expect(snapshot.classifiedWaves[4]?.totalGamesInWave).toBe(6);  // Wave 5
+    expect(snapshot.classifiedWaves[5]?.totalGamesInWave).toBe(9);  // Wave 6
     expect(snapshot.classifiedWaves[6]?.totalGamesInWave).toBe(5);  // Wave 7
-    expect(snapshot.classifiedWaves[7]?.totalGamesInWave).toBe(3);  // Wave 8
+    expect(snapshot.classifiedWaves[7]?.totalGamesInWave).toBe(2);  // Wave 8
   });
 
   it('tracks classified game stats per wave', () => {

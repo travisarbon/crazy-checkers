@@ -260,7 +260,7 @@ export function isClassifiedUnlocked(challengesCompleted: number): boolean {
  * Chaos is unlocked when ALL Chaos Gate conditions are satisfied.
  *
  * @param totalClassifiedGames — Total number of Classified games in the registry.
- *   Defaults to current registry count (60 placeholders) for backward compatibility.
+ *   Defaults to current registry count (64 placeholders) for backward compatibility.
  */
 export function isChaosUnlocked(
   challengesCompleted: number,

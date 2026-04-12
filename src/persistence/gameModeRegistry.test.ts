@@ -40,8 +40,8 @@ function makeRecord(overrides: Partial<GameRecord>): GameRecord {
 // ---------------------------------------------------------------------------
 
 describe('Registry Completeness', () => {
-  it('registers all 108 modes', () => {
-    expect(getAllModes()).toHaveLength(108);
+  it('registers all 112 modes', () => {
+    expect(getAllModes()).toHaveLength(112);
   });
 
   it('registers 8 core modes', () => {
@@ -59,8 +59,8 @@ describe('Registry Completeness', () => {
     expect(getModesByCategory('choice')).toHaveLength(40);
   });
 
-  it('registers all 60 Classified placeholders', () => {
-    expect(getModesByCategory('classified')).toHaveLength(60);
+  it('registers all 64 Classified placeholders', () => {
+    expect(getModesByCategory('classified')).toHaveLength(64);
   });
 
   it('all Choice modes have unique IDs', () => {
@@ -70,7 +70,7 @@ describe('Registry Completeness', () => {
 
   it('all Classified placeholders have unique IDs', () => {
     const ids = getModesByCategory('classified').map((e) => e.id);
-    expect(new Set(ids).size).toBe(60);
+    expect(new Set(ids).size).toBe(64);
   });
 });
 
@@ -110,7 +110,7 @@ describe('Category Queries', () => {
     expect(getModesByCategory('chaos')).toHaveLength(1);
     expect(getModesByCategory('choice')).toHaveLength(40);
     expect(getModesByCategory('challenge')).toHaveLength(1);
-    expect(getModesByCategory('classified')).toHaveLength(60);
+    expect(getModesByCategory('classified')).toHaveLength(64);
   });
 
   it('Choice modes sorted by choiceNumber', () => {
@@ -138,10 +138,10 @@ describe('Wave Queries', () => {
     expect(getClassifiedByWave(2)).toHaveLength(13);
     expect(getClassifiedByWave(3)).toHaveLength(10);
     expect(getClassifiedByWave(4)).toHaveLength(5);
-    expect(getClassifiedByWave(5)).toHaveLength(5);
-    expect(getClassifiedByWave(6)).toHaveLength(5);
+    expect(getClassifiedByWave(5)).toHaveLength(6);
+    expect(getClassifiedByWave(6)).toHaveLength(9);
     expect(getClassifiedByWave(7)).toHaveLength(5);
-    expect(getClassifiedByWave(8)).toHaveLength(3);
+    expect(getClassifiedByWave(8)).toHaveLength(2);
   });
 
   it('getClassifiedByWave returns empty for invalid wave', () => {
@@ -187,7 +187,7 @@ describe('Track Queries', () => {
   it('getModesContributingToTrack world-player includes all Classified', () => {
     const modes = getModesContributingToTrack('world-player');
     const classifiedCount = modes.filter((m) => m.category === 'classified').length;
-    expect(classifiedCount).toBe(60);
+    expect(classifiedCount).toBe(64);
   });
 
   it('getModesContributingToTrack lifer returns empty', () => {
@@ -212,8 +212,8 @@ describe('Career Eligibility', () => {
 
   it('getCareerEligibleModes includes Classic, Crazy, Chaos, all Choice, all Classified', () => {
     const modes = getCareerEligibleModes();
-    // 3 core (Classic, Crazy, Chaos) + 40 Choice + 60 Classified = 103
-    expect(modes).toHaveLength(103);
+    // 3 core (Classic, Crazy, Chaos) + 40 Choice + 64 Classified = 107
+    expect(modes).toHaveLength(107);
   });
 });
 

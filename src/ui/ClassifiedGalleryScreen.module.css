@@ -1,0 +1,285 @@
+/* ClassifiedGalleryScreen — CSS Module */
+
+/* Wave section container */
+.waveSection {
+  margin-bottom: 1.5rem;
+}
+
+.waveSection:last-child {
+  margin-bottom: 0;
+}
+
+/* Wave header */
+.waveHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-accent) 20%, transparent);
+}
+
+.waveLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ui-accent);
+  opacity: 0.8;
+}
+
+.waveTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ui-text);
+  margin: 0;
+}
+
+.waveCount {
+  font-size: 0.7rem;
+  opacity: 0.55;
+  margin-left: auto;
+}
+
+.waveSubtitle {
+  width: 100%;
+  font-size: 0.8rem;
+  opacity: 0.6;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Gallery grid layout (per wave, matches ChoiceGalleryScreen pattern) */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+/* Gallery card base styling (adapted from ChoiceGalleryScreen) */
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 0.5rem;
+  border: 2px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ui-text);
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+  position: relative;
+  text-align: center;
+}
+
+.card:hover {
+  border-color: var(--ui-accent);
+  transform: scale(1.03);
+}
+
+.card:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+/* State: Locked (mode not unlocked or game not unlocked) */
+.cardLocked {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+
+.cardLocked:hover {
+  border-color: color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  transform: none;
+}
+
+/* State: Coming Soon (game unlocked but not implemented) */
+.cardComingSoon {
+  opacity: 0.65;
+  cursor: default;
+  pointer-events: none;
+}
+
+.cardComingSoon:hover {
+  border-color: color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  transform: none;
+}
+
+/* Lock icon overlay */
+.lockOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.8rem;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Game name and board geometry text */
+.gameName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.boardGeometry {
+  font-size: 0.65rem;
+  opacity: 0.55;
+  line-height: 1.2;
+}
+
+/* Coming Soon badge */
+.comingSoon {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.5;
+  color: var(--ui-accent);
+}
+
+/* Family badge (wave-colored) */
+.familyBadge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.waveColor1 { background: color-mix(in srgb, #4a90d9 25%, transparent); color: #4a90d9; }
+.waveColor2 { background: color-mix(in srgb, #d94a4a 25%, transparent); color: #d94a4a; }
+.waveColor3 { background: color-mix(in srgb, #4ad94a 25%, transparent); color: #4ad94a; }
+.waveColor4 { background: color-mix(in srgb, #d9b44a 25%, transparent); color: #d9b44a; }
+.waveColor5 { background: color-mix(in srgb, #9b4ad9 25%, transparent); color: #9b4ad9; }
+.waveColor6 { background: color-mix(in srgb, #4ad9c9 25%, transparent); color: #4ad9c9; }
+.waveColor7 { background: color-mix(in srgb, #d94a8a 25%, transparent); color: #d94a8a; }
+.waveColor8 { background: color-mix(in srgb, #8a8a8a 25%, transparent); color: #8a8a8a; }
+
+/* Board preview container within card */
+.cardPreview {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardLocked .cardPreview,
+.cardComingSoon .cardPreview {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+/* Intro text above gallery */
+.introText {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+/* Unlock status display */
+.unlockStatus {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.unlockStatusLocked {
+  color: color-mix(in srgb, var(--ui-text) 50%, transparent);
+}
+
+.unlockStatusUnlocked {
+  color: var(--ui-accent);
+}
+
+.unlockHint {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+/* Dialog description styling (within GalleryDialogBox) */
+.dialogInfo {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.dialogInfoRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.dialogInfoLabel {
+  font-weight: 600;
+  opacity: 0.7;
+  min-width: 5rem;
+}
+
+.dialogPlaceholder {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px dashed color-mix(in srgb, var(--ui-accent) 40%, transparent);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  opacity: 0.55;
+  text-align: center;
+}
+
+/* Loading state */
+.loading {
+  text-align: center;
+  opacity: 0.55;
+  padding: 2rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 479px) {
+  .gallery {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .card {
+    padding: 0.5rem 0.35rem;
+  }
+
+  .cardPreview {
+    width: 60px;
+    height: 60px;
+  }
+
+  .gameName {
+    font-size: 0.8rem;
+  }
+
+  .waveTitle {
+    font-size: 1rem;
+  }
+
+  .waveSubtitle {
+    font-size: 0.75rem;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  .cardPreview {
+    width: 70px;
+    height: 70px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

@@ -89,7 +89,7 @@ function makeChaosGateStatus(): ChaosGateStatus {
       challengesCompleted: { current: 0, required: 100, met: false },
       choiceModesUnlocked: { current: 0, required: 40, met: false },
       classifiedUnlocked: { met: false },
-      classifiedHardWins: { current: 0, required: 60, met: false },
+      classifiedHardWins: { current: 0, required: 64, met: false },
     },
   };
 }

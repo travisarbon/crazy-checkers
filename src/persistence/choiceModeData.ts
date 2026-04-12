@@ -80,5 +80,5 @@ export const CHOICE_MODE_DATA: readonly ChoiceModeDefinition[] = [
   { choiceNumber: 37, event: CrazyEvent.Wormhole, displayName: 'Portal', description: 'Pairs of squares become linked teleporters', track: 'world-player', unlockThreshold: 'Win 30 Classified games vs. Hard CPU' },
   { choiceNumber: 38, event: CrazyEvent.FlippedScript, displayName: 'Turned Tables', description: 'The board rotates 180 degrees', track: 'world-player', unlockThreshold: 'Win 40 Classified games vs. Hard CPU' },
   { choiceNumber: 39, event: CrazyEvent.ShrinkingBoard, displayName: 'Pressure Cooker', description: 'The board shrinks by removing edge squares', track: 'world-player', unlockThreshold: 'Win 50 Classified games vs. Hard CPU' },
-  { choiceNumber: 40, event: CrazyEvent.MarchingOrders, displayName: 'Rank and File', description: 'All pieces must advance or be removed', track: 'world-player', unlockThreshold: 'Win all 60 Classified games vs. Hard CPU' },
+  { choiceNumber: 40, event: CrazyEvent.MarchingOrders, displayName: 'Rank and File', description: 'All pieces must advance or be removed', track: 'world-player', unlockThreshold: 'Win all 64 Classified games vs. Hard CPU' },
 ];

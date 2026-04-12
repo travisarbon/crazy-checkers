@@ -216,34 +216,34 @@ describe('isClassifiedUnlocked', () => {
 });
 
 describe('isChaosUnlocked', () => {
-  it('returns true when all gates met (100, 40, 60)', () => {
-    expect(isChaosUnlocked(100, 40, 60, 60)).toBe(true);
+  it('returns true when all gates met (100, 40, 64)', () => {
+    expect(isChaosUnlocked(100, 40, 64, 64)).toBe(true);
   });
 
-  it('returns false when choice modes short by 1 (100, 39, 60)', () => {
-    expect(isChaosUnlocked(100, 39, 60, 60)).toBe(false);
+  it('returns false when choice modes short by 1 (100, 39, 64)', () => {
+    expect(isChaosUnlocked(100, 39, 64, 64)).toBe(false);
   });
 
-  it('returns false when classified games short by 1 (100, 40, 59)', () => {
-    expect(isChaosUnlocked(100, 40, 59, 60)).toBe(false);
+  it('returns false when classified games short by 1 (100, 40, 63)', () => {
+    expect(isChaosUnlocked(100, 40, 63, 64)).toBe(false);
   });
 
-  it('returns false when challenges short by 1 (99, 40, 60)', () => {
-    expect(isChaosUnlocked(99, 40, 60, 60)).toBe(false);
+  it('returns false when challenges short by 1 (99, 40, 64)', () => {
+    expect(isChaosUnlocked(99, 40, 64, 64)).toBe(false);
   });
 
   it('returns false when all values are 0', () => {
-    expect(isChaosUnlocked(0, 0, 0, 60)).toBe(false);
+    expect(isChaosUnlocked(0, 0, 0, 64)).toBe(false);
   });
 
   it('returns true when values exceed thresholds', () => {
-    expect(isChaosUnlocked(200, 50, 70, 60)).toBe(true);
+    expect(isChaosUnlocked(200, 50, 70, 64)).toBe(true);
   });
 
   it('uses dynamic classified count from registry by default', () => {
-    // Default parameter reads from getModesByCategory('classified').length = 60
-    expect(isChaosUnlocked(100, 40, 60)).toBe(true);
-    expect(isChaosUnlocked(100, 40, 59)).toBe(false);
+    // Default parameter reads from getModesByCategory('classified').length = 64
+    expect(isChaosUnlocked(100, 40, 64)).toBe(true);
+    expect(isChaosUnlocked(100, 40, 63)).toBe(false);
   });
 });
 
@@ -407,18 +407,14 @@ describe('TRACK_3_THRESHOLDS cross-validation', () => {
 });
 
 describe('TRACK_5_THRESHOLDS cross-validation', () => {
-  it('matches the world-player entries in CHOICE_MODE_DATA (first 7 thresholds)', () => {
+  it('matches all world-player entries in CHOICE_MODE_DATA (all 8 thresholds)', () => {
     const track5Modes = CHOICE_MODE_DATA.filter(
       (d) => d.track === 'world-player',
     );
     expect(track5Modes).toHaveLength(TRACK_5_THRESHOLDS.length);
 
-    // First 7 thresholds match the numeric values in unlockThreshold text.
-    // The 8th threshold (64) is the Design Document's final Classified count,
-    // while CHOICE_MODE_DATA says "Win all 60" (current registry size).
-    // This discrepancy is documented in the plan and will be reconciled
-    // when Phase 4 adds the final 4 Classified games.
-    for (let i = 0; i < 7; i++) {
+    // All 8 thresholds match the numeric values in unlockThreshold text.
+    for (let i = 0; i < 8; i++) {
       const expectedThreshold = TRACK_5_THRESHOLDS[i];
       const mode = track5Modes[i];
       expect(mode).toBeDefined();
@@ -431,18 +427,18 @@ describe('TRACK_5_THRESHOLDS cross-validation', () => {
     }
   });
 
-  it('last threshold (64) vs CHOICE_MODE_DATA text (60) — known Phase 4 discrepancy', () => {
+  it('last threshold (64) matches CHOICE_MODE_DATA text and registry size', () => {
     const track5Modes = CHOICE_MODE_DATA.filter(
       (d) => d.track === 'world-player',
     );
     const lastMode = track5Modes[7];
     expect(lastMode).toBeDefined();
-    // CHOICE_MODE_DATA says "Win all 60 Classified games vs. Hard CPU"
+    // CHOICE_MODE_DATA says "Win all 64 Classified games vs. Hard CPU"
     const match = lastMode!.unlockThreshold.match(/(\d+)/);
     expect(match).not.toBeNull();
     const dataThreshold = Number((match as RegExpMatchArray)[1]);
-    expect(dataThreshold).toBe(60); // Current registry size
-    expect(TRACK_5_THRESHOLDS[7]).toBe(64); // Design Document target
+    expect(dataThreshold).toBe(64);
+    expect(TRACK_5_THRESHOLDS[7]).toBe(64);
   });
 });
 
@@ -966,7 +962,7 @@ describe('evaluateFullUnlockState — Full progress', () => {
       track3Value: 43,
       track4MilestonesMet: 8,
       track5Value: 64,
-      classifiedHardWins: 60,
+      classifiedHardWins: 64,
     });
     const evaluation = evaluateFullUnlockState(snapshot, new Set());
 
@@ -993,14 +989,14 @@ describe('evaluateFullUnlockState — Full progress', () => {
     }
   });
 
-  it('Chaos Gate fully met with 60 classified hard wins', () => {
+  it('Chaos Gate fully met with 64 classified hard wins', () => {
     const snapshot = makeCareerSnapshot({
       puzzlesCompleted: 100,
       track2Value: 36,
       track3Value: 43,
       track4MilestonesMet: 8,
       track5Value: 64,
-      classifiedHardWins: 60,
+      classifiedHardWins: 64,
     });
     const evaluation = evaluateFullUnlockState(snapshot, new Set());
 
@@ -1153,7 +1149,7 @@ describe('evaluateFullUnlockState — Chaos Gate', () => {
       track3Value: 43,
       track4MilestonesMet: 8,
       track5Value: 64,
-      classifiedHardWins: 60,
+      classifiedHardWins: 64,
     });
     const evaluation = evaluateFullUnlockState(snapshot, new Set());
 
@@ -1168,7 +1164,7 @@ describe('evaluateFullUnlockState — Chaos Gate', () => {
       track3Value: 43,
       track4MilestonesMet: 8,
       track5Value: 64,
-      classifiedHardWins: 60,
+      classifiedHardWins: 64,
     });
     const evaluation = evaluateFullUnlockState(snapshot, new Set());
 
@@ -1186,7 +1182,7 @@ describe('evaluateFullUnlockState — Chaos Gate', () => {
       track3Value: 43,
       track4MilestonesMet: 8,
       track5Value: 64,
-      classifiedHardWins: 60,
+      classifiedHardWins: 64,
     });
     const evaluation = evaluateFullUnlockState(snapshot, new Set());
 
@@ -1202,14 +1198,14 @@ describe('evaluateFullUnlockState — Chaos Gate', () => {
       track3Value: 43,
       track4MilestonesMet: 8,
       track5Value: 64,
-      classifiedHardWins: 59,
+      classifiedHardWins: 63,
     });
     const evaluation = evaluateFullUnlockState(snapshot, new Set());
 
     expect(evaluation.chaosGate.unlocked).toBe(false);
     expect(evaluation.chaosGate.gates.classifiedHardWins.met).toBe(false);
-    expect(evaluation.chaosGate.gates.classifiedHardWins.current).toBe(59);
-    expect(evaluation.chaosGate.gates.classifiedHardWins.required).toBe(60);
+    expect(evaluation.chaosGate.gates.classifiedHardWins.current).toBe(63);
+    expect(evaluation.chaosGate.gates.classifiedHardWins.required).toBe(64);
   });
 
   it('all conditions unmet (fresh player)', () => {
@@ -1502,7 +1498,7 @@ describe('evaluateUnlocks', () => {
 
   it('Chaos remains locked even with max Track 1 unlocks', () => {
     // Track 1 provides at most 8 Choice mode unlocks; Chaos requires 40
-    expect(isChaosUnlocked(100, 8, 0, 60)).toBe(false);
+    expect(isChaosUnlocked(100, 8, 0, 64)).toBe(false);
   });
 });
 
@@ -1579,8 +1575,8 @@ describe('Edge cases', () => {
   it('Chaos Gate classifiedHardWins required matches registry size', () => {
     const snapshot = makeCareerSnapshot();
     const evaluation = evaluateFullUnlockState(snapshot, new Set());
-    // The required value should be 60 (current registry size)
-    expect(evaluation.chaosGate.gates.classifiedHardWins.required).toBe(60);
+    // The required value should be 64 (current registry size)
+    expect(evaluation.chaosGate.gates.classifiedHardWins.required).toBe(64);
   });
 
   it('isUnlocked returns true for unknown mode IDs (non-Choice, non-menu)', () => {

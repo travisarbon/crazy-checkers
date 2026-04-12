@@ -99,7 +99,7 @@ function buildRegistry(): Map<string, ModeRegistryEntry> {
       id: 'chaos', displayName: 'Chaos', category: 'chaos',
       wave: null, family: null, tracksContribution: [],
       excludeFromCareer: false,
-      unlockRequirement: 'Unlock all 40 Choice modes, complete 100 challenges, and win all 60 Classified games vs. Hard CPU',
+      unlockRequirement: 'Unlock all 40 Choice modes, complete 100 challenges, and win all 64 Classified games vs. Hard CPU',
       engineMode: 'CHAOS', permanentEvent: null,
       choiceDescription: null, choiceNumber: null,
       classifiedIndex: null, boardGeometry: null, implemented: true,
@@ -178,7 +178,7 @@ function buildRegistry(): Map<string, ModeRegistryEntry> {
     map.set(entry.id, Object.freeze(entry));
   }
 
-  // Classified placeholders (60 entries)
+  // Classified placeholders (64 entries)
   for (const def of CLASSIFIED_PLACEHOLDER_DATA) {
     const entry: ModeRegistryEntry = {
       id: `classified-${String(def.index)}`,
