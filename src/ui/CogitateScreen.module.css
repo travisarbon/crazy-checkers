@@ -1,0 +1,122 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  padding: 0.25rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--ui-accent, #3498db) 30%, transparent);
+  border-radius: 10px;
+  background: var(--ui-surface, #fff);
+  transition:
+    transform 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.card:not(.cardDisabled):hover,
+.card:not(.cardDisabled):focus-within {
+  transform: scale(1.03);
+  border-color: var(--ui-accent, #3498db);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ui-accent, #3498db) 15%, transparent);
+}
+
+.cardDisabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.cardDisabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cardIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--ui-accent, #3498db);
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--ui-heading, #222);
+}
+
+.cardDescription {
+  margin: 0;
+  flex: 1 1 auto;
+  color: var(--ui-text-muted, #555);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.cardUnavailableMessage {
+  margin: 0;
+  padding: 0.35rem 0 0;
+  color: var(--ui-text-muted, #666);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.cardButton {
+  appearance: none;
+  align-self: flex-start;
+  padding: 0.5rem 1.1rem;
+  border-radius: 6px;
+  border: 1px solid var(--ui-accent, #3498db);
+  background: var(--ui-accent, #3498db);
+  color: var(--ui-accent-contrast, #fff);
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+.cardButton:disabled {
+  background: var(--ui-border, #ccc);
+  border-color: var(--ui-border, #ccc);
+  color: var(--ui-text-muted, #666);
+  cursor: not-allowed;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .cardButton {
+    transition: none;
+  }
+  .card:not(.cardDisabled):hover,
+  .card:not(.cardDisabled):focus-within {
+    transform: none;
+  }
+}

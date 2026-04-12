@@ -688,3 +688,54 @@ describe('iterativeSearch — event-aware', () => {
     });
   }
 });
+
+// ---------------------------------------------------------------------------
+// Principal variation collection
+// ---------------------------------------------------------------------------
+
+describe('iterativeSearch — principal variation collection', () => {
+  it('omits pv when collectPV is false', () => {
+    const state = createNewGame(rules, {
+      white: PlayerType.Human,
+      black: PlayerType.CpuHard,
+    });
+    const result = iterativeSearch(state, FAST_CONFIG);
+    expect(result.pv).toBeUndefined();
+  });
+
+  it('populates pv when collectPV is true', () => {
+    const state = createNewGame(rules, {
+      white: PlayerType.Human,
+      black: PlayerType.CpuHard,
+    });
+    const result = iterativeSearch(state, { ...FAST_CONFIG, collectPV: true });
+    const pv = result.pv;
+    expect(pv).toBeDefined();
+    expect((pv ?? []).length).toBeGreaterThan(0);
+    // First PV move must equal the best move found.
+    expect(((pv ?? [])[0] as Move).from).toBe((result.move as Move).from);
+  });
+
+  it('PV moves form a legal sequence from the starting position', () => {
+    const state = createNewGame(rules, {
+      white: PlayerType.Human,
+      black: PlayerType.CpuHard,
+    });
+    const result = iterativeSearch(state, { ...FAST_CONFIG, collectPV: true });
+    const pv = result.pv ?? [];
+    expect(pv.length).toBeGreaterThan(0);
+    // Replay the PV from the start and confirm no exceptions and all moves legal.
+    let current: GameState = state;
+    for (const move of pv) {
+      const legal = current.ruleSet.getLegalMoves(current.board, current.activeColor);
+      const isLegal = legal.some(
+        (m) =>
+          (m.from as number) === (move.from as number) &&
+          m.path.length === move.path.length &&
+          m.path.every((sq, i) => (sq as number) === ((move.path[i] as number) | 0)),
+      );
+      expect(isLegal).toBe(true);
+      current = makeMove(current, move);
+    }
+  });
+});

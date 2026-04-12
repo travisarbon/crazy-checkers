@@ -1,0 +1,64 @@
+.wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.boardWrap {
+  width: 100%;
+  height: 100%;
+}
+
+.overlaySvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.annotation {
+  fill: var(--ui-text);
+  font-size: 48px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.editorMode {
+  cursor: pointer;
+}
+
+.editorMode.dragging {
+  cursor: grabbing;
+}
+
+.dropTarget {
+  outline: 2px dashed #2ecc71;
+  outline-offset: -4px;
+}
+
+@media (max-width: 479px) {
+  .wrapper {
+    width: min(90vw, 400px);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .wrapper {
+    width: min(50vw, 450px);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .wrapper {
+    width: min(55vw, 550px);
+  }
+}
+
+@media (min-width: 1440px) {
+  .wrapper {
+    width: min(45vw, 600px);
+  }
+}

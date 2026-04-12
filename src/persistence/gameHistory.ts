@@ -8,6 +8,7 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import type { GameState } from '../engine/types';
 import type { SerializedActiveEvent } from './serialization';
+import type { AnalysisResult } from '../cogitate/types';
 import { createInitialBoard } from '../engine/board';
 import { createAmericanRules } from '../engine/rules';
 import { moveToString } from '../utils/notation';
@@ -47,6 +48,25 @@ export interface GameRecord {
 
   /** Log of event triggers: which event fired on which ply. */
   eventTriggerLog?: Array<{ ply: number; event: string; triggeredBy: string }>;
+
+  /** Cached analysis results per ply, populated by the Analysis tool. */
+  analysisCache?: AnalysisResult[];
+  /** Ply indices identified as training positions, sorted by eval drop descending. */
+  trainingPositions?: number[];
+}
+
+export const GAMES_STORE_NAME = GAMES_STORE;
+
+/** Persists a partial update to an existing GameRecord. */
+export async function updateGameRecord(
+  id: string,
+  patch: Partial<GameRecord>,
+): Promise<void> {
+  const db = await getDb();
+  const existing = (await db.get(GAMES_STORE, id)) as GameRecord | undefined;
+  if (!existing) return;
+  const next: GameRecord = { ...existing, ...patch, id: existing.id };
+  await db.put(GAMES_STORE, next);
 }
 
 // ---------------------------------------------------------------------------
@@ -149,6 +169,25 @@ export async function getGameRecord(id: string): Promise<GameRecord | undefined>
 export async function getGameRecordCount(): Promise<number> {
   const db = await getDb();
   return db.count(GAMES_STORE);
+}
+
+/**
+ * Returns true as soon as any stored game record has a non-empty
+ * `trainingPositions` array. Iterates records via cursor and short-circuits.
+ */
+export async function hasAnalyzedGamesWithTrainingPositions(): Promise<boolean> {
+  const db = await getDb();
+  const tx = db.transaction(GAMES_STORE, 'readonly');
+  const store = tx.objectStore(GAMES_STORE);
+  let cursor = await store.openCursor();
+  while (cursor) {
+    const record = cursor.value as GameRecord;
+    if (record.trainingPositions && record.trainingPositions.length > 0) {
+      return true;
+    }
+    cursor = await cursor.continue();
+  }
+  return false;
 }
 
 /**

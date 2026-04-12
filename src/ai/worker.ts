@@ -1,17 +1,29 @@
 /**
  * Web Worker entry point wrapping the AI search.
  * Exposes getAIMove via Comlink for off-thread computation.
+ * Also exposes Cogitate analysis methods: analyzePosition, batchAnalyze,
+ * evaluatePosition, cancelAnalysis (Task 21.1).
  */
 
 import { expose } from 'comlink';
 import type { ActiveEvent, BoardState, GameState, Move, PieceColor, RuleSet } from '../engine/types';
-import type { CrazyEvent, GameResult, PlayerSetup, GameStatus } from '../engine/types';
-import { GameMode } from '../engine/types';
+import type { CrazyEvent, GameResult, PlayerSetup } from '../engine/types';
+import { GameMode, GameStatus, PlayerType } from '../engine/types';
 import type { Difficulty } from './difficulty';
 import { getDifficultyConfig, toSearchConfig, selectMove } from './difficulty';
 import { iterativeSearch } from './search';
+import type { SearchConfig } from './search';
 import { createAmericanRules } from '../engine/rules';
 import { createCompositeRuleSet } from '../engine/compositeRuleSet';
+import type { SerializedActiveEvent } from '../persistence/serialization';
+import { createRuleSet, hasRuleSetFactory } from '../cogitate/RuleSetFactory';
+import type { AnalysisResult, NormalizedEvaluation } from '../cogitate/types';
+import {
+  normalizeRawScore,
+} from '../cogitate/EvaluationProvider';
+import { evaluate } from './evaluator';
+import { evaluateWithEvents } from './eventEvalWeights';
+import { moveToString } from '../utils/notation';
 
 // ---------------------------------------------------------------------------
 // Serialization types
@@ -132,7 +144,166 @@ export function getAIMove(data: SerializableGameState, difficulty: Difficulty): 
   return selectMove(searchResult, searchResult.rootMoveScores, legalMoves, config);
 }
 
-const workerApi = { getAIMove };
+// ---------------------------------------------------------------------------
+// Cogitate analysis API (Task 21.1)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_PLAYERS: PlayerSetup = {
+  white: PlayerType.Human,
+  black: PlayerType.Human,
+};
+
+let cancellationRequested = false;
+
+/** Resets the cancellation flag. */
+function resetCancellation(): void {
+  cancellationRequested = false;
+}
+
+function buildRuleSetForAnalysis(
+  modeId: string,
+  activeEvents: readonly SerializedActiveEvent[],
+): { ruleSet: RuleSet; eventContext: readonly ActiveEvent[] } {
+  const events: ActiveEvent[] = activeEvents.map((e) => ({
+    type: e.type as CrazyEvent,
+    remainingPlies: e.remainingPlies,
+    triggeredBy: e.triggeredBy as PieceColor,
+    triggeredAtPly: e.triggeredAtPly,
+    ...(e.metadata !== undefined ? { metadata: e.metadata } : {}),
+  }));
+  let ruleSet: RuleSet;
+  if (hasRuleSetFactory(modeId)) {
+    ruleSet = createRuleSet(modeId, activeEvents);
+  } else {
+    // Fallback: treat unknown modes as classic American rules.
+    ruleSet = createAmericanRules();
+  }
+  return { ruleSet, eventContext: events };
+}
+
+function buildStateForAnalysis(
+  board: BoardState,
+  activeColor: PieceColor,
+  ruleSet: RuleSet,
+  eventContext: readonly ActiveEvent[],
+  modeId: string,
+): GameState {
+  const mode: GameMode =
+    modeId === 'classic'
+      ? GameMode.Classic
+      : modeId === 'chaos'
+        ? GameMode.Chaos
+        : modeId === 'crazy'
+          ? GameMode.Crazy
+          : modeId.startsWith('choice-')
+            ? GameMode.Choice
+            : GameMode.Classic;
+  return {
+    board,
+    activeColor,
+    status: GameStatus.InProgress,
+    result: null,
+    ruleSet,
+    players: DEFAULT_PLAYERS,
+    moveHistory: [],
+    positionHashes: [],
+    halfMoveClock: 0,
+    plyCount: 0,
+    mode,
+    activeEvents: eventContext,
+  };
+}
+
+export function analyzePosition(
+  board: BoardState,
+  activeColor: PieceColor,
+  modeId: string,
+  activeEvents: readonly SerializedActiveEvent[],
+  config: SearchConfig,
+): AnalysisResult {
+  const { ruleSet, eventContext } = buildRuleSetForAnalysis(modeId, activeEvents);
+  const state = buildStateForAnalysis(board, activeColor, ruleSet, eventContext, modeId);
+
+  const searchConfig: SearchConfig = { ...config, collectPV: true };
+  const result = iterativeSearch(state, searchConfig);
+
+  const sorted = [...result.rootMoveScores].sort((a, b) => b.score - a.score);
+  const topAlternatives = sorted.slice(0, 3).map((entry) => {
+    const { score: normalized } = normalizeRawScore(entry.score, activeColor);
+    return {
+      move: entry.move,
+      notation: moveToString(entry.move),
+      score: entry.score,
+      normalizedScore: normalized,
+    };
+  });
+
+  const { score: normalizedBest } = normalizeRawScore(result.score, activeColor);
+  const pv = result.pv ?? (result.move ? [result.move] : []);
+  const pvNotation = pv.map((m) => moveToString(m));
+
+  return {
+    evaluation: normalizedBest,
+    bestMove: result.move,
+    bestMoveNotation: result.move ? moveToString(result.move) : '',
+    principalVariation: pv,
+    pvNotation,
+    alternativeMoves: topAlternatives,
+    depth: result.depth,
+    nodesEvaluated: result.nodesEvaluated,
+    rawScore: result.score,
+  };
+}
+
+export function batchAnalyze(
+  positions: ReadonlyArray<{
+    board: BoardState;
+    activeColor: PieceColor;
+    activeEvents: readonly SerializedActiveEvent[];
+  }>,
+  modeId: string,
+  config: SearchConfig,
+): AnalysisResult[] {
+  resetCancellation();
+  const out: AnalysisResult[] = [];
+  for (const pos of positions) {
+    if (cancellationRequested) break;
+    out.push(analyzePosition(pos.board, pos.activeColor, modeId, pos.activeEvents, config));
+  }
+  return out;
+}
+
+export function evaluatePosition(
+  board: BoardState,
+  activeColor: PieceColor,
+  modeId: string,
+  activeEvents: readonly SerializedActiveEvent[],
+): NormalizedEvaluation {
+  const { eventContext } = buildRuleSetForAnalysis(modeId, activeEvents);
+  const raw =
+    eventContext.length > 0
+      ? evaluateWithEvents(board, activeColor, eventContext)
+      : evaluate(board, activeColor);
+  const { score, isTerminal } = normalizeRawScore(raw, activeColor);
+  return {
+    score,
+    rawScore: raw,
+    isTerminal,
+    confidence: 1,
+  };
+}
+
+export function cancelAnalysis(): void {
+  cancellationRequested = true;
+}
+
+const workerApi = {
+  getAIMove,
+  analyzePosition,
+  batchAnalyze,
+  evaluatePosition,
+  cancelAnalysis,
+};
 export type WorkerApi = typeof workerApi;
 
 expose(workerApi);

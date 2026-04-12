@@ -1,0 +1,219 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.selectHeader,
+.trainingHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.backButton,
+.homeLink {
+  background: none;
+  border: 1px solid var(--ui-border, #555);
+  color: var(--ui-text, inherit);
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.backButton:hover,
+.homeLink:hover {
+  background: var(--ui-surface-hover, rgba(255, 255, 255, 0.06));
+}
+
+.selectBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.empty {
+  padding: 1rem;
+  border: 1px dashed var(--ui-border, #555);
+  border-radius: 0.5rem;
+  text-align: center;
+  color: var(--ui-text-secondary, #bbb);
+}
+
+.loading {
+  padding: 1rem;
+  text-align: center;
+  color: var(--ui-text-secondary, #bbb);
+}
+
+.error {
+  color: var(--quality-blunder, #f44336);
+  padding: 0.5rem 0;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.boardPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.boardArea {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.evalBarVertical {
+  width: 1.25rem;
+  height: 100%;
+  min-height: 18rem;
+}
+
+.evalBarHorizontal {
+  display: none;
+}
+
+.sidePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  overflow: auto;
+}
+
+.contextPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid var(--ui-border, #555);
+  border-radius: 0.5rem;
+  background-color: var(--ui-surface, rgba(255, 255, 255, 0.03));
+}
+
+.contextLabel {
+  font-weight: 600;
+  color: var(--ui-text-secondary, #bbb);
+}
+
+.actionBar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.actionButton {
+  background: none;
+  border: 1px solid var(--ui-border, #555);
+  color: var(--ui-text, inherit);
+  padding: 0.5rem 1rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actionPrimary {
+  background-color: var(--quality-good, #4caf50);
+  color: #000;
+  border-color: transparent;
+}
+
+.summary {
+  max-width: 30rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 2rem;
+  border: 1px solid var(--ui-border, #555);
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+.summaryStat {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+}
+
+.summaryActions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.liveRegion {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.evaluating {
+  color: var(--ui-text-secondary, #bbb);
+  font-style: italic;
+}
+
+.modeChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.modeChip {
+  background: none;
+  border: 1px solid var(--ui-border, #555);
+  color: var(--ui-text, inherit);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.modeChipActive {
+  background-color: var(--quality-good, #4caf50);
+  color: #000;
+  border-color: transparent;
+}
+
+@media (max-width: 1023px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .evalBarVertical {
+    display: none;
+  }
+
+  .evalBarHorizontal {
+    display: block;
+    width: 100%;
+    height: 1.25rem;
+  }
+}

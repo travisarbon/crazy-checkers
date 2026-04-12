@@ -92,3 +92,67 @@ describe('workerClient main-thread fallback', () => {
     expect(move2).toBeDefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Cogitate analysis fallback tests
+// ---------------------------------------------------------------------------
+
+describe('workerClient cogitate fallback', () => {
+  beforeEach(async () => {
+    const { _resetForTesting } = await import('./workerClient');
+    _resetForTesting();
+  });
+
+  it('requestEvaluation returns a normalized score for Classic mode', async () => {
+    const { requestEvaluation } = await import('./workerClient');
+    const { createInitialBoard } = await import('../engine/board');
+    const { PieceColor } = await import('../engine/types');
+    const ev = await requestEvaluation(createInitialBoard(), PieceColor.White, 'classic', []);
+    expect(ev).toBeDefined();
+    expect(ev.score).toBeGreaterThanOrEqual(-1);
+    expect(ev.score).toBeLessThanOrEqual(1);
+    expect(ev.confidence).toBe(1);
+  });
+
+  it('requestAnalysis returns an AnalysisResult with a best move and PV', async () => {
+    const { requestAnalysis } = await import('./workerClient');
+    const { createInitialBoard } = await import('../engine/board');
+    const { PieceColor } = await import('../engine/types');
+    const result = await requestAnalysis(
+      createInitialBoard(),
+      PieceColor.White,
+      'classic',
+      [],
+      { maxDepth: 3, timeLimitMs: 500, quiescenceEnabled: false, quiescenceMaxDepth: 0 },
+    );
+    expect(result.bestMove).not.toBeNull();
+    expect(result.bestMoveNotation).toMatch(/\d+-\d+/);
+    expect(result.principalVariation.length).toBeGreaterThan(0);
+    expect(result.pvNotation.length).toBe(result.principalVariation.length);
+    expect(result.alternativeMoves.length).toBeGreaterThan(0);
+  });
+
+  it('requestBatchAnalysis returns one result per position', async () => {
+    const { requestBatchAnalysis } = await import('./workerClient');
+    const { createInitialBoard } = await import('../engine/board');
+    const { PieceColor } = await import('../engine/types');
+    const board = createInitialBoard();
+    const results = await requestBatchAnalysis(
+      [
+        { board, activeColor: PieceColor.White, activeEvents: [] },
+        { board, activeColor: PieceColor.Black, activeEvents: [] },
+      ],
+      'classic',
+      { maxDepth: 2, timeLimitMs: 250, quiescenceEnabled: false, quiescenceMaxDepth: 0 },
+    );
+    expect(results.length).toBe(2);
+    expect(results[0]?.bestMove).not.toBeNull();
+  });
+
+  it('cancelAnalysis can be called without side effects when no worker exists', async () => {
+    const { cancelAnalysis } = await import('./workerClient');
+    expect(() => {
+      cancelAnalysis();
+    }).not.toThrow();
+  });
+});

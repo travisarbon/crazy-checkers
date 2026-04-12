@@ -27,6 +27,8 @@ export interface SearchResult {
   /** Scores for all root-level moves from the last completed iteration.
    *  Used by difficulty presets for score-window randomization. */
   rootMoveScores: ReadonlyArray<{ move: Move; score: number }>;
+  /** Principal variation (best play line). Populated only when config.collectPV is true. */
+  pv?: readonly Move[];
 }
 
 /**
@@ -42,6 +44,8 @@ export interface SearchConfig {
   quiescenceEnabled: boolean;
   /** Maximum additional plies for quiescence search. */
   quiescenceMaxDepth: number;
+  /** When true, collect the principal variation (triangular PV table). */
+  collectPV?: boolean;
 }
 
 /** Default search configuration for development and testing. */
@@ -70,6 +74,10 @@ interface SearchContext {
   timeExpired: boolean;
   quiescenceEnabled: boolean;
   quiescenceMaxDepth: number;
+  /** When true, each negamax frame records its best child move for PV reconstruction. */
+  collectPV: boolean;
+  /** Indexed by depth; updated during search to build the principal variation. */
+  pvTable: Move[][];
 }
 
 // ---------------------------------------------------------------------------
@@ -250,9 +258,14 @@ function negamax(
   beta: number,
   ctx: SearchContext,
   previousBestMove: Move | null,
+  ply = 0,
 ): number {
   if (checkTime(ctx)) {
     return 0;
+  }
+
+  if (ctx.collectPV) {
+    ctx.pvTable[ply] = [];
   }
 
   const moves = ctx.ruleSet.getLegalMoves(board, color);
@@ -278,15 +291,30 @@ function negamax(
   const orderedMoves = orderMoves(moves, previousBestMove);
 
   let bestScore = -Infinity;
+  let bestMoveAtPly: Move | null = null;
 
   for (const move of orderedMoves) {
     const newBoard = ctx.ruleSet.applyMove(board, move);
-    const score = -negamax(newBoard, opponentColor(color), depth - 1, -beta, -alpha, ctx, null);
+    const score = -negamax(
+      newBoard,
+      opponentColor(color),
+      depth - 1,
+      -beta,
+      -alpha,
+      ctx,
+      null,
+      ply + 1,
+    );
 
     if (ctx.timeExpired) return 0;
 
     if (score > bestScore) {
       bestScore = score;
+      bestMoveAtPly = move;
+      if (ctx.collectPV) {
+        const childPv = ctx.pvTable[ply + 1] ?? [];
+        ctx.pvTable[ply] = [move, ...childPv];
+      }
     }
 
     if (score > alpha) {
@@ -298,6 +326,7 @@ function negamax(
     }
   }
 
+  void bestMoveAtPly;
   return bestScore;
 }
 
@@ -311,6 +340,7 @@ function negamax(
  */
 export function iterativeSearch(state: GameState, config: SearchConfig): SearchResult {
   const { board, activeColor, ruleSet, activeEvents } = state;
+  const collectPV = config.collectPV === true;
   const ctx: SearchContext = {
     ruleSet,
     activeEvents,
@@ -320,6 +350,8 @@ export function iterativeSearch(state: GameState, config: SearchConfig): SearchR
     timeExpired: false,
     quiescenceEnabled: config.quiescenceEnabled,
     quiescenceMaxDepth: config.quiescenceMaxDepth,
+    collectPV,
+    pvTable: [],
   };
 
   const effectiveMaxDepth = Math.max(
@@ -352,6 +384,7 @@ export function iterativeSearch(state: GameState, config: SearchConfig): SearchR
       depth: 1,
       nodesEvaluated: 1,
       rootMoveScores: [{ move: onlyMove, score }],
+      ...(collectPV ? { pv: [onlyMove] as readonly Move[] } : {}),
     };
   }
 
@@ -371,10 +404,13 @@ export function iterativeSearch(state: GameState, config: SearchConfig): SearchR
 
     let bestMoveThisDepth: Move = orderedRootMoves[0] as Move;
     let bestScoreThisDepth = -Infinity;
+    let bestChildPV: readonly Move[] = [];
     const currentRootScores: Array<{ move: Move; score: number }> = [];
 
     for (const move of orderedRootMoves) {
       const newBoard = ruleSet.applyMove(board, move);
+      // Child negamax writes its PV to ctx.pvTable[1].
+      if (collectPV) ctx.pvTable[1] = [];
       const score = -negamax(
         newBoard,
         opponentColor(activeColor),
@@ -383,6 +419,7 @@ export function iterativeSearch(state: GameState, config: SearchConfig): SearchR
         -bestScoreThisDepth,
         ctx,
         null,
+        1,
       );
 
       if (ctx.timeExpired) break;
@@ -392,6 +429,9 @@ export function iterativeSearch(state: GameState, config: SearchConfig): SearchR
       if (score > bestScoreThisDepth) {
         bestScoreThisDepth = score;
         bestMoveThisDepth = move;
+        if (collectPV) {
+          bestChildPV = ctx.pvTable[1] ?? [];
+        }
       }
     }
 
@@ -402,6 +442,7 @@ export function iterativeSearch(state: GameState, config: SearchConfig): SearchR
         depth,
         nodesEvaluated: ctx.nodesEvaluated,
         rootMoveScores: currentRootScores,
+        ...(collectPV ? { pv: [bestMoveThisDepth, ...bestChildPV] as readonly Move[] } : {}),
       };
       previousBestMove = bestMoveThisDepth;
 

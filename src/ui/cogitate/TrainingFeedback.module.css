@@ -1,0 +1,105 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 2px solid var(--ui-border, #444);
+  background-color: var(--ui-surface, #222);
+}
+
+.correct {
+  border-color: var(--quality-good, #4caf50);
+  background-color: color-mix(in srgb, var(--quality-good, #4caf50) 12%, transparent);
+}
+
+.acceptable {
+  border-color: var(--quality-inaccuracy, #ffc107);
+  background-color: color-mix(in srgb, var(--quality-inaccuracy, #ffc107) 12%, transparent);
+}
+
+.incorrect {
+  border-color: var(--quality-blunder, #f44336);
+  background-color: color-mix(in srgb, var(--quality-blunder, #f44336) 12%, transparent);
+}
+
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.verdictIcon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.comparison {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  row-gap: 0.25rem;
+  column-gap: 0.75rem;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.label {
+  color: var(--ui-text-secondary, #bbb);
+  font-weight: 600;
+}
+
+.notation {
+  font-family: var(--ui-font-mono, 'Fira Code', monospace);
+}
+
+.score {
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-secondary, #bbb);
+}
+
+.diffRow {
+  font-size: 0.9rem;
+  color: var(--ui-text-secondary, #bbb);
+}
+
+.context {
+  font-size: 0.85rem;
+  color: var(--ui-text-secondary, #bbb);
+  border-top: 1px solid var(--ui-border, #444);
+  padding-top: 0.5rem;
+}
+
+.alternatives {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.alternativesHeading {
+  font-weight: 600;
+  color: var(--ui-text-secondary, #bbb);
+  margin: 0;
+}
+
+.alternativeItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.altNotation {
+  font-family: var(--ui-font-mono, 'Fira Code', monospace);
+}
+
+.altScore {
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-secondary, #bbb);
+}
+
+.highlightPlayerAlt {
+  font-weight: 600;
+  color: var(--ui-text, #fff);
+}

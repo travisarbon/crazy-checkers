@@ -6,11 +6,20 @@
  */
 
 import { wrap, type Remote } from 'comlink';
-import type { GameState, Move } from '../engine/types';
+import type { BoardState, GameState, Move, PieceColor } from '../engine/types';
 import type { Difficulty } from './difficulty';
 import { getDifficultyConfig, toSearchConfig, selectMove } from './difficulty';
 import { iterativeSearch } from './search';
+import type { SearchConfig } from './search';
 import type { WorkerApi, SerializableGameState } from './worker';
+import {
+  analyzePosition as workerAnalyzePosition,
+  batchAnalyze as workerBatchAnalyze,
+  evaluatePosition as workerEvaluatePosition,
+  cancelAnalysis as workerCancelAnalysis,
+} from './worker';
+import type { SerializedActiveEvent } from '../persistence/serialization';
+import type { AnalysisResult, NormalizedEvaluation } from '../cogitate/types';
 
 // ---------------------------------------------------------------------------
 // Serialization
@@ -174,4 +183,110 @@ export function terminateWorker(): void {
 export function _resetForTesting(): void {
   terminateWorker();
   fallbackMode = false;
+}
+
+// ---------------------------------------------------------------------------
+// Cogitate analysis client (Task 21.1)
+// ---------------------------------------------------------------------------
+
+const ANALYSIS_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${label}_TIMEOUT`));
+    }, timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId !== undefined) clearTimeout(timeoutId);
+  }) as Promise<T>;
+}
+
+/** Runs a full minimax analysis on a single position. */
+export async function requestAnalysis(
+  board: BoardState,
+  activeColor: PieceColor,
+  modeId: string,
+  activeEvents: readonly SerializedActiveEvent[],
+  config: SearchConfig,
+): Promise<AnalysisResult> {
+  const api = getWorkerApi();
+  const computation: Promise<AnalysisResult> = api
+    ? (async () =>
+        api.analyzePosition(
+          board,
+          activeColor,
+          modeId,
+          activeEvents as SerializedActiveEvent[],
+          config,
+        ))()
+    : Promise.resolve(
+        workerAnalyzePosition(board, activeColor, modeId, activeEvents, config),
+      );
+
+  try {
+    return await withTimeout(computation, ANALYSIS_TIMEOUT_MS, 'ANALYSIS');
+  } catch (error) {
+    if (error instanceof Error && error.message === 'ANALYSIS_TIMEOUT') {
+      console.warn(`Analysis timed out after ${String(ANALYSIS_TIMEOUT_MS)}ms; falling back to main thread.`);
+      terminateWorker();
+      return workerAnalyzePosition(board, activeColor, modeId, activeEvents, config);
+    }
+    throw error;
+  }
+}
+
+/** Runs analyses for a batch of positions in the worker. */
+export async function requestBatchAnalysis(
+  positions: ReadonlyArray<{
+    board: BoardState;
+    activeColor: PieceColor;
+    activeEvents: readonly SerializedActiveEvent[];
+  }>,
+  modeId: string,
+  config: SearchConfig,
+): Promise<AnalysisResult[]> {
+  const api = getWorkerApi();
+  if (api) {
+    return api.batchAnalyze(
+      positions as Array<{
+        board: BoardState;
+        activeColor: PieceColor;
+        activeEvents: SerializedActiveEvent[];
+      }>,
+      modeId,
+      config,
+    );
+  }
+  return workerBatchAnalyze(positions, modeId, config);
+}
+
+/** Runs a lightweight static evaluation on a single position. */
+export async function requestEvaluation(
+  board: BoardState,
+  activeColor: PieceColor,
+  modeId: string,
+  activeEvents: readonly SerializedActiveEvent[],
+): Promise<NormalizedEvaluation> {
+  const api = getWorkerApi();
+  if (api) {
+    return api.evaluatePosition(
+      board,
+      activeColor,
+      modeId,
+      activeEvents as SerializedActiveEvent[],
+    );
+  }
+  return workerEvaluatePosition(board, activeColor, modeId, activeEvents);
+}
+
+/** Signals in-progress batch analyses to stop. */
+export function cancelAnalysis(): void {
+  const api = getWorkerApi();
+  if (api) {
+    void api.cancelAnalysis();
+    return;
+  }
+  workerCancelAnalysis();
 }
