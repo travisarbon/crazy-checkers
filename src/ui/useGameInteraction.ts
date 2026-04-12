@@ -358,10 +358,18 @@ export function useGameInteraction({
 
           // Marching Orders: the 32-square board can't represent intermediate
           // light-square positions, so execute multi-jump moves atomically.
+          //
+          // Leapfrog: friendly-piece leapfrogs produce hops that have no
+          // captured square, so per-hop click processing (which identifies
+          // each hop by its captured piece) cannot encode a mixed chain of
+          // friendly leapfrogs + enemy captures. Execute atomically instead.
           const marchingOrdersActive = gameState.activeEvents.some(
             e => e.type === CrazyEvent.MarchingOrders,
           );
-          if (marchingOrdersActive) {
+          const leapfrogActive = gameState.activeEvents.some(
+            e => e.type === CrazyEvent.Leapfrog,
+          );
+          if (marchingOrdersActive || leapfrogActive) {
             const fullMove = movesForDest.find(m => m.captured.length > 0);
             if (fullMove) {
               clearSelection();

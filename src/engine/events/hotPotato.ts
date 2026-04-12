@@ -43,8 +43,8 @@ export function switchPieceColor(board: BoardState, sq: Square): BoardState {
   return setBoardSquare(board, sq, newPiece);
 }
 
-/** Interval for permanent Imposter: fire every 3 turns (6 plies). */
-const PERMANENT_FIRE_INTERVAL = 6;
+/** Interval for permanent Imposter: fire every 2.5 rounds (5 plies). */
+const PERMANENT_FIRE_INTERVAL = 5;
 
 export class HotPotatoDecorator extends EventDecorator {
   getEventType(): CrazyEvent {
@@ -69,7 +69,7 @@ export class HotPotatoDecorator extends EventDecorator {
 
     if (matchingEntries.length === 0) return result;
 
-    // For permanent events, use periodic firing (every 3 turns = 6 plies)
+    // For permanent events, use periodic firing (every 2.5 rounds = 5 plies)
     const permanentEntry = matchingEntries.find(e => e.permanent === true);
     if (permanentEntry) {
       const metadata = (permanentEntry.metadata ?? {}) as Record<string, unknown>;
