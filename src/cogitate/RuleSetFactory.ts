@@ -72,20 +72,34 @@ function crazyFactoryFactory(): RuleSetFactoryFn {
 function choiceFactoryFactory(permanentEvent: CrazyEvent | null): RuleSetFactoryFn {
   return (events?: readonly SerializedActiveEvent[]): RuleSet => {
     const composite = createCompositeRuleSet(createAmericanRules());
+    const deserialized = events ? deserializeEvents(events) : [];
+
+    // Prefer the caller-provided permanent event entry when present —
+    // it carries live metadata (MarchingOrders.orthogonalGrid,
+    // Wormhole.portals, TimeBomb countdown, Haunted.ghosts, etc.).
+    // Without this the AI worker would rebuild the permanent event
+    // from scratch without metadata, its ruleSet would diverge from
+    // the client's, and the move it returns could be rejected by the
+    // client's legality check — which silently aborts the AI turn.
+    const providedPermanent =
+      permanentEvent !== null
+        ? deserialized.find((e) => e.type === permanentEvent)
+        : undefined;
+
     const combined: ActiveEvent[] = [];
     if (permanentEvent != null) {
-      combined.push({
-        type: permanentEvent,
-        remainingPlies: -1,
-        triggeredBy: 'WHITE' as PieceColor,
-        triggeredAtPly: 0,
-        permanent: true,
-      });
+      combined.push(
+        providedPermanent ?? {
+          type: permanentEvent,
+          remainingPlies: -1,
+          triggeredBy: 'WHITE' as PieceColor,
+          triggeredAtPly: 0,
+          permanent: true,
+        },
+      );
     }
-    if (events) {
-      for (const e of deserializeEvents(events)) {
-        if (permanentEvent == null || e.type !== permanentEvent) combined.push(e);
-      }
+    for (const e of deserialized) {
+      if (permanentEvent == null || e.type !== permanentEvent) combined.push(e);
     }
     composite.setActiveEvents(combined);
     return composite;

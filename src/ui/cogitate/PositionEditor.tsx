@@ -25,6 +25,25 @@ export interface PositionEditorProps {
   readonly className?: string;
 }
 
+/** Mini crown matching the SVG on the real board (see Piece.tsx). */
+function CrownMark() {
+  return (
+    <svg
+      viewBox="-16 -16 32 32"
+      width="1.4rem"
+      height="1.4rem"
+      aria-hidden="true"
+      focusable={false}
+    >
+      <path
+        d="M -12,6 L -8,-6 L -4,2 L 0,-6 L 4,2 L 8,-6 L 12,6 Z"
+        transform="translate(0, 4)"
+        fill="var(--ui-accent)"
+      />
+    </svg>
+  );
+}
+
 function PieceIcon({ piece }: { readonly piece: PieceDefinition }) {
   const classes = [
     styles.pieceIcon,
@@ -32,7 +51,7 @@ function PieceIcon({ piece }: { readonly piece: PieceDefinition }) {
   ].join(' ');
   return (
     <span className={classes} aria-hidden="true">
-      {piece.type === PieceType.King ? <span className={styles.kingMark}>K</span> : null}
+      {piece.type === PieceType.King ? <CrownMark /> : null}
     </span>
   );
 }
