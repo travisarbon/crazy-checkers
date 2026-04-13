@@ -40,11 +40,17 @@ import { getBoardSquare, squareToGrid } from '../../engine/board';
 import { computeZobristHash } from '../../engine/zobrist';
 import { makeMove } from '../../engine/game';
 import { EVENT_METADATA_FACTORIES } from '../../engine/events';
-import { getAdapter } from '../../cogitate/CogitateGameAdapter';
+import {
+  getAdapter,
+  listRegisteredAdapterIds,
+} from '../../cogitate/CogitateGameAdapter';
 import type { CogitateGameAdapter } from '../../cogitate/CogitateGameAdapter';
 import '../../cogitate/adapters/registerAll';
 import { CHOICE_MODE_DATA } from '../../persistence/choiceModeData';
 import { choiceDisplayNameToId } from '../../cogitate/adapters/choiceAdapter';
+import { evaluateFullUnlocks } from '../../persistence/unlockEvaluator';
+import type { UnlockEvaluation } from '../../persistence/unlockEvaluator';
+import { getClassifiedByWave } from '../../persistence/gameModeRegistry';
 import { recordGame } from '../../persistence/gameHistory';
 import { serializeBoard } from '../../persistence/serialization';
 import type { SerializedActiveEvent } from '../../persistence/serialization';
@@ -303,6 +309,80 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [arrowFrom, setArrowFrom] = useState<Square | null>(null);
 
+  // Load the player's unlock state so we only advertise modes they've
+  // actually unlocked. Classic and Crazy are always playable; Chaos,
+  // specific Choice modes, and Classified games are gated.
+  const [unlockEvaluation, setUnlockEvaluation] =
+    useState<UnlockEvaluation | null>(null);
+  useEffect(() => {
+    const state = { cancelled: false };
+    void (async () => {
+      try {
+        const evaluation = await evaluateFullUnlocks();
+        if (!state.cancelled) setUnlockEvaluation(evaluation);
+      } catch (err) {
+        console.warn('[FreePlay] failed to load unlock state', err);
+      }
+    })();
+    return () => { state.cancelled = true; };
+  }, []);
+
+  const availableModeIds = useMemo<readonly string[]>(() => {
+    const all = listRegisteredAdapterIds();
+    // Before the unlock evaluation resolves, show the safe baseline
+    // (Classic + Crazy) so the selector never briefly advertises locked
+    // modes that would then disappear.
+    if (!unlockEvaluation) {
+      return all.filter((id) => id === 'classic' || id === 'crazy');
+    }
+    const unlockedChoiceIds = new Set<string>();
+    for (const status of unlockEvaluation.choiceModes.values()) {
+      if (status.unlocked) unlockedChoiceIds.add(status.registryId);
+    }
+    // Classified games unlock sequentially based on Hard CPU wins
+    // (chaosGate.gates.classifiedHardWins.current). Determine the
+    // unlocked count and compare to each game's classifiedIndex.
+    const classifiedGamesUnlocked =
+      unlockEvaluation.chaosGate.gates.classifiedHardWins.current;
+    const allClassified: ReadonlySet<string> = new Set(
+      (() => {
+        const set = new Set<string>();
+        for (let wave = 1; wave <= 8; wave += 1) {
+          for (const entry of getClassifiedByWave(wave)) {
+            if (
+              entry.classifiedIndex !== null &&
+              entry.classifiedIndex <= classifiedGamesUnlocked
+            ) {
+              set.add(entry.id);
+            }
+          }
+        }
+        return set;
+      })(),
+    );
+
+    return all.filter((id) => {
+      if (id === 'classic' || id === 'crazy') return true;
+      if (id === 'chaos') return unlockEvaluation.snapshot.chaosUnlocked;
+      if (id.startsWith('choice-')) return unlockedChoiceIds.has(id);
+      if (id.startsWith('classified-')) return allClassified.has(id);
+      return true;
+    });
+  }, [unlockEvaluation]);
+
+  // If the selected mode just became unavailable (e.g., the user
+  // cleared a code unlock while staying in the Free Play editor),
+  // snap back to Classic so the adapter lookup never fails. The
+  // state-setter-during-render pattern avoids the effect-in-render
+  // warning and runs the correction on the very next render pass.
+  if (
+    availableModeIds.length > 0 &&
+    !availableModeIds.includes(selectedModeId) &&
+    selectedModeId !== DEFAULT_MODE_ID
+  ) {
+    setSelectedModeId(DEFAULT_MODE_ID);
+  }
+
   // Marching Orders is "active in the editor" if it's either:
   //   (a) a user-toggled event (Crazy/Chaos modes via EventEditor), or
   //   (b) the selected mode's baked-in permanent event (e.g. the
@@ -511,6 +591,7 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
         <GameModeSelector
           selectedModeId={selectedModeId}
           onModeSelect={setSelectedModeId}
+          availableModeIds={availableModeIds}
         />
       </header>
 
