@@ -28,7 +28,7 @@
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   white-space: nowrap;
   z-index: var(--z-dropdown);
 }
@@ -86,7 +86,7 @@
 
   .multiJumpBanner {
     top: -1.5rem;
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
   }
 }
 

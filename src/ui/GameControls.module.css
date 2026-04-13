@@ -13,15 +13,20 @@
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--ui-text);
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: background var(--duration-fast) ease, opacity var(--duration-fast) ease, transform 100ms ease;
 }
 
 .controlButton:hover:not(:disabled) {
   background: var(--ui-accent);
   color: var(--ui-bg);
+  transform: scale(1.02);
 }
 
 .controlButton:focus-visible {

@@ -50,6 +50,7 @@ import ActiveEventsIndicator from './ActiveEventsIndicator';
 import { useReplayNavigation } from './useReplayNavigation';
 import AnalysisDetailPanel from './AnalysisDetailPanel';
 import QualitySummaryBar from './QualitySummaryBar';
+import CogitateToolHeader from './CogitateToolHeader';
 import styles from './AnalysisTool.module.css';
 
 export interface AnalysisToolProps {
@@ -112,17 +113,15 @@ export default function AnalysisTool({ onBack, initialGameId }: AnalysisToolProp
   if (phase.kind === 'select') {
     return (
       <div className={styles.root} data-testid="analysis-tool">
-        <header className={styles.selectHeader}>
-          <button
-            type="button"
-            className={styles.backButton}
-            onClick={onBack}
-            data-testid="analysis-back-to-home"
-          >
-            &larr; Back
-          </button>
-          <h2 className={styles.title}>Select a game to analyze</h2>
-        </header>
+        <CogitateToolHeader
+          title="Select a game to analyze"
+          onBack={onBack}
+          backLabel="Back"
+          backTestId="analysis-back-to-home"
+          headerClassName={styles.selectHeader}
+          backButtonClassName={styles.backButton}
+          titleClassName={styles.title}
+        />
         {selectionError && (
           <p className={styles.error} role="alert" data-testid="analysis-selection-error">
             {selectionError}
@@ -438,27 +437,18 @@ function AnalysisView({
       ref={containerRef}
       tabIndex={-1}
     >
-      <header className={styles.replayHeader}>
-        <button
-          type="button"
-          className={styles.backButton}
-          onClick={onBackToSelect}
-          data-testid="analysis-back-to-select"
-        >
-          &larr; Games
-        </button>
-        <h2 className={styles.title}>
-          Analysis: {modeDisplayName} — {formatPlayerLabel(game.playerWhite)} vs {formatPlayerLabel(game.playerBlack)}
-        </h2>
-        <button
-          type="button"
-          className={styles.homeLink}
-          onClick={onBackToHome}
-          data-testid="analysis-back-to-cogitate-home"
-        >
-          Cogitate home
-        </button>
-      </header>
+      <CogitateToolHeader
+        title={`Analysis: ${modeDisplayName} — ${formatPlayerLabel(game.playerWhite)} vs ${formatPlayerLabel(game.playerBlack)}`}
+        onBack={onBackToSelect}
+        backLabel="Games"
+        backTestId="analysis-back-to-select"
+        onHome={onBackToHome}
+        homeTestId="analysis-back-to-cogitate-home"
+        headerClassName={styles.replayHeader}
+        backButtonClassName={styles.backButton}
+        titleClassName={styles.title}
+        homeLinkClassName={styles.homeLink}
+      />
 
       <div className={styles.layout}>
         <div className={styles.boardPanel}>

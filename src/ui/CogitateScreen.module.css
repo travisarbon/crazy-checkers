@@ -90,7 +90,7 @@
   border: 1px solid var(--ui-accent, #3498db);
   background: var(--ui-accent, #3498db);
   color: var(--ui-accent-contrast, #fff);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   cursor: pointer;
   min-height: 44px;
   transition: background 200ms ease, border-color 200ms ease;

@@ -9,6 +9,7 @@ import ModeScreenShell from './ModeScreenShell';
 import BoardPreviewLarge from './BoardPreviewLarge';
 import ExpandableDetailPanel from './ExpandableDetailPanel';
 import PuzzleSelector from './PuzzleSelector';
+import Icon, { type IconName } from './Icon';
 import { getAllChallengeRecords, computeChallengeProgress } from '../persistence/challengeRecords';
 import type { ChallengeProgressSnapshot, PuzzleSummary } from '../persistence/challengeRecords';
 import { PUZZLE_DATA } from '../data/puzzleData';
@@ -42,11 +43,50 @@ function formatTimeShort(ms: number): string {
 // Inline sub-components
 // ---------------------------------------------------------------------------
 
-function StatCard({ label, value, testId }: { label: string; value: string; testId: string }) {
+function StatCard({
+  label,
+  value,
+  testId,
+  icon,
+  emptyValue = '\u2014',
+  emptyHint,
+}: {
+  label: string;
+  value: string;
+  testId: string;
+  icon?: IconName;
+  emptyValue?: string;
+  emptyHint?: string;
+}) {
+  const isEmpty = value === emptyValue;
   return (
     <div className={styles.statCard} data-testid={testId}>
+      {icon && (
+        <span
+          aria-hidden="true"
+          style={{
+            color: 'var(--ui-accent)',
+            display: 'inline-flex',
+            marginBottom: '0.25rem',
+          }}
+        >
+          <Icon name={icon} size={22} />
+        </span>
+      )}
       <span className={styles.statLabel}>{label}</span>
       <span className={styles.statValue}>{value}</span>
+      {isEmpty && emptyHint && (
+        <span
+          style={{
+            fontSize: '0.7rem',
+            opacity: 0.7,
+            lineHeight: 1.3,
+            textAlign: 'center',
+          }}
+        >
+          {emptyHint}
+        </span>
+      )}
     </div>
   );
 }
@@ -186,21 +226,27 @@ export default function ChallengeScreen({ onBack, onStartPuzzle }: ChallengeScre
               label="Completed"
               value={String(puzzlesCompleted) + ' / 100'}
               testId="stat-completed"
+              icon="check"
             />
             <StatCard
               label="Avg Rating"
               value={puzzlesCompleted > 0 ? averageRating.toFixed(1) + ' \u2605' : '\u2014'}
               testId="stat-avg-rating"
+              icon="sparkles"
+              emptyHint="Complete a puzzle to earn stars"
             />
             <StatCard
               label="Best Time"
               value={bestTimeMs !== null ? formatTimeShort(bestTimeMs) : '\u2014'}
               testId="stat-best-time"
+              icon="trophy"
+              emptyHint="Solve a puzzle to set your best time"
             />
             <StatCard
               label="Streak"
               value={String(currentStreak)}
               testId="stat-streak"
+              icon="chart"
             />
           </div>
           <div className={styles.actionRow}>

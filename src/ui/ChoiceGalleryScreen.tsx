@@ -83,6 +83,22 @@ const TRACK_SHORT_NAMES: ReadonlyMap<string, string> = new Map([
   ['world-player', 'WP'],
 ]);
 
+const TRACK_FULL_NAMES: ReadonlyMap<string, string> = new Map([
+  ['puzzle-mastery', 'Puzzle Mastery'],
+  ['chaos-veteran', 'Chaos Veteran'],
+  ['rule-bender', 'Rule Bender'],
+  ['lifer', 'Lifer'],
+  ['world-player', 'World Player'],
+]);
+
+const TRACK_COLORS: ReadonlyMap<string, string> = new Map([
+  ['puzzle-mastery', '#4a90d9'],
+  ['chaos-veteran', '#d94a4a'],
+  ['rule-bender', '#4ad94a'],
+  ['lifer', '#d9b44a'],
+  ['world-player', '#9b4ad9'],
+]);
+
 // ---------------------------------------------------------------------------
 // Cycling helpers
 // ---------------------------------------------------------------------------
@@ -131,6 +147,8 @@ function GalleryCard({
   const isLocked = !(unlockStatus?.unlocked ?? false);
   const trackBadgeClass = TRACK_BADGE_CLASSES.get(mode.track) ?? '';
   const trackShort = TRACK_SHORT_NAMES.get(mode.track) ?? '';
+  const trackFull = TRACK_FULL_NAMES.get(mode.track) ?? '';
+  const trackColor = TRACK_COLORS.get(mode.track) ?? 'var(--ui-accent)';
 
   const cardClasses = [styles.card];
   if (isLocked) cardClasses.push(styles.cardLocked);
@@ -146,11 +164,13 @@ function GalleryCard({
           : `${mode.displayName} \u2014 ${mode.description}`
       }
       data-testid={`choice-card-${String(mode.choiceNumber)}`}
+      style={{ borderLeft: `4px solid ${trackColor}` }}
+      title={`${mode.displayName} · ${trackFull}`}
     >
       <span className={styles.modeNumber}>#{String(mode.choiceNumber)}</span>
       <div className={styles.cardPreview}>
         <BoardPreviewLarge
-          size={80}
+          size={96}
           position={getEventModifiedPosition(mode.event ?? null)}
           highlightSquares={CHOICE_HIGHLIGHT_SQUARES.get(mode.choiceNumber) as number[] | undefined}
           label={`${mode.displayName} board preview`}
@@ -301,6 +321,50 @@ export default function ChoiceGalleryScreen({
       <p className={styles.unlockSummary} data-testid="unlock-summary">
         {String(totalUnlocked)} / 40 modes unlocked
       </p>
+
+      {/* Track legend — explains the two-letter badges + color-coded left border */}
+      <div
+        aria-label="Track badge legend"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.5rem 0.75rem',
+          padding: '0.5rem 0.75rem',
+          marginBottom: '0.75rem',
+          border: '1px solid color-mix(in srgb, var(--ui-accent) 20%, transparent)',
+          borderRadius: 'var(--radius-md, 6px)',
+          fontSize: '0.75rem',
+        }}
+        data-testid="choice-track-legend"
+      >
+        {[...TRACK_FULL_NAMES.entries()].map(([trackId, fullName]) => {
+          const color = TRACK_COLORS.get(trackId) ?? 'var(--ui-accent)';
+          const short = TRACK_SHORT_NAMES.get(trackId) ?? '';
+          return (
+            <span
+              key={trackId}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: '0.75rem',
+                  height: '0.75rem',
+                  borderRadius: '2px',
+                  background: color,
+                  display: 'inline-block',
+                }}
+              />
+              <strong style={{ color }}>{short}</strong>
+              <span style={{ opacity: 0.75 }}>{fullName}</span>
+            </span>
+          );
+        })}
+      </div>
 
       {/* Gallery grid — locked modes are hidden entirely */}
       <div className={styles.gallery} role="grid" aria-label="Choice mode gallery">

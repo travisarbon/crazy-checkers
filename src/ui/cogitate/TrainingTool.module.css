@@ -15,7 +15,7 @@
 }
 
 .title {
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   margin: 0;
 }
 
@@ -32,6 +32,12 @@
 .backButton:hover,
 .homeLink:hover {
   background: var(--ui-surface-hover, rgba(255, 255, 255, 0.06));
+}
+
+.backButton:focus-visible,
+.homeLink:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
 }
 
 .selectBody {
@@ -109,7 +115,7 @@
 }
 
 .contextLabel {
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--ui-text-secondary, #bbb);
 }
 
@@ -127,7 +133,12 @@
   padding: 0.5rem 1rem;
   border-radius: 0.35rem;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
+}
+
+.actionButton:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
 }
 
 .actionButton:disabled {
@@ -192,9 +203,14 @@
   border: 1px solid var(--ui-border, #555);
   color: var(--ui-text, inherit);
   padding: 0.25rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   cursor: pointer;
   font-size: 0.85rem;
+}
+
+.modeChip:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
 }
 
 .modeChipActive {

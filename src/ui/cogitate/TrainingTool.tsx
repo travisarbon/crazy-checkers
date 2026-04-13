@@ -33,6 +33,7 @@ import ActiveEventsIndicator from './ActiveEventsIndicator';
 import TrainingProgressBar from './TrainingProgressBar';
 import TrainingFeedback from './TrainingFeedback';
 import { useTrainingSession } from './useTrainingSession';
+import CogitateToolHeader from './CogitateToolHeader';
 import styles from './TrainingTool.module.css';
 
 export interface TrainingToolProps {
@@ -100,25 +101,18 @@ export default function TrainingTool({
   if (toolPhase === 'select') {
     return (
       <div className={styles.root} data-testid="training-tool" data-phase="select">
-        <header className={styles.selectHeader}>
-          <button
-            type="button"
-            className={styles.backButton}
-            onClick={onBack}
-            data-testid="training-back-to-home"
-          >
-            &larr; Back
-          </button>
-          <h2 className={styles.title}>Training — choose a source</h2>
-          <button
-            type="button"
-            className={styles.homeLink}
-            onClick={onBack}
-            data-testid="training-select-home-shortcut"
-          >
-            Cogitate home
-          </button>
-        </header>
+        <CogitateToolHeader
+          title="Training — choose a source"
+          onBack={onBack}
+          backLabel="Back"
+          backTestId="training-back-to-home"
+          onHome={onBack}
+          homeTestId="training-select-home-shortcut"
+          headerClassName={styles.selectHeader}
+          backButtonClassName={styles.backButton}
+          titleClassName={styles.title}
+          homeLinkClassName={styles.homeLink}
+        />
 
         <div className={styles.actionBar}>
           <button
@@ -339,17 +333,15 @@ function TrainingSession({
         data-testid="training-tool"
         data-phase="summary"
       >
-        <header className={styles.trainingHeader}>
-          <button
-            type="button"
-            className={styles.backButton}
-            onClick={onBackToSelect}
-            data-testid="training-back-from-summary"
-          >
-            &larr; Sources
-          </button>
-          <h2 className={styles.title}>Training Session Complete</h2>
-        </header>
+        <CogitateToolHeader
+          title="Training Session Complete"
+          onBack={onBackToSelect}
+          backLabel="Sources"
+          backTestId="training-back-from-summary"
+          headerClassName={styles.trainingHeader}
+          backButtonClassName={styles.backButton}
+          titleClassName={styles.title}
+        />
         <div className={styles.summary} data-testid="training-summary">
           <div className={styles.summaryStat}>
             <span>Positions attempted</span>
@@ -417,25 +409,18 @@ function TrainingSession({
       ref={containerRef}
       tabIndex={-1}
     >
-      <header className={styles.trainingHeader}>
-        <button
-          type="button"
-          className={styles.backButton}
-          onClick={onBackToSelect}
-          data-testid="training-back-to-select"
-        >
-          &larr; Sources
-        </button>
-        <h2 className={styles.title}>Training</h2>
-        <button
-          type="button"
-          className={styles.homeLink}
-          onClick={onBackToHome}
-          data-testid="training-back-to-cogitate-home"
-        >
-          Cogitate home
-        </button>
-      </header>
+      <CogitateToolHeader
+        title="Training"
+        onBack={onBackToSelect}
+        backLabel="Sources"
+        backTestId="training-back-to-select"
+        onHome={onBackToHome}
+        homeTestId="training-back-to-cogitate-home"
+        headerClassName={styles.trainingHeader}
+        backButtonClassName={styles.backButton}
+        titleClassName={styles.title}
+        homeLinkClassName={styles.homeLink}
+      />
 
       <div className={styles.layout}>
         <div className={styles.boardPanel}>

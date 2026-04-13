@@ -35,14 +35,14 @@
 
 .eventName {
   font-size: 1.75rem;
-  font-weight: 700;
+  font-weight: var(--font-bold);
   color: var(--ui-accent);
   margin: 0;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 .eventFlavor {
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   font-style: italic;
   color: var(--ui-text, #fff);
   opacity: 1;
@@ -84,6 +84,6 @@
   }
 
   .eventFlavor {
-    font-size: 1rem;
+    font-size: var(--text-base);
   }
 }

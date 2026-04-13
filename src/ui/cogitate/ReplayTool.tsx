@@ -29,6 +29,7 @@ import MoveTimeline from '../MoveTimeline';
 import GameHistoryBrowser from '../GameHistoryBrowser';
 import { useEventOverlays } from '../useEventOverlays';
 import ActiveEventsIndicator from './ActiveEventsIndicator';
+import CogitateToolHeader from './CogitateToolHeader';
 import { useReplayNavigation } from './useReplayNavigation';
 import { formatEvaluationScore } from '../EvaluationBar';
 import { formatPlayerLabel } from '../../utils/formatting';
@@ -120,17 +121,15 @@ export default function ReplayTool({ onBack, initialGameId }: ReplayToolProps) {
   if (phase.kind === 'select') {
     return (
       <div className={styles.root} data-testid="replay-tool">
-        <header className={styles.selectHeader}>
-          <button
-            type="button"
-            className={styles.backButton}
-            onClick={onBack}
-            data-testid="replay-back-to-home"
-          >
-            &larr; Back
-          </button>
-          <h2 className={styles.title}>Select a game to replay</h2>
-        </header>
+        <CogitateToolHeader
+          title="Select a game to replay"
+          onBack={onBack}
+          backLabel="Back"
+          backTestId="replay-back-to-home"
+          headerClassName={styles.selectHeader}
+          backButtonClassName={styles.backButton}
+          titleClassName={styles.title}
+        />
         {selectionError && (
           <p className={styles.error} role="alert" data-testid="replay-selection-error">
             {selectionError}
@@ -284,27 +283,18 @@ function ReplayView({ game, adapter, onBackToSelect, onBackToHome }: ReplayViewP
       ref={containerRef}
       tabIndex={-1}
     >
-      <header className={styles.replayHeader}>
-        <button
-          type="button"
-          className={styles.backButton}
-          onClick={onBackToSelect}
-          data-testid="replay-back-to-select"
-        >
-          &larr; Games
-        </button>
-        <h2 className={styles.title}>
-          Replay: {modeDisplayName} — {formatPlayerLabel(game.playerWhite)} vs {formatPlayerLabel(game.playerBlack)}
-        </h2>
-        <button
-          type="button"
-          className={styles.homeLink}
-          onClick={onBackToHome}
-          data-testid="replay-back-to-cogitate-home"
-        >
-          Cogitate home
-        </button>
-      </header>
+      <CogitateToolHeader
+        title={`Replay: ${modeDisplayName} — ${formatPlayerLabel(game.playerWhite)} vs ${formatPlayerLabel(game.playerBlack)}`}
+        onBack={onBackToSelect}
+        backLabel="Games"
+        backTestId="replay-back-to-select"
+        onHome={onBackToHome}
+        homeTestId="replay-back-to-cogitate-home"
+        headerClassName={styles.replayHeader}
+        backButtonClassName={styles.backButton}
+        titleClassName={styles.title}
+        homeLinkClassName={styles.homeLink}
+      />
 
       <div className={styles.layout}>
         <div className={styles.boardPanel}>

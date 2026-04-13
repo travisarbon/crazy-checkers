@@ -15,7 +15,7 @@
 }
 
 .title {
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   margin: 0;
 }
 
@@ -26,6 +26,11 @@
   padding: 0.35rem 0.75rem;
   border-radius: 0.35rem;
   cursor: pointer;
+}
+
+.backButton:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
 }
 
 .layout {
@@ -80,9 +85,9 @@
   padding: 0.5rem 1rem;
   border-radius: var(--radius-md, 6px);
   cursor: pointer;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   margin-top: 0.5rem;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 .startButton:focus-visible {
@@ -95,7 +100,7 @@
 }
 
 .startButton:disabled {
-  opacity: var(--opacity-disabled, 0.4);
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
@@ -115,7 +120,7 @@
 .setupLegend {
   padding: 0 0.4rem;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--ui-accent);
@@ -136,7 +141,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: var(--z-modal-backdrop);
 }
 
 .loadModalContent {
@@ -171,14 +176,14 @@
 
 .actionButton {
   flex: 1;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0.4rem 0.75rem;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--ui-bg);
   background: var(--ui-accent);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
 }
 
@@ -186,8 +191,13 @@
   opacity: 0.9;
 }
 
+.actionButton:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
 .actionButton:disabled {
-  opacity: 0.4;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
@@ -197,9 +207,9 @@
   gap: 0.4rem;
   padding: 0.85rem 1rem;
   margin-top: 0.75rem;
-  background: color-mix(in srgb, var(--ui-accent) 10%, transparent);
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
   border: 1px solid color-mix(in srgb, var(--ui-accent) 40%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   color: var(--ui-text, inherit);
   font-size: 0.95rem;
 }

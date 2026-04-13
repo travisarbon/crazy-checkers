@@ -27,8 +27,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
 }
 
 .verdictIcon {
@@ -47,7 +47,7 @@
 
 .label {
   color: var(--ui-text, #111);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 
 .notation {
@@ -79,7 +79,7 @@
 }
 
 .alternativesHeading {
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--ui-text, #111);
   margin: 0;
 }
@@ -100,6 +100,6 @@
 }
 
 .highlightPlayerAlt {
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--ui-text, #fff);
 }

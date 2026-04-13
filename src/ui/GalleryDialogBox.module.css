@@ -33,7 +33,7 @@
   background: transparent;
   border: none;
   color: var(--ui-text);
-  font-size: 1.5rem;
+  font-size: var(--text-xl);
   cursor: pointer;
   min-width: 44px;
   min-height: 44px;
@@ -60,7 +60,7 @@
 
 .title {
   font-size: 1.4rem;
-  font-weight: 700;
+  font-weight: var(--font-bold);
   color: var(--ui-accent);
   margin: 0 0 0.5rem;
 }
@@ -107,8 +107,8 @@
   border: none;
   border-radius: var(--radius-md);
   padding: 0.6rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   cursor: pointer;
   min-height: 44px;
   transition: opacity var(--duration-fast);

@@ -25,7 +25,7 @@
   flex: 1;
   min-height: 44px;
   padding: 0.5rem 0.75rem;
-  font-size: 1rem;
+  font-size: var(--text-base);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -44,8 +44,8 @@
 .redeemButton {
   min-height: 44px;
   padding: 0.5rem 1.25rem;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   color: var(--ui-bg);
   background: var(--ui-accent);
   border: none;
@@ -95,7 +95,7 @@
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-md);
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: var(--font-medium);
 }
 
 .success {
@@ -116,7 +116,7 @@
 }
 
 .checkmark {
-  font-weight: 700;
+  font-weight: var(--font-bold);
 }
 
 @keyframes successGlow {
@@ -162,7 +162,7 @@
 
 .historyCode {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--ui-accent);
   letter-spacing: 0.03em;
 }

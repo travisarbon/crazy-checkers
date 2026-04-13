@@ -63,7 +63,7 @@
 /* Mode number badge */
 .modeNumber {
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: var(--font-bold);
   opacity: 0.6;
   align-self: flex-start;
   padding-left: 0.25rem;
@@ -77,7 +77,7 @@
 /* Mode name and description/hint */
 .modeName {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   line-height: 1.2;
 }
 
@@ -96,7 +96,7 @@
 /* Track badge */
 .trackBadge {
   font-size: 0.6rem;
-  font-weight: 700;
+  font-weight: var(--font-bold);
   padding: 0.1rem 0.4rem;
   border-radius: var(--radius-sm);
   letter-spacing: 0.05em;
@@ -134,7 +134,7 @@
 }
 
 .eventCalloutLabel {
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--ui-accent);
   display: block;
   margin-bottom: 0.25rem;
@@ -151,7 +151,7 @@
 .unlockSummary {
   font-size: 0.85rem;
   color: var(--ui-accent);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   margin-bottom: 1rem;
 }
 

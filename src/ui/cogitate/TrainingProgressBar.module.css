@@ -15,8 +15,8 @@
 .segment {
   flex: 1;
   background-color: var(--quality-pending, #666);
-  border-radius: 2px;
-  transition: background-color 0.2s ease;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) ease;
 }
 
 .current {
@@ -53,12 +53,12 @@
   align-items: center;
   font-size: 0.85rem;
   color: var(--ui-text, #111);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 
 .streak {
   color: var(--quality-good, #4caf50);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 
 @keyframes pulse {

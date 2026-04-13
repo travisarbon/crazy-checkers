@@ -7,8 +7,8 @@
 }
 
 .sectionTitle {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   color: var(--ui-accent);
   margin: 0 0 0.75rem;
 }
@@ -69,7 +69,7 @@
 
 .statValue {
   font-size: 1.4rem;
-  font-weight: 700;
+  font-weight: var(--font-bold);
   color: var(--ui-accent);
 }
 
@@ -132,8 +132,8 @@
   border: none;
   border-radius: var(--radius-md);
   padding: 0.75rem 2rem;
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   cursor: pointer;
   min-height: 44px;
   min-width: 44px;
@@ -155,8 +155,8 @@
   border: 2px solid var(--ui-accent);
   border-radius: var(--radius-md);
   padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   cursor: pointer;
   min-height: 44px;
   min-width: 44px;
@@ -174,15 +174,15 @@
 
 .completeMessage {
   color: var(--ui-accent);
-  font-weight: 600;
-  font-size: 1.1rem;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-lg);
 }
 
 /* ── Expanded detail content ───────────────────────────────── */
 
 .subsectionTitle {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   color: var(--ui-accent);
   margin: 1.25rem 0 0.5rem;
 }
@@ -212,7 +212,7 @@
 
 .historyTable th {
   text-align: left;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   padding: 0.4rem 0.6rem;
   border-bottom: 2px solid color-mix(in srgb, var(--ui-accent) var(--tint-strong), transparent);
   white-space: nowrap;

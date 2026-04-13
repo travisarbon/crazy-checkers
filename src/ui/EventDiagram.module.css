@@ -11,8 +11,8 @@
 }
 
 .eventName {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   color: var(--ui-accent);
   margin: 0;
 }
@@ -40,12 +40,12 @@
 
 .boardLabel {
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--ui-accent);
 }
 
 .arrow {
-  font-size: 1.5rem;
+  font-size: var(--text-xl);
   color: var(--ui-accent);
   align-self: center;
   padding-top: 1.5rem;
@@ -67,7 +67,7 @@
   background: var(--ui-accent);
   color: var(--ui-bg);
   font-size: 0.7rem;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   padding: 0.15rem 0.4rem;
   border-radius: var(--radius-sm);
   white-space: nowrap;

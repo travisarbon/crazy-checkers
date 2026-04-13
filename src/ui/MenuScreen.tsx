@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 import { useAudioManager } from '../audio/useAudioManager';
 import { SoundEvent } from '../audio/types';
 import type { UnlockSnapshot } from '../persistence/unlockState';
+import Icon, { type IconName } from './Icon';
 import styles from './MenuScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -36,19 +37,20 @@ interface ModeEntry {
   /** null = always visible; otherwise, the key in UnlockSnapshot that gates visibility. */
   readonly visibilityGate: keyof UnlockSnapshot | null;
   readonly description: string;
+  readonly icon: IconName;
 }
 
 const MODES: readonly ModeEntry[] = [
-  { id: 'crazy', label: 'Crazy', enabled: true, visibilityGate: null, description: 'Checkers with chaotic events' },
-  { id: 'classic', label: 'Classic', enabled: true, visibilityGate: null, description: 'Standard American Rules Checkers' },
-  { id: 'challenge', label: 'Challenge', enabled: true, visibilityGate: null, description: 'Timed checkers puzzles' },
-  { id: 'code', label: 'Code', enabled: true, visibilityGate: null, description: 'Enter unlock codes' },
-  { id: 'cogitate', label: 'Cogitate', enabled: true, visibilityGate: null, description: 'Game review and analysis' },
-  { id: 'career', label: 'Career', enabled: true, visibilityGate: null, description: 'Statistics and progression' },
-  { id: 'configure', label: 'Configure', enabled: true, visibilityGate: null, description: 'Settings and themes' },
-  { id: 'choice', label: 'Choice', enabled: true, visibilityGate: 'choiceUnlocked', description: 'Permanent event checkers' },
-  { id: 'classified', label: 'Classified', enabled: true, visibilityGate: 'classifiedUnlocked', description: 'World game library' },
-  { id: 'chaos', label: 'Chaos', enabled: true, visibilityGate: 'chaosUnlocked', description: 'Ultimate chaos checkers' },
+  { id: 'crazy', label: 'Crazy', enabled: true, visibilityGate: null, description: 'Checkers with chaotic events', icon: 'sparkles' },
+  { id: 'classic', label: 'Classic', enabled: true, visibilityGate: null, description: 'Standard American Rules Checkers', icon: 'shield' },
+  { id: 'challenge', label: 'Challenge', enabled: true, visibilityGate: null, description: 'Timed checkers puzzles', icon: 'puzzle' },
+  { id: 'code', label: 'Code', enabled: true, visibilityGate: null, description: 'Enter unlock codes', icon: 'code' },
+  { id: 'cogitate', label: 'Cogitate', enabled: true, visibilityGate: null, description: 'Game review and analysis', icon: 'brain' },
+  { id: 'career', label: 'Career', enabled: true, visibilityGate: null, description: 'Statistics and progression', icon: 'trophy' },
+  { id: 'configure', label: 'Configure', enabled: true, visibilityGate: null, description: 'Settings and themes', icon: 'cog' },
+  { id: 'choice', label: 'Choice', enabled: true, visibilityGate: 'choiceUnlocked', description: 'Permanent event checkers', icon: 'crown' },
+  { id: 'classified', label: 'Classified', enabled: true, visibilityGate: 'classifiedUnlocked', description: 'World game library', icon: 'stack' },
+  { id: 'chaos', label: 'Chaos', enabled: true, visibilityGate: 'chaosUnlocked', description: 'Ultimate chaos checkers', icon: 'chaos' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -129,6 +131,7 @@ export default function MenuScreen({
                 handleModeClick(mode.id);
               }}
             >
+              <Icon name={mode.icon} size={28} />
               <span>{mode.label}</span>
               {!mode.enabled && <span className={styles.badge}>Coming Soon</span>}
             </button>

@@ -43,8 +43,8 @@
 }
 
 .title {
-  font-size: clamp(1.5rem, 4vw, 2.25rem);
-  font-weight: 700;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
   color: var(--ui-accent);
   margin: 0;
 }

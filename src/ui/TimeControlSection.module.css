@@ -10,7 +10,7 @@
 .presetPill {
   background: transparent;
   border: 2px solid color-mix(in srgb, var(--ui-accent) 25%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   color: var(--ui-text);
   padding: 0.4rem 1rem;
   font-size: 0.85rem;
@@ -104,7 +104,7 @@
 
 /* Mobile responsive */
 
-@media (max-width: 480px) {
+@media (max-width: 479px) {
   .presetGroup {
     justify-content: center;
   }

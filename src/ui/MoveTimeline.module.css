@@ -3,7 +3,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   font-family: 'Courier New', Courier, monospace;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--ui-text);
   background: rgba(0, 0, 0, 0.15);
   border-radius: var(--radius-md);
@@ -47,7 +47,7 @@
 .cellCurrent {
   background: var(--ui-accent);
   color: var(--ui-bg);
-  font-weight: 700;
+  font-weight: var(--font-bold);
   opacity: 0.9;
 }
 

@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import ConfirmDialog from './dialogs/ConfirmDialog';
+import Icon from './Icon';
 import styles from './GameControls.module.css';
 
 interface GameControlsProps {
@@ -96,7 +97,8 @@ export default function GameControls({
           aria-label="New Game"
           title="Start a new game"
         >
-          New Game
+          <Icon name="play-fresh" size={16} />
+          <span>New Game</span>
         </button>
         <button
           className={styles.controlButton}
@@ -105,7 +107,8 @@ export default function GameControls({
           aria-label={undoTooltip}
           title={undoTooltip}
         >
-          Undo{undoCountLabel ? ` ${undoCountLabel}` : ''}
+          <Icon name="undo" size={16} />
+          <span>Undo{undoCountLabel ? ` ${undoCountLabel}` : ''}</span>
         </button>
         <button
           className={styles.controlButton}
@@ -114,7 +117,8 @@ export default function GameControls({
           aria-label="Resign"
           title={isGameInProgress ? 'Resign the current game' : 'Game is over'}
         >
-          Resign
+          <Icon name="flag" size={16} />
+          <span>Resign</span>
         </button>
         {onMainMenu && (
           <button
@@ -123,7 +127,8 @@ export default function GameControls({
             aria-label="Return to main menu"
             title="Return to main menu"
           >
-            Main Menu
+            <Icon name="home" size={16} />
+            <span>Main Menu</span>
           </button>
         )}
       </div>

@@ -6,7 +6,7 @@
 
 .trackName {
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--ui-accent);
   margin: 0 0 0.75rem;
 }
@@ -54,7 +54,7 @@
 
 .milestoneComplete .milestoneMarker {
   color: var(--ui-accent);
-  font-weight: 700;
+  font-weight: var(--font-bold);
 }
 
 .milestoneIncomplete .milestoneMarker {
