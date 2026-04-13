@@ -333,7 +333,8 @@ function ReplayView({ game, adapter, onBackToSelect, onBackToHome }: ReplayViewP
           )}
           {game.activeEventsPerPly === undefined && adapter.modeId !== 'classic' && (
             <p className={styles.eventsFallback} data-testid="replay-events-fallback">
-              Event data not available for this game.
+              Event state wasn't recorded when this game was saved, so per-move event
+              indicators are unavailable. Move playback still works normally.
             </p>
           )}
           <div className={styles.timelineWrap}>
