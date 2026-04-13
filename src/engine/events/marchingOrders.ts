@@ -423,13 +423,37 @@ export class MarchingOrdersDecorator extends EventDecorator {
     return synced;
   }
 
+  /**
+   * Build a default 64-grid metadata from the 32-square board when the
+   * active MO event doesn't carry one yet. Used when the MO event was
+   * reconstructed from a persisted game record (or a mode registry
+   * factory) without a pre-seeded `orthogonalGrid`; without this, the
+   * decorator would silently bypass itself and the game would play as
+   * vanilla American Rules.
+   */
+  private buildDefaultMetadata(board: BoardState): MarchingOrdersMetadata {
+    const grid: (SerializedPiece | null)[] = new Array<SerializedPiece | null>(64).fill(null);
+    for (let sq = 1; sq <= 32; sq++) {
+      const piece = board[sq - 1];
+      if (piece) {
+        const { row, col } = squareToGrid(sq as Square);
+        grid[row * 8 + col] = { color: piece.color, type: piece.type };
+      }
+    }
+    const built: MarchingOrdersMetadata = { orthogonalGrid: grid, applied: false };
+    this.requestMetadataUpdate(
+      CrazyEvent.MarchingOrders,
+      built as unknown as Readonly<Record<string, unknown>>,
+    );
+    return built;
+  }
+
   override getLegalMoves(board: BoardState, activeColor: PieceColor): Move[] {
     if (!this.isActive(this.activeEventsContext)) {
       return this.inner.getLegalMoves(board, activeColor);
     }
 
-    let metadata = this.getMarchingOrdersMetadata();
-    if (!metadata) return this.inner.getLegalMoves(board, activeColor);
+    let metadata = this.getMarchingOrdersMetadata() ?? this.buildDefaultMetadata(board);
 
     // Sync grid with board in case instant events shuffled the board
     metadata = this.syncGridFromBoard(board, metadata);
@@ -489,8 +513,8 @@ export class MarchingOrdersDecorator extends EventDecorator {
       return this.inner.applyMove(board, move);
     }
 
-    let metadata = this.getMarchingOrdersMetadata();
-    if (!metadata) return this.inner.applyMove(board, move);
+    let metadata =
+      this.getMarchingOrdersMetadata() ?? this.buildDefaultMetadata(board);
 
     // Sync grid with board in case instant events shuffled the board
     metadata = this.syncGridFromBoard(board, metadata);
@@ -539,13 +563,12 @@ export class MarchingOrdersDecorator extends EventDecorator {
     if (legalMoves.length > 0) return null;
 
     // Count pieces from the 64-square grid, not the 32-square projection
-    const metadata = this.getMarchingOrdersMetadata();
+    const metadata =
+      this.getMarchingOrdersMetadata() ?? this.buildDefaultMetadata(board);
     let pieceCount = 0;
-    if (metadata) {
-      for (const cell of metadata.orthogonalGrid) {
-        if (cell !== null && cell.color === activeColor) {
-          pieceCount++;
-        }
+    for (const cell of metadata.orthogonalGrid) {
+      if (cell !== null && cell.color === activeColor) {
+        pieceCount++;
       }
     }
 

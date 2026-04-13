@@ -285,6 +285,14 @@ export function makeMove(state: GameState, move: Move): GameState {
     // ── Apply pending metadata updates after onTurnEnd ────────────────
     const metadataUpdates = state.ruleSet.drainPendingMetadataUpdates();
     updatedEvents = applyMetadataUpdates(updatedEvents, metadataUpdates);
+    // Propagate the just-merged metadata (e.g. Marching Orders'
+    // orthogonalGrid after a move) back to the composite so any caller
+    // that invokes ruleSet.getLegalMoves / checkGameOver between
+    // makeMove turns (UI useMemos, AI search) sees a fresh event
+    // context. Without this, the next getLegalMoves would run against
+    // the pre-move metadata and e.g. treat a pawn that just moved
+    // onto a light square as not existing.
+    state.ruleSet.setActiveEvents(updatedEvents);
   }
 
   // ── Check suppress-turn-switch signal (Double Time) ────────────────
