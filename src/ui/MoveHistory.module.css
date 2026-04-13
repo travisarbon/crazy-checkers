@@ -145,10 +145,13 @@
 
 /* ── Desktop adaptive height ────────────────────────────────── */
 
+/* Cap the scrollable move list on desktop so an ever-growing move
+   history can't push the rest of the sidebar (controls, clock) off
+   screen. The list scrolls internally past this height. */
 @media (min-width: 768px) {
   .scrollable {
-    max-height: none;
-    flex: 1;
+    max-height: min(35vh, 300px);
+    flex: 0 1 auto;
     min-height: 60px;
   }
 }
