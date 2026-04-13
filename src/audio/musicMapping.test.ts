@@ -52,6 +52,34 @@ describe('resolveMusicTrack', () => {
     expect(resolveMusicTrack('game', GameMode.Classic, 'extraCrazy')).toBe(MusicTrack.SpaceDance);
   });
 
+  it('returns PuzzleBattle for choice screen', () => {
+    expect(resolveMusicTrack('choice')).toBe(MusicTrack.PuzzleBattle);
+  });
+
+  it('returns PuzzleBattle for choice-detail screen', () => {
+    expect(resolveMusicTrack('choice-detail')).toBe(MusicTrack.PuzzleBattle);
+  });
+
+  it('returns ModernFuturistic for challenge screen', () => {
+    expect(resolveMusicTrack('challenge')).toBe(MusicTrack.ModernFuturistic);
+  });
+
+  it('returns ModernFuturistic for challenge-game screen', () => {
+    expect(resolveMusicTrack('challenge-game')).toBe(MusicTrack.ModernFuturistic);
+  });
+
+  it('returns PuzzleBattle for classified screen', () => {
+    expect(resolveMusicTrack('classified')).toBe(MusicTrack.PuzzleBattle);
+  });
+
+  it('returns PuzzleBattle for classified-detail screen', () => {
+    expect(resolveMusicTrack('classified-detail')).toBe(MusicTrack.PuzzleBattle);
+  });
+
+  it('returns MidnightWalk for cogitate screen', () => {
+    expect(resolveMusicTrack('cogitate')).toBe(MusicTrack.MidnightWalk);
+  });
+
   it('returns null for unknown screen', () => {
     expect(resolveMusicTrack('unknown')).toBeNull();
   });

@@ -25,6 +25,18 @@ export const SoundEvent = {
   MenuClick: 'menuClick',
   /** A player's clock drops below the low-time warning threshold. */
   LowTimeWarning: 'lowTimeWarning',
+  /** Chime when an unlock code is successfully redeemed or a mode becomes newly visible. */
+  UnlockChime: 'unlockChime',
+  /** Error buzz when an invalid unlock code is entered. */
+  ErrorBuzz: 'errorBuzz',
+  /** Sound for multi-jump chain continuation (jumps 2+ in a chain). */
+  MultiJump: 'multiJump',
+  /** Success sound when a challenge puzzle is solved correctly. */
+  PuzzleSuccess: 'puzzleSuccess',
+  /** Failure sound when an incorrect move is played in a puzzle. */
+  PuzzleFail: 'puzzleFail',
+  /** Generic per-event activation sound (fallback when no specific event sound exists). */
+  EventActivation: 'eventActivation',
 } as const;
 
 export type SoundEvent = (typeof SoundEvent)[keyof typeof SoundEvent];

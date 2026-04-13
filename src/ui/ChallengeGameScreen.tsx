@@ -15,6 +15,8 @@ import { computeZobristHash } from '../engine/zobrist';
 import { moveToString, stringToMove } from '../utils/notation';
 import { deserializeBoardState } from '../persistence/serialization';
 import { recordChallengeAttempt } from '../persistence/challengeRecords';
+import { useAudioManager } from '../audio/useAudioManager';
+import { SoundEvent } from '../audio/types';
 import type { PuzzleDefinition } from '../data/puzzleData';
 import Board from './Board';
 import { useAnimationQueue, buildAnimationSequence } from './useAnimationQueue';
@@ -102,6 +104,7 @@ export default function ChallengeGameScreen({
   const [showCompletion, setShowCompletion] = useState(false);
   const [completionData, setCompletionData] = useState<CompletionData | null>(null);
 
+  const audioManager = useAudioManager();
   const isMountedRef = useRef(true);
   const pendingOpponentMoveRef = useRef(false);
   const pendingStateRef = useRef<GameState | null>(null);
@@ -195,6 +198,7 @@ export default function ChallengeGameScreen({
   // ── Puzzle completion ──────────────────────────────────────
   const handlePuzzleSolved = useCallback(() => {
     setIsSolved(true);
+    audioManager?.play(SoundEvent.PuzzleSuccess);
     const finalElapsedMs = timer.stop();
     const rating = calculatePuzzleRating(
       finalElapsedMs,
@@ -221,7 +225,7 @@ export default function ChallengeGameScreen({
         setShowCompletion(true);
       }
     }, 500);
-  }, [puzzle, timer, movesPlayed, onPuzzleCompleted]);
+  }, [puzzle, timer, movesPlayed, onPuzzleCompleted, audioManager]);
 
   // ── Move callbacks ─────────────────────────────────────────
   const handleCorrectMove = useCallback((move: Move, newState: GameState) => {
@@ -250,6 +254,7 @@ export default function ChallengeGameScreen({
 
   const handleIncorrectMove = useCallback((move: Move) => {
     setMovesPlayed((prev) => [...prev, moveToString(move)]);
+    audioManager?.play(SoundEvent.PuzzleFail);
 
     // Find the from square for the shake animation
     setIncorrectMoveSquare(move.from);
@@ -261,7 +266,7 @@ export default function ChallengeGameScreen({
         setStatusMessage('Your turn');
       }
     }, INCORRECT_FEEDBACK_DURATION_MS);
-  }, []);
+  }, [audioManager]);
 
   // ── Interaction hook ───────────────────────────────────────
   const interaction = usePuzzleInteraction({

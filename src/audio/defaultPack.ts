@@ -43,6 +43,13 @@ export const DEFAULT_PACK: AudioPack = {
     [SoundEvent.GameOverWin]: sfx('game-over-win.mp3'),
     [SoundEvent.GameOverDraw]: sfx('game-over-draw.mp3'),
     [SoundEvent.MenuClick]: sfx('menu-click.mp3'),
+    [SoundEvent.LowTimeWarning]: sfx('low-time-warning.mp3', 0.8),
+    [SoundEvent.UnlockChime]: sfx('unlock-chime.mp3'),
+    [SoundEvent.ErrorBuzz]: sfx('error-buzz.mp3', 0.6),
+    [SoundEvent.MultiJump]: sfx('multi-jump.mp3', 0.9),
+    [SoundEvent.PuzzleSuccess]: sfx('puzzle-success.mp3'),
+    [SoundEvent.PuzzleFail]: sfx('puzzle-fail.mp3', 0.7),
+    [SoundEvent.EventActivation]: sfx('event-trigger.mp3'),
   },
 
   music: {

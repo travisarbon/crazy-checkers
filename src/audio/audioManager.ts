@@ -32,6 +32,12 @@ export class AudioManager {
   /** Pre-decoded SFX buffers for zero-latency playback. */
   private sfxBuffers: Map<string, AudioBuffer> = new Map();
 
+  /**
+   * Cache for dynamically loaded audio buffers (event-specific sounds
+   * that are not part of the standard SoundEvent enum).
+   */
+  private dynamicBuffers: Map<string, AudioBuffer> = new Map();
+
   /** Current music playback state. */
   private musicElement: HTMLAudioElement | null = null;
   private musicSource: MediaElementAudioSourceNode | null = null;
@@ -150,6 +156,46 @@ export class AudioManager {
 
     const assetGain = nodes.context.createGain();
     assetGain.gain.value = assetVolume;
+    source.connect(assetGain);
+    assetGain.connect(nodes.sfxGain);
+
+    source.start(0);
+  }
+
+  /**
+   * Plays a one-shot sound effect from an arbitrary URL. Fetches and decodes
+   * the asset on first call; subsequent calls reuse the cached buffer.
+   *
+   * Used for event-specific sounds that live outside the pack's SoundEvent
+   * mapping (see src/audio/eventSoundMapping.ts). Errors are swallowed so a
+   * missing file never interrupts gameplay.
+   */
+  async playUrl(url: string, volume = 1.0): Promise<void> {
+    if (this.settings.muted) return;
+
+    const nodes = this.ensureContext();
+    if (!nodes) return;
+
+    this.startPendingMusic(nodes);
+
+    let buffer = this.dynamicBuffers.get(url);
+    if (!buffer) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) return;
+        const arrayBuffer = await response.arrayBuffer();
+        buffer = await nodes.context.decodeAudioData(arrayBuffer);
+        this.dynamicBuffers.set(url, buffer);
+      } catch {
+        return;
+      }
+    }
+
+    const source = nodes.context.createBufferSource();
+    source.buffer = buffer;
+
+    const assetGain = nodes.context.createGain();
+    assetGain.gain.value = volume;
     source.connect(assetGain);
     assetGain.connect(nodes.sfxGain);
 
@@ -283,6 +329,7 @@ export class AudioManager {
   async loadPack(pack: AudioPack): Promise<void> {
     this.stopMusic();
     this.sfxBuffers.clear();
+    this.dynamicBuffers.clear();
     this.pack = pack;
 
     if (this.nodes) {
@@ -308,6 +355,7 @@ export class AudioManager {
   dispose(): void {
     this.stopMusic();
     this.sfxBuffers.clear();
+    this.dynamicBuffers.clear();
     if (this.nodes && this.nodes.context.state !== 'closed') {
       this.nodes.context.close().catch(() => {
         /* ignore */

@@ -11,6 +11,8 @@ import { useEffect, useRef, useState } from 'react';
 import ModeScreenShell from './ModeScreenShell';
 import EmptyStateIllustration from './EmptyStateIllustration';
 import ExpandableDetailPanel from './ExpandableDetailPanel';
+import { useAudioManager } from '../audio/useAudioManager';
+import { SoundEvent } from '../audio/types';
 import { lookupCode, normalizeCode } from '../data/unlockCodes';
 import {
   addCodeUnlock,
@@ -73,6 +75,7 @@ export default function CodeScreen({ onBack, onCodeRedeemed }: CodeScreenProps) 
   );
   const [isRedeeming, setIsRedeeming] = useState(false);
 
+  const audioManager = useAudioManager();
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -101,6 +104,7 @@ export default function CodeScreen({ onBack, onCodeRedeemed }: CodeScreenProps) 
     const result = lookupCode(inputValue);
 
     if (!result.found) {
+      audioManager?.play(SoundEvent.ErrorBuzz);
       setStatusMessage({ kind: 'invalid', text: 'Invalid code.' });
       setInputValue('');
       setIsRedeeming(false);
@@ -125,6 +129,8 @@ export default function CodeScreen({ onBack, onCodeRedeemed }: CodeScreenProps) 
     for (const targetId of newTargets) {
       addCodeUnlock(targetId);
     }
+
+    audioManager?.play(SoundEvent.UnlockChime);
 
     const record: RedemptionRecord = {
       code: normalizeCode(inputValue),

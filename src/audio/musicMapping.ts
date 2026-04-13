@@ -10,6 +10,13 @@ export const SCREEN_MUSIC: Record<string, MusicTrack> = {
   config: MusicTrack.ProjectTethys,
   career: MusicTrack.ProjectTethys,
   code: MusicTrack.ProjectTethys,
+  choice: MusicTrack.PuzzleBattle,
+  'choice-detail': MusicTrack.PuzzleBattle,
+  challenge: MusicTrack.ModernFuturistic,
+  'challenge-game': MusicTrack.ModernFuturistic,
+  classified: MusicTrack.PuzzleBattle,
+  'classified-detail': MusicTrack.PuzzleBattle,
+  cogitate: MusicTrack.MidnightWalk,
 };
 
 /**

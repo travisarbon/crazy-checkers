@@ -40,6 +40,7 @@ import { useEventAnimations } from './useEventAnimations';
 import { useEventOverlays } from './useEventOverlays';
 import { useAudioManager } from '../audio/useAudioManager';
 import { SoundEvent } from '../audio/types';
+import { getEventSound } from '../audio/eventSoundMapping';
 import styles from './GameScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -401,8 +402,9 @@ export default function GameScreen({
 
       animationQueue.enqueue(hopSteps, boardBeforeHop, gameState.activeColor);
 
-      // Capture SFX for each hop
-      audioManager?.play(SoundEvent.Capture);
+      // First hop plays the standard Capture SFX; continuation hops use the
+      // lighter MultiJump chain sound to convey momentum.
+      audioManager?.play(hop.isContinuation ? SoundEvent.MultiJump : SoundEvent.Capture);
     },
     [animationQueue, gameState.activeColor, audioManager],
   );
@@ -428,7 +430,17 @@ export default function GameScreen({
         setAnnouncementEvents((prev) =>
           prev.length > 0 ? [...prev, ...triggered] : triggered,
         );
-        audioManager?.play(SoundEvent.EventTrigger);
+        // Play event-specific SFX for the first triggered event, falling back
+        // to the generic EventTrigger sound if no mapping exists.
+        if (audioManager) {
+          const first = triggered[0];
+          const eventSound = first ? getEventSound(first.type) : null;
+          if (eventSound) {
+            void audioManager.playUrl(eventSound.url, eventSound.volume);
+          } else {
+            audioManager.play(SoundEvent.EventTrigger);
+          }
+        }
       }
 
       const move = newState.moveHistory[newState.moveHistory.length - 1];

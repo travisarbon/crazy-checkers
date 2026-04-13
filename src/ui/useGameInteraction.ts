@@ -32,6 +32,12 @@ export interface HopDetails {
   captured: Square;
   /** Board state after this hop (with piece moved and capture removed). */
   boardAfter: BoardState;
+  /**
+   * True when this hop is a continuation within an already-started multi-jump
+   * (hop index >= 1). False for the first hop of a chain. Used to select a
+   * lighter SFX for continuation jumps.
+   */
+  isContinuation: boolean;
 }
 
 interface UseGameInteractionOptions {
@@ -293,7 +299,7 @@ export function useGameInteraction({
           const continuations = getContinuationJumps(newBoard, sq, gameState.activeEvents);
 
           // Notify about this hop for per-hop animation
-          onHopComplete?.({ from: selectedSquare, to: sq, captured, boardAfter: newBoard });
+          onHopComplete?.({ from: selectedSquare, to: sq, captured, boardAfter: newBoard, isContinuation: true });
 
           if (continuations.length > 0) {
             // More jumps available — stay in mid-multi-jump
@@ -386,7 +392,7 @@ export function useGameInteraction({
             if (continuations.length > 0) {
               // Multi-jump: enter mid-multi-jump phase
               // Notify about first hop for per-hop animation
-              onHopComplete?.({ from: selectedSquare, to: sq, captured, boardAfter: newBoard });
+              onHopComplete?.({ from: selectedSquare, to: sq, captured, boardAfter: newBoard, isContinuation: false });
               setSelectedSquare(sq);
               setIntermediateBoard(newBoard);
               setMultiJumpProgress({

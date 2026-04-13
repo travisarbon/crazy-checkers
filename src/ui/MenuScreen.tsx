@@ -88,6 +88,13 @@ export default function MenuScreen({
 }: MenuScreenProps) {
   const audioManager = useAudioManager();
 
+  // Play the unlock chime when a mode transitions from hidden to newly visible.
+  useEffect(() => {
+    if (newlyUnlocked.choice || newlyUnlocked.classified || newlyUnlocked.chaos) {
+      audioManager?.play(SoundEvent.UnlockChime);
+    }
+  }, [newlyUnlocked.choice, newlyUnlocked.classified, newlyUnlocked.chaos, audioManager]);
+
   // Reduced-motion fallback: immediately mark seen when animation won't fire
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');

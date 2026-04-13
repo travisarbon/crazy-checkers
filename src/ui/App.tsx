@@ -166,7 +166,12 @@ export default function App() {
   // Music routing: play the correct track for the current screen
   useEffect(() => {
     const gameMode = screen.kind === 'game' ? screen.mode : undefined;
-    const track = resolveMusicTrack(screen.kind, gameMode);
+    // Extra Crazy = Choice mode with no permanent event; it gets its own track.
+    const specialMode =
+      screen.kind === 'game' && screen.mode === GameMode.Choice && !screen.permanentEvent
+        ? 'extraCrazy'
+        : undefined;
+    const track = resolveMusicTrack(screen.kind, gameMode, specialMode);
     if (track) {
       audioManager.playMusic(track);
     }
