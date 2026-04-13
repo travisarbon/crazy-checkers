@@ -50,6 +50,23 @@ export interface SerializedActiveEvent {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * Serialize an ActiveEvent[] snapshot for persistence. Preserves
+ * metadata verbatim so Marching Orders' orthogonalGrid, Haunted's
+ * ghosts, Ticking Clock's countdown, etc. survive replay/analysis.
+ */
+export function serializeActiveEvents(
+  events: readonly import('../engine/types').ActiveEvent[],
+): SerializedActiveEvent[] {
+  return events.map((e) => ({
+    type: e.type as string,
+    remainingPlies: e.remainingPlies,
+    triggeredBy: e.triggeredBy as string,
+    triggeredAtPly: e.triggeredAtPly,
+    ...(e.metadata !== undefined ? { metadata: { ...e.metadata } } : {}),
+  }));
+}
+
 interface SerializedPiece {
   color: string;
   type: string;

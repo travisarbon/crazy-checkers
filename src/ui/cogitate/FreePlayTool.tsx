@@ -777,6 +777,32 @@ function FreePlayGameView({
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [evaluation, setEvaluation] = useState<NormalizedEvaluation | null>(null);
   const [announcementEvents, setAnnouncementEvents] = useState<readonly ActiveEvent[]>([]);
+
+  // Per-ply log for analysis fidelity on saved games.
+  const activeEventsPerPlyRef = useRef([
+    serializeActiveEvents(initialState.activeEvents),
+  ]);
+  const boardStatesPerPlyRef = useRef([serializeBoard(initialState.board)]);
+  const lastLoggedPlyRef = useRef(initialState.plyCount);
+  useEffect(() => {
+    if (gameState.plyCount > lastLoggedPlyRef.current) {
+      activeEventsPerPlyRef.current.push(
+        serializeActiveEvents(gameState.activeEvents),
+      );
+      boardStatesPerPlyRef.current.push(serializeBoard(gameState.board));
+      lastLoggedPlyRef.current = gameState.plyCount;
+    } else if (gameState.plyCount < lastLoggedPlyRef.current) {
+      activeEventsPerPlyRef.current = activeEventsPerPlyRef.current.slice(
+        0,
+        gameState.plyCount + 1,
+      );
+      boardStatesPerPlyRef.current = boardStatesPerPlyRef.current.slice(
+        0,
+        gameState.plyCount + 1,
+      );
+      lastLoggedPlyRef.current = gameState.plyCount;
+    }
+  }, [gameState.plyCount, gameState.activeEvents, gameState.board]);
   const pendingStateRef = useRef<GameState | null>(null);
 
   // Animation queue — commits pending state when the sequence completes.
@@ -967,7 +993,8 @@ function FreePlayGameView({
           gameState,
           `freeplay-${adapter.modeId}`,
           gameStartedAt,
-          gameState.positionHashes.map(() => serializeBoard(gameState.board)),
+          boardStatesPerPlyRef.current,
+          activeEventsPerPlyRef.current,
         );
       } catch (err) {
         console.warn('[FreePlay] failed to record game', err);

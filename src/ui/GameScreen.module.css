@@ -38,7 +38,12 @@
   flex-direction: column;
   gap: var(--space-3, 0.75rem);
   max-height: calc(100vh - 2rem);
-  overflow: hidden;
+  /* Let the sidebar itself scroll when its stacked sections exceed the
+     viewport (Choice modes add an Active Events panel, Crazy/Chaos add
+     more). Previously `overflow: hidden` simply clipped the Main Menu
+     button and bottom clock on shorter viewports. */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--ui-bg);
   border-radius: var(--radius-lg);
   padding: var(--space-4, 1rem);

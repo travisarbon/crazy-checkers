@@ -17,6 +17,10 @@ import { requestAIMove } from '../ai/workerClient';
 import type { Difficulty } from '../ai/difficulty';
 import { saveGame, clearSavedGame } from '../persistence/settings';
 import { recordGame } from '../persistence/gameHistory';
+import {
+  serializeActiveEvents,
+  serializeBoard,
+} from '../persistence/serialization';
 import Board from './Board';
 import TurnIndicator from './TurnIndicator';
 import CapturedPieces from './CapturedPieces';
@@ -253,6 +257,39 @@ export default function GameScreen({
     );
   }, [gameState, flipped, timeControl, gameClock.clockState]);
 
+  // --- Per-ply active events log (for analysis fidelity) -------------
+  // We persist one snapshot of state.activeEvents per ply so that
+  // Cogitate Analysis can reconstruct the ruleset at each point in the
+  // game (essential for Choice modes with a permanent event, and for
+  // Crazy mode events whose metadata — e.g. Marching Orders'
+  // orthogonalGrid, Haunted's ghost positions, Ticking Clock's
+  // countdown — varies turn-by-turn).
+  const activeEventsPerPlyRef = useRef([
+    serializeActiveEvents(gameState.activeEvents),
+  ]);
+  const boardStatesPerPlyRef = useRef([serializeBoard(gameState.board)]);
+  const lastLoggedPlyRef = useRef(gameState.plyCount);
+  useEffect(() => {
+    if (gameState.plyCount > lastLoggedPlyRef.current) {
+      activeEventsPerPlyRef.current.push(
+        serializeActiveEvents(gameState.activeEvents),
+      );
+      boardStatesPerPlyRef.current.push(serializeBoard(gameState.board));
+      lastLoggedPlyRef.current = gameState.plyCount;
+    } else if (gameState.plyCount < lastLoggedPlyRef.current) {
+      // Undo: trim the logs back to the current ply.
+      activeEventsPerPlyRef.current = activeEventsPerPlyRef.current.slice(
+        0,
+        gameState.plyCount + 1,
+      );
+      boardStatesPerPlyRef.current = boardStatesPerPlyRef.current.slice(
+        0,
+        gameState.plyCount + 1,
+      );
+      lastLoggedPlyRef.current = gameState.plyCount;
+    }
+  }, [gameState.plyCount, gameState.activeEvents, gameState.board]);
+
   // Id of the completed game after it is persisted to history. Used by the
   // Review button in the game-over dialog to open the saved game in Cogitate.
   const [reviewGameId, setReviewGameId] = useState<string | null>(null);
@@ -261,7 +298,13 @@ export default function GameScreen({
   useEffect(() => {
     if (gameState.status === GameStatus.GameOver) {
       clearSavedGame();
-      recordGame(gameState, gameState.mode, gameStartedAt)
+      recordGame(
+        gameState,
+        gameState.mode,
+        gameStartedAt,
+        boardStatesPerPlyRef.current,
+        activeEventsPerPlyRef.current,
+      )
         .then((id) => {
           setReviewGameId(id);
         })
