@@ -13,8 +13,8 @@
   flex-direction: column;
   gap: 0.6rem;
   padding: 1.25rem 1.5rem;
-  border: 1px solid color-mix(in srgb, var(--ui-accent, #3498db) 30%, transparent);
-  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent, #3498db) var(--tint-strong), transparent);
+  border-radius: var(--radius-lg);
   background: var(--ui-surface, #fff);
   transition:
     transform 200ms ease,
@@ -86,7 +86,7 @@
   appearance: none;
   align-self: flex-start;
   padding: 0.5rem 1.1rem;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--ui-accent, #3498db);
   background: var(--ui-accent, #3498db);
   color: var(--ui-accent-contrast, #fff);

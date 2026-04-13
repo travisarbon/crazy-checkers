@@ -52,13 +52,13 @@
   justify-content: center;
   padding: 1.25rem 1rem;
   border: 2px solid var(--ui-accent);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--ui-text);
   font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 150ms ease, border-color 150ms ease, transform 100ms ease;
+  transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease, transform 100ms ease;
   min-height: 80px;
 }
 
@@ -74,7 +74,7 @@
 }
 
 .modeButton.disabled {
-  opacity: var(--opacity-disabled, 0.4);
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
   border-color: currentColor;
 }
@@ -113,7 +113,7 @@
 }
 
 .unlockReveal {
-  animation: unlockRevealKeyframes 800ms ease-out forwards;
+  animation: unlockRevealKeyframes var(--duration-emphasis) ease-out forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {

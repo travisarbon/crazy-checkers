@@ -15,19 +15,21 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.75rem 0.5rem;
-  border: 2px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
-  border-radius: 10px;
+  border: 2px solid color-mix(in srgb, var(--ui-accent) var(--tint-strong), transparent);
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--ui-text);
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.1s;
+  transition: border-color var(--duration-fast), transform 0.1s;
   position: relative;
   text-align: center;
 }
 
 .card:hover {
   border-color: var(--ui-accent);
-  transform: scale(1.03);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px
+    color-mix(in srgb, var(--ui-accent) var(--tint-medium), transparent);
 }
 
 .card:focus-visible {
@@ -43,7 +45,7 @@
 }
 
 .cardLocked:hover {
-  border-color: color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-color: color-mix(in srgb, var(--ui-accent) var(--tint-strong), transparent);
   transform: none;
 }
 
@@ -96,7 +98,7 @@
   font-size: 0.6rem;
   font-weight: 700;
   padding: 0.1rem 0.4rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -167,8 +169,8 @@
   line-height: 1.5;
   padding: 2rem 1rem;
   margin: 1rem 0 0;
-  border: 1px dashed color-mix(in srgb, var(--ui-accent) 30%, transparent);
-  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, var(--ui-accent) var(--tint-strong), transparent);
+  border-radius: var(--radius-lg);
 }
 
 /* Responsive adjustments */

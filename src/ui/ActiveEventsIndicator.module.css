@@ -7,7 +7,7 @@
   padding: 0.75rem;
   background: var(--ui-bg);
   border: 1px solid var(--ui-accent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
 }
 
 .heading {

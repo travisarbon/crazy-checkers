@@ -29,7 +29,7 @@
   appearance: none;
   background: transparent;
   border: 1px solid var(--ui-border, #ccc);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 0.375rem 0.75rem;
   cursor: pointer;
   font-size: 0.95rem;
@@ -44,9 +44,9 @@
 
 .error {
   padding: 0.75rem 1rem;
-  border: 1px solid color-mix(in srgb, #e74c3c 50%, transparent);
-  border-radius: 6px;
-  background: color-mix(in srgb, #e74c3c 10%, transparent);
+  border: 1px solid color-mix(in srgb, #e74c3c var(--tint-heavy), transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, #e74c3c var(--tint-light), transparent);
   color: #8b2c1f;
   margin: 0;
 }
@@ -109,7 +109,7 @@
   margin: 0;
   padding: 0.75rem;
   border: 1px solid var(--ui-border, #ccc);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: var(--ui-surface, #fff);
 }
 
@@ -131,7 +131,7 @@
   margin: 0;
   padding: 0.5rem 0.75rem;
   border: 1px dashed var(--ui-border, #ccc);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   color: var(--ui-text-muted, #666);
   font-size: 0.9em;
 }
@@ -171,7 +171,7 @@
   gap: 0.5rem;
   padding: 0.5rem;
   border: 1px solid var(--ui-border, #ccc);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: var(--ui-surface, #fff);
   flex-wrap: wrap;
   justify-content: center;
@@ -181,7 +181,7 @@
   appearance: none;
   background: transparent;
   border: 1px solid var(--ui-border, #ccc);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   min-width: 44px;
   min-height: 44px;
   padding: 0.375rem 0.625rem;
@@ -195,7 +195,7 @@
 }
 
 .transportButton:disabled {
-  opacity: 0.4;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 

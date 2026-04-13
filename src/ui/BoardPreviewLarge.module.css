@@ -7,7 +7,7 @@
 }
 
 .container svg {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .fallback {
@@ -15,7 +15,7 @@
   align-items: center;
   justify-content: center;
   border: 2px solid var(--board-border, var(--ui-accent));
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   color: var(--ui-text);
   font-size: 0.85rem;
   opacity: 0.65;

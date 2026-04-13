@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import ModeScreenShell from './ModeScreenShell';
+import EmptyStateIllustration from './EmptyStateIllustration';
 import ExpandableDetailPanel from './ExpandableDetailPanel';
 import { lookupCode, normalizeCode } from '../data/unlockCodes';
 import {
@@ -198,6 +199,76 @@ export default function CodeScreen({ onBack, onCodeRedeemed }: CodeScreenProps) 
             <span>{statusMessage.text}</span>
           </div>
         )}
+      </section>
+
+      <section
+        aria-label="What codes unlock"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '0.75rem',
+          padding: '1rem',
+          border: '1px solid color-mix(in srgb, var(--ui-accent) 25%, transparent)',
+          borderRadius: 'var(--radius-lg, 10px)',
+          background: 'color-mix(in srgb, var(--ui-accent) 4%, transparent)',
+        }}
+      >
+        <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <EmptyStateIllustration
+            variant="checkmark"
+            size={48}
+            style={{ color: 'var(--ui-accent)', flexShrink: 0 }}
+          />
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--ui-accent)' }}>
+              What codes can unlock
+            </h3>
+            <p
+              style={{
+                margin: '0.15rem 0 0',
+                fontSize: '0.85rem',
+                opacity: 0.75,
+              }}
+            >
+              Share or discover codes to skip unlock requirements for these
+              three mode categories.
+            </p>
+          </div>
+        </div>
+        {([
+          {
+            title: 'Choice modes',
+            desc: '40 permanent-event checkers variants normally earned via unlock tracks.',
+          },
+          {
+            title: 'Classified games',
+            desc: '64 abstract strategy games normally unlocked by defeating Hard CPU.',
+          },
+          {
+            title: 'Chaos mode',
+            desc: 'The ultimate chaos experience, normally gated by full career progress.',
+          },
+        ] as const).map((row) => (
+          <div
+            key={row.title}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.25rem',
+              padding: '0.65rem 0.75rem',
+              background: 'var(--ui-surface, transparent)',
+              border: '1px solid color-mix(in srgb, var(--ui-accent) 20%, transparent)',
+              borderRadius: 'var(--radius-md, 6px)',
+            }}
+          >
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ui-accent)' }}>
+              {row.title}
+            </span>
+            <span style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.35 }}>
+              {row.desc}
+            </span>
+          </div>
+        ))}
       </section>
 
       <ExpandableDetailPanel

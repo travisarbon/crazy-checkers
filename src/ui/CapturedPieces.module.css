@@ -1,5 +1,5 @@
 .captureCount {
-  transition: transform 150ms ease-out;
+  transition: transform var(--duration-fast) ease-out;
 }
 
 .captureCountBump {

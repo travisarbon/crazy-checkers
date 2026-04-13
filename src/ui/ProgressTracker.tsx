@@ -28,7 +28,11 @@ export default function ProgressTracker({
   maxValue,
   accentColor,
 }: ProgressTrackerProps) {
-  const percentage = maxValue > 0 ? Math.round((currentValue / maxValue) * 100) : 0;
+  // Clamp to [0, 100] so over-achievement (e.g. 101 completed / 100 required)
+  // still reads cleanly as "100%" rather than "101%".
+  const rawPercentage =
+    maxValue > 0 ? Math.round((currentValue / maxValue) * 100) : 0;
+  const percentage = Math.min(100, Math.max(0, rawPercentage));
   const fillColor = accentColor ?? 'var(--ui-accent)';
 
   return (
@@ -40,7 +44,7 @@ export default function ProgressTracker({
           className={styles.barFill}
           style={{ width: `${String(percentage)}%`, backgroundColor: fillColor }}
           role="progressbar"
-          aria-valuenow={currentValue}
+          aria-valuenow={Math.min(currentValue, maxValue)}
           aria-valuemin={0}
           aria-valuemax={maxValue}
           aria-label={trackName}

@@ -4,7 +4,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  z-index: 100;
+  z-index: var(--z-modal-backdrop);
   animation: fadeIn 200ms ease-out;
 }
 
@@ -13,11 +13,11 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 101;
+  z-index: var(--z-modal);
   background: var(--ui-bg);
   color: var(--ui-text);
   border: 2px solid var(--ui-accent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 2rem;
   max-width: 420px;
   width: 90%;
@@ -40,7 +40,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
 }
 
 .closeButton:hover {
@@ -81,14 +81,14 @@
 .navButton {
   background: transparent;
   border: 2px solid var(--ui-accent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   color: var(--ui-text);
   padding: 0.5rem 1rem;
   min-width: 44px;
   min-height: 44px;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: background-color 0.15s;
+  transition: background-color var(--duration-fast);
 }
 
 .navButton:hover {
@@ -105,13 +105,13 @@
   background: var(--ui-accent);
   color: var(--ui-bg);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 0.6rem 1.5rem;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   min-height: 44px;
-  transition: opacity 150ms;
+  transition: opacity var(--duration-fast);
 }
 
 .playButton:hover {

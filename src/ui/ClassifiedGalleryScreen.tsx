@@ -12,6 +12,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import ModeScreenShell from './ModeScreenShell';
 import BoardPreviewLarge from './BoardPreviewLarge';
+import EmptyStateIllustration from './EmptyStateIllustration';
 import GalleryDialogBox from './GalleryDialogBox';
 import type { ModeRegistryEntry } from '../persistence/gameModeRegistry';
 import { getClassifiedByWave } from '../persistence/gameModeRegistry';
@@ -375,6 +376,47 @@ export default function ClassifiedGalleryScreen({
           <p className={styles.unlockHint}>
             Complete all 100 challenges to unlock Classified mode.
           </p>
+          <div
+            data-testid="classified-locked-teaser"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.75rem',
+              padding: '1.5rem 1rem',
+              margin: '1rem 0',
+              border: '1px dashed color-mix(in srgb, var(--ui-accent) 35%, transparent)',
+              borderRadius: 'var(--radius-lg, 10px)',
+              color: 'var(--ui-accent)',
+              textAlign: 'center',
+            }}
+          >
+            <EmptyStateIllustration variant="locked" size={96} />
+            <p
+              style={{
+                margin: 0,
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                color: 'var(--ui-text)',
+              }}
+            >
+              A library of 64 abstract strategy games awaits.
+            </p>
+            <p
+              style={{
+                margin: 0,
+                fontSize: '0.85rem',
+                opacity: 0.75,
+                color: 'var(--ui-text)',
+                maxWidth: '36rem',
+                lineHeight: 1.45,
+              }}
+            >
+              Draughts variants, chess cousins, territorial games, shogi-family
+              games, and many more — each unlocked in sequence as you complete
+              Challenge puzzles and defeat the Hard CPU.
+            </p>
+          </div>
         </>
       )}
 

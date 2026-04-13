@@ -3,8 +3,8 @@
 /* Section styling */
 
 .section {
-  border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
-  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) var(--tint-strong), transparent);
+  border-radius: var(--radius-lg);
   padding: 1.25rem 1.5rem;
 }
 
@@ -36,11 +36,11 @@
   gap: 0.5rem;
   padding: 0.75rem;
   border: 2px solid color-mix(in srgb, var(--ui-accent) 25%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--ui-text);
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.1s;
+  transition: border-color var(--duration-fast), transform 0.1s;
 }
 
 .themeCard:hover {
@@ -56,7 +56,7 @@
 .themeCardSelected {
   border-color: var(--ui-accent);
   border-width: 3px;
-  background: color-mix(in srgb, var(--ui-accent) 10%, transparent);
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
 }
 
 .themeLabel {
@@ -83,8 +83,8 @@
   height: 8px;
   -webkit-appearance: none;
   appearance: none;
-  background: color-mix(in srgb, var(--ui-accent) 30%, transparent);
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-strong), transparent);
+  border-radius: var(--radius-sm);
   outline: none;
 }
 
@@ -138,10 +138,10 @@
   height: 44px;
   border-radius: 22px;
   border: 2px solid var(--ui-accent);
-  background: color-mix(in srgb, var(--ui-text) 20%, transparent);
+  background: color-mix(in srgb, var(--ui-text) var(--tint-medium), transparent);
   cursor: pointer;
   padding: 0;
-  transition: background-color 0.2s;
+  transition: background-color var(--duration-fast);
   flex-shrink: 0;
 }
 
@@ -162,7 +162,7 @@
   height: 28px;
   border-radius: 50%;
   background: var(--ui-text);
-  transition: transform 0.2s;
+  transition: transform var(--duration-fast);
 }
 
 .toggleOn .toggleKnob {
@@ -176,11 +176,11 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  transition: opacity 0.2s;
+  transition: opacity var(--duration-fast);
 }
 
 .volumeSliders[data-muted='true'] {
-  opacity: 0.4;
+  opacity: var(--opacity-disabled);
   pointer-events: none;
 }
 
@@ -216,12 +216,12 @@
 .dataButton {
   padding: 0.5rem 1.25rem;
   border: 2px solid var(--ui-accent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--ui-text);
   font-size: 0.9rem;
   cursor: not-allowed;
-  opacity: var(--opacity-disabled, 0.4);
+  opacity: var(--opacity-disabled);
 }
 
 .dataButton:focus-visible {

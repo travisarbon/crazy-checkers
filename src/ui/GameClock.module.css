@@ -5,8 +5,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.625rem;
-  border-radius: 6px;
-  transition: opacity 0.2s ease, background-color 0.2s ease;
+  border-radius: var(--radius-md);
+  transition: opacity var(--duration-fast) ease, background-color var(--duration-fast) ease;
   min-height: 2.5rem;
   width: 100%;
 }

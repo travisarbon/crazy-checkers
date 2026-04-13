@@ -765,36 +765,46 @@ export default function GameScreen({
             hidden={isCpuColor(flipped ? PieceColor.White : PieceColor.Black)}
           />
         )}
-        <TurnIndicator
-          activeColor={gameState.activeColor}
-          isGameOver={isGameOver}
-          result={gameState.result}
-          isThinking={isAIThinking}
-        />
-        <CapturedPieces moveHistory={gameState.moveHistory} pendingCaptures={pendingCaptures} />
+        <div className={[styles.sidebarSection, styles.sidebarSectionTight].filter(Boolean).join(' ')}>
+          <TurnIndicator
+            activeColor={gameState.activeColor}
+            isGameOver={isGameOver}
+            result={gameState.result}
+            isThinking={isAIThinking}
+          />
+        </div>
+        <div className={styles.sidebarSection}>
+          <CapturedPieces moveHistory={gameState.moveHistory} pendingCaptures={pendingCaptures} />
+        </div>
         {(gameState.mode === GameMode.Crazy ||
           gameState.mode === GameMode.Chaos ||
           gameState.mode === GameMode.Choice) && (
-          <ActiveEventsIndicator
-            activeEvents={gameState.activeEvents}
-            activeColor={gameState.activeColor}
-          />
+          <div className={styles.sidebarSection}>
+            <ActiveEventsIndicator
+              activeEvents={gameState.activeEvents}
+              activeColor={gameState.activeColor}
+            />
+          </div>
         )}
-        <MoveHistory
-          moveHistory={gameState.moveHistory}
-          currentMoveIndex={currentMoveIndex}
-          collapsible={isMobile}
-        />
-        <GameControls
-          canUndo={undoAvailable && !animationQueue.isAnimating && !isAIThinking}
-          undoTooltip={undoTooltip}
-          undoCountLabel={undoCountLabel}
-          isGameInProgress={!isGameOver}
-          onNewGame={onNewGame}
-          onUndo={handleUndo}
-          onResign={handleResign}
-          onMainMenu={onMainMenu}
-        />
+        <div className={styles.sidebarSection}>
+          <MoveHistory
+            moveHistory={gameState.moveHistory}
+            currentMoveIndex={currentMoveIndex}
+            collapsible={isMobile}
+          />
+        </div>
+        <div className={styles.sidebarSection}>
+          <GameControls
+            canUndo={undoAvailable && !animationQueue.isAnimating && !isAIThinking}
+            undoTooltip={undoTooltip}
+            undoCountLabel={undoCountLabel}
+            isGameInProgress={!isGameOver}
+            onNewGame={onNewGame}
+            onUndo={handleUndo}
+            onResign={handleResign}
+            onMainMenu={onMainMenu}
+          />
+        </div>
         {/* Desktop: White's clock at bottom (Black when flipped) */}
         {!isMobile && gameClock.clockState && (
           <GameClock

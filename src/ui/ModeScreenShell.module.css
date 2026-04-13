@@ -22,14 +22,14 @@
 .backButton {
   background: transparent;
   border: 2px solid var(--ui-accent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   color: var(--ui-text);
   min-width: 44px;
   min-height: 44px;
   padding: 0.5rem 1rem;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: background-color 0.15s;
+  transition: background-color var(--duration-fast);
 }
 
 .backButton:hover {

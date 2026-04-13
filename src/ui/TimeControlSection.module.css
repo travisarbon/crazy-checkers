@@ -15,7 +15,7 @@
   padding: 0.4rem 1rem;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: border-color 0.15s, background-color 0.15s;
+  transition: border-color var(--duration-fast), background-color var(--duration-fast);
   min-width: 44px;
   min-height: 44px;
   display: flex;
@@ -47,9 +47,9 @@
   align-items: center;
   margin-top: 1rem;
   padding: 1rem;
-  border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--ui-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ui-accent) var(--tint-strong), transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
 }
 
 .fieldLabel {
@@ -61,7 +61,7 @@
   width: 5rem;
   padding: 0.4rem 0.6rem;
   border: 2px solid color-mix(in srgb, var(--ui-accent) 25%, transparent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--ui-bg);
   color: var(--ui-text);
   font-size: 0.9rem;
@@ -84,7 +84,7 @@
   width: 100%;
   padding: 0.4rem 0.6rem;
   border: 2px solid color-mix(in srgb, var(--ui-accent) 25%, transparent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--ui-bg);
   color: var(--ui-text);
   font-size: 0.9rem;

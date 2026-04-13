@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  z-index: 100;
+  z-index: var(--z-modal-backdrop);
   animation: fadeIn 200ms ease-out;
 }
 
@@ -11,12 +11,12 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 101;
+  z-index: var(--z-modal);
 
   background: var(--ui-bg);
   color: var(--ui-text);
   border: 2px solid var(--ui-accent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 2rem;
   max-width: 420px;
   width: 90%;
@@ -72,12 +72,12 @@
   background: var(--ui-accent);
   color: var(--ui-bg);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 0.6rem 1.5rem;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 150ms;
+  transition: opacity var(--duration-fast);
 }
 
 .primaryButton:hover {
@@ -93,12 +93,12 @@
   background: transparent;
   color: var(--ui-text);
   border: 1px solid var(--ui-text);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 0.6rem 1.5rem;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: opacity 150ms;
+  transition: opacity var(--duration-fast);
 }
 
 .secondaryButton:hover {
@@ -126,10 +126,10 @@
   height: 44px;
   border-radius: 22px;
   border: 2px solid var(--ui-accent);
-  background: color-mix(in srgb, var(--ui-text) 20%, transparent);
+  background: color-mix(in srgb, var(--ui-text) var(--tint-medium), transparent);
   cursor: pointer;
   padding: 0;
-  transition: background-color 0.2s;
+  transition: background-color var(--duration-fast);
   flex-shrink: 0;
 }
 
@@ -150,7 +150,7 @@
   height: 28px;
   border-radius: 50%;
   background: var(--ui-text);
-  transition: transform 0.2s;
+  transition: transform var(--duration-fast);
 }
 
 .toggleOn .toggleKnob {

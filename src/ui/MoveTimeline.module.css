@@ -6,7 +6,7 @@
   font-size: 0.875rem;
   color: var(--ui-text);
   background: rgba(0, 0, 0, 0.15);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 0.5rem;
 }
 
@@ -25,7 +25,7 @@
 
 .cell {
   padding: 0.0625rem 0.25rem;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   display: inline-flex;
   align-items: center;

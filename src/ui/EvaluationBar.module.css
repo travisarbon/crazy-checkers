@@ -2,7 +2,7 @@
   position: relative;
   background: rgba(0, 0, 0, 0.1);
   border: 1px solid var(--ui-border, rgba(0, 0, 0, 0.2));
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   color: var(--ui-text);
   font-family: system-ui, sans-serif;
@@ -29,12 +29,12 @@
 
 .fill {
   background: var(--piece-white, #eeeeee);
-  transition: all 300ms ease;
+  transition: all var(--duration-normal) ease;
 }
 
 .rest {
   background: var(--piece-black, #222222);
-  transition: all 300ms ease;
+  transition: all var(--duration-normal) ease;
 }
 
 .label {
@@ -43,7 +43,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 0 0.25rem;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--ui-surface, #fff) 70%, transparent);
   color: var(--ui-text, #111);
   mix-blend-mode: normal;

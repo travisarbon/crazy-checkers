@@ -16,13 +16,13 @@
   font-weight: 600;
   color: var(--ui-accent);
   padding: 0.5rem 0.75rem;
-  border-bottom: 2px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--ui-accent) var(--tint-strong), transparent);
   white-space: nowrap;
 }
 
 .eventTable td {
   padding: 0.4rem 0.75rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--ui-accent) 10%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
 }
 
 .eventTable tr:nth-child(even) {
@@ -68,7 +68,7 @@
 .interactionOverview {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid color-mix(in srgb, var(--ui-accent) 20%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ui-accent) var(--tint-medium), transparent);
 }
 
 .sectionSubtitle {

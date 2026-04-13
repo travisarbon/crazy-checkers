@@ -2,6 +2,30 @@
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
+  font-family:
+    'Nunito',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display font for headings and hero titles — gives the game a playful,
+   cohesive brand identity instead of the default system sans. */
+h1, h2, h3,
+[data-display-font='true'] {
+  font-family:
+    'Fredoka',
+    'Nunito',
+    system-ui,
+    sans-serif;
+  letter-spacing: -0.005em;
 }
 
 #root {
@@ -73,4 +97,125 @@ html, body {
 
   /* Common disabled opacity */
   --opacity-disabled: 0.4;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Global button utility classes
+   Apply these on any <button> to get consistent sizing, radius,
+   hover, focus, and disabled behavior without re-authoring the
+   rules in every component CSS module.
+   (Phase 3 UI/UX Improvement Plan — Section 5)
+   ───────────────────────────────────────────────────────────── */
+
+.ui-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.625rem var(--space-6);
+  min-height: 44px;
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  line-height: 1.2;
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    transform 100ms ease,
+    opacity var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+
+.ui-btn:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.ui-btn:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ui-btn--primary {
+  background: var(--ui-accent);
+  color: var(--ui-accent-contrast, var(--ui-bg));
+  border-color: var(--ui-accent);
+}
+
+.ui-btn--primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.ui-btn--primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ui-btn--secondary {
+  background: transparent;
+  color: var(--ui-text);
+  border-color: var(--ui-accent);
+}
+
+.ui-btn--secondary:hover:not(:disabled) {
+  background: var(--ui-accent);
+  color: var(--ui-accent-contrast, var(--ui-bg));
+  transform: scale(1.02);
+}
+
+.ui-btn--tertiary {
+  background: transparent;
+  color: var(--ui-accent);
+  border-color: transparent;
+}
+
+.ui-btn--tertiary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
+}
+
+.ui-btn--danger {
+  background: var(--ui-danger);
+  color: var(--ui-accent-contrast, var(--ui-bg));
+  border-color: var(--ui-danger);
+}
+
+.ui-btn--danger:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+/* Card-lift utility — subtle "pick up" interaction on hover */
+.ui-hover-lift {
+  transition:
+    transform var(--duration-normal) ease,
+    box-shadow var(--duration-normal) ease;
+}
+
+.ui-hover-lift:hover:not([aria-disabled='true']):not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px
+    color-mix(in srgb, var(--ui-accent) var(--tint-medium), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-btn,
+  .ui-btn--primary,
+  .ui-btn--secondary,
+  .ui-btn--tertiary,
+  .ui-btn--danger,
+  .ui-hover-lift {
+    transition: none;
+  }
+  .ui-btn--primary:hover,
+  .ui-btn--secondary:hover,
+  .ui-btn--danger:hover,
+  .ui-hover-lift:hover {
+    transform: none;
+  }
 }

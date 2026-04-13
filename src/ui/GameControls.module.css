@@ -10,13 +10,13 @@
   min-height: 44px;
   padding: 0.625rem 0.75rem;
   border: 2px solid var(--ui-accent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--ui-text);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 150ms ease, opacity 150ms ease;
+  transition: background var(--duration-fast) ease, opacity var(--duration-fast) ease;
 }
 
 .controlButton:hover:not(:disabled) {
@@ -30,7 +30,7 @@
 }
 
 .controlButton:disabled {
-  opacity: var(--opacity-disabled, 0.4);
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 

@@ -1,8 +1,8 @@
 /* CodeScreen — unlock code entry screen */
 
 .section {
-  border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
-  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) var(--tint-strong), transparent);
+  border-radius: var(--radius-lg);
   padding: 1.25rem 1.5rem;
 }
 
@@ -32,7 +32,7 @@
   background: var(--ui-bg);
   color: var(--ui-text);
   border: 1px solid color-mix(in srgb, var(--ui-accent) 40%, transparent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   box-sizing: border-box;
 }
 
@@ -49,9 +49,9 @@
   color: var(--ui-bg);
   background: var(--ui-accent);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: opacity 150ms ease, transform 100ms ease;
+  transition: opacity var(--duration-fast) ease, transform 100ms ease;
 }
 
 .redeemButton:hover:not(:disabled) {
@@ -68,7 +68,7 @@
 }
 
 .redeemButton:disabled {
-  opacity: 0.4;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
@@ -93,7 +93,7 @@
   gap: 0.5rem;
   margin-top: 0.75rem;
   padding: 0.5rem 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 0.95rem;
   font-weight: 500;
 }
@@ -156,7 +156,7 @@
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
   border: 1px solid color-mix(in srgb, var(--ui-accent) 15%, transparent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 0.9rem;
 }
 
