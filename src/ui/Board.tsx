@@ -11,13 +11,14 @@ import { useState, useRef, useCallback, memo } from 'react';
 import type { BoardState, Piece as PieceData, Square } from '../engine/types';
 import { getBoardSquare, gridToSquare, squareToGrid } from '../engine/board';
 import { PieceColor, PieceType, square } from '../engine/types';
-import { gridToExtSquare } from '../engine/events/marchingOrders';
+import { extSquareToGrid, gridToExtSquare } from '../engine/events/marchingOrders';
 import type { AnimatingPiece, FlashingSquaresState, ExplosionState, OverlayState } from './useAnimationQueue';
 import { ANIM_DURATION } from './useAnimationQueue';
 import PieceComponent from './Piece';
 import EventAnimations from './EventAnimations';
 import EventOverlays from './EventOverlays';
 import type { EventOverlayState } from './useEventOverlays';
+import type { DragState } from './useDragAndDrop';
 import styles from './Board.module.css';
 import overlayStyles from './EventOverlays.module.css';
 
@@ -63,6 +64,17 @@ interface BoardProps {
   // Marching Orders 64-square support
   /** 64-element orthogonal grid for rendering light-square pieces. */
   marchingOrdersGrid?: readonly ({ color: PieceColor; type: PieceType } | null)[];
+
+  // Drag-and-drop props (Task 23.2)
+  /** Drag state from useDragAndDrop (optional — progressive enhancement). */
+  dragState?: DragState;
+  /** Pointer event handlers from useDragAndDrop. */
+  pointerHandlers?: {
+    onPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
+    onPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
+    onPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void;
+    onPointerCancel: (e: React.PointerEvent<SVGSVGElement>) => void;
+  };
 }
 
 function describeSquare(sq: Square, piece: PieceData | null): string {
@@ -152,6 +164,8 @@ function Board({
   overlayState,
   eventOverlayState,
   marchingOrdersGrid,
+  dragState,
+  pointerHandlers,
 }: BoardProps) {
   const rows = Array.from({ length: 8 }, (_, i) => i);
   const cols = Array.from({ length: 8 }, (_, i) => i);
@@ -227,6 +241,11 @@ function Board({
         aria-label="Checkers board"
         data-testid="board"
         onKeyDown={handleBoardKeyDown}
+        onPointerDown={pointerHandlers?.onPointerDown}
+        onPointerMove={pointerHandlers?.onPointerMove}
+        onPointerUp={pointerHandlers?.onPointerUp}
+        onPointerCancel={pointerHandlers?.onPointerCancel}
+        className={dragState?.isDragging ? styles.boardDragging : undefined}
       >
         {/* SVG filter definitions */}
         <defs>
@@ -351,7 +370,11 @@ function Board({
                       />
                     )}
 
-                    {moPiece !== null && moPiece !== undefined && (
+                    {moPiece !== null && moPiece !== undefined && !(
+                      dragState?.isDragging &&
+                      dragState.dragOriginSquare !== null &&
+                      (dragState.dragOriginSquare as number) === moExtSq
+                    ) && (
                       <PieceComponent
                         piece={moPiece}
                         sq={moExtSq as Square}
@@ -536,8 +559,13 @@ function Board({
                     />
                   )}
 
-                  {/* Piece — only rendered here if NOT floating (animating/fading) */}
-                  {piece && sq && !isFloating && (
+                  {/* Piece — only rendered here if NOT floating (animating/fading)
+                      and not currently being dragged */}
+                  {piece && sq && !isFloating && !(
+                    dragState?.isDragging &&
+                    dragState.dragOriginSquare !== null &&
+                    (dragState.dragOriginSquare as number) === (sq as number)
+                  ) && (
                     <PieceComponent
                       piece={piece}
                       sq={sq}
@@ -654,6 +682,58 @@ function Board({
             isTemporaryKing={eventOverlayState?.temporaryKingSquares.has(sq as number) ?? false}
           />
         ))}
+
+        {/* Drag-and-drop layer (Task 23.2) — ghost at origin, hop trail, follower */}
+        {dragState?.isDragging && dragState.draggedPiece && (
+          <g data-testid="drag-layer" pointerEvents="none">
+            {dragState.dragOriginSquare !== null && (() => {
+              const originSq = dragState.dragOriginSquare as number;
+              const { row, col } =
+                originSq > 32 ? extSquareToGrid(originSq) : squareToGrid(originSq as Square);
+              const renderRow = flipped ? 7 - row : row;
+              return (
+                <PieceComponent
+                  piece={dragState.draggedPiece}
+                  sq={dragState.dragOriginSquare}
+                  cx={col * SQUARE_SIZE + SQUARE_SIZE / 2}
+                  cy={renderRow * SQUARE_SIZE + SQUARE_SIZE / 2}
+                  isSelectable={false}
+                  isSelected={false}
+                  animOpacity={0.3}
+                />
+              );
+            })()}
+            {dragState.hopTrail.map((hop, i) => {
+              const hopSq = hop.square as number;
+              const { row, col } =
+                hopSq > 32 ? extSquareToGrid(hopSq) : squareToGrid(hop.square);
+              const renderRow = flipped ? 7 - row : row;
+              return (
+                <PieceComponent
+                  key={`drag-trail-${String(i)}-${String(hopSq)}`}
+                  piece={hop.piece}
+                  sq={hop.square}
+                  cx={col * SQUARE_SIZE + SQUARE_SIZE / 2}
+                  cy={renderRow * SQUARE_SIZE + SQUARE_SIZE / 2}
+                  isSelectable={false}
+                  isSelected={false}
+                  animOpacity={0.15}
+                />
+              );
+            })}
+            {dragState.dragPosition && dragState.dragOriginSquare !== null && (
+              <PieceComponent
+                piece={dragState.draggedPiece}
+                sq={dragState.dragOriginSquare}
+                cx={dragState.dragPosition.x}
+                cy={dragState.dragPosition.y}
+                isSelectable={false}
+                isSelected={false}
+                animScale={1.15}
+              />
+            )}
+          </g>
+        )}
 
         {/* Event animation overlays (Task 11.1) — rendered above floating pieces */}
         <EventAnimations

@@ -67,6 +67,7 @@ import EventAnnouncement from '../EventAnnouncement';
 import { useAnimationQueue, buildAnimationSequence, type AnimationStep } from '../useAnimationQueue';
 import { useEventAnimations } from '../useEventAnimations';
 import { useEventOverlays } from '../useEventOverlays';
+import { useDragAndDrop } from '../useDragAndDrop';
 import { getEffectiveBoard } from '../../engine/game';
 import type { Difficulty } from '../../ai/difficulty';
 import { deserializeBoardState } from '../../persistence/serialization';
@@ -398,6 +399,32 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
     return getPermanentEventForMode(selectedModeId) === CrazyEvent.MarchingOrders;
   }, [activeEvents, selectedModeId]);
 
+  const editorMarchingOrdersGrid = useMemo<MarchingOrdersGrid | undefined>(
+    () => (marchingOrdersActive ? editor.getMarchingOrdersGrid() : undefined),
+    [marchingOrdersActive, editor],
+  );
+
+  // Drag-and-drop for the editor (Task 23.2). Editor mode uses
+  // onEditorDragDrop to reposition pieces; activeColor and selectablePieces
+  // are unused in this mode but typed as required.
+  const editorDrag = useDragAndDrop({
+    effectiveBoard: editor.board,
+    activeColor: PieceColors.White,
+    selectablePieces: new Set<number>(),
+    legalDestinations: new Set<number>(),
+    selectedSquare: null,
+    isMidMultiJump: false,
+    handleSquareClick: () => undefined,
+    isAnimating: false,
+    isDisabled: false,
+    isGameInProgress: false,
+    flipped: false,
+    activeEvents: [],
+    editorMode: true,
+    onEditorDragDrop: editor.handleDragDrop,
+    marchingOrdersGrid: editorMarchingOrdersGrid,
+  });
+
   const handleBoardClick = useCallback(
     (sq: Square) => {
       if (diagram.activeTool === 'highlight') {
@@ -611,9 +638,9 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
               overlays={diagram.overlays}
               svgRef={svgRef}
               pendingArrowFrom={arrowFrom}
-              editorMarchingOrdersGrid={
-                marchingOrdersActive ? editor.getMarchingOrdersGrid() : undefined
-              }
+              editorMarchingOrdersGrid={editorMarchingOrdersGrid}
+              dragState={editorDrag.dragState}
+              pointerHandlers={editorDrag.pointerHandlers}
             />
           </div>
           <EvaluationBar
@@ -1181,6 +1208,23 @@ function FreePlayGameView({
     ],
   );
 
+  // Drag-and-drop for play mode (Task 23.2).
+  const playDrag = useDragAndDrop({
+    effectiveBoard: gameState.board,
+    activeColor: gameState.activeColor,
+    selectablePieces,
+    legalDestinations,
+    selectedSquare,
+    isMidMultiJump: false,
+    handleSquareClick,
+    isAnimating: animationQueue.isAnimating,
+    isDisabled: isAITurn,
+    isGameInProgress: gameState.status === GameStatus.InProgress,
+    flipped: setup.flipped,
+    activeEvents: gameState.activeEvents,
+    marchingOrdersGrid: marchingOrdersGridForPlay ?? undefined,
+  });
+
   // Undo handler: step back one ply (pass-and-play) or two plies (vs CPU).
   const handleUndo = useCallback(() => {
     if (animationQueue.isAnimating) return;
@@ -1245,6 +1289,8 @@ function FreePlayGameView({
               explosionState={animationQueue.explosionState}
               overlayState={animationQueue.overlayState}
               eventOverlayState={eventOverlayState}
+              dragState={playDrag.dragState}
+              pointerHandlers={playDrag.pointerHandlers}
             />
           </div>
           <EvaluationBar

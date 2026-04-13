@@ -87,6 +87,9 @@ export interface UseGameInteractionResult {
 
   /** Square awaiting move confirmation (second click), or null. */
   pendingConfirmSquare: Square | null;
+
+  /** The effective board after onTurnStart event transformations (Task 23.2). */
+  effectiveBoard: BoardState;
 }
 
 // ---------------------------------------------------------------------------
@@ -471,5 +474,6 @@ export function useGameInteraction({
     isMidMultiJump: multiJumpProgress !== null,
     selectablePieces,
     pendingConfirmSquare,
+    effectiveBoard,
   };
 }

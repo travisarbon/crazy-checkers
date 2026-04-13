@@ -14,6 +14,7 @@ import type { BoardState, PieceColor, PieceType, Square } from '../engine/types'
 import { squareToGrid } from '../engine/board';
 import { extSquareToGrid } from '../engine/events/marchingOrders';
 import Board from './Board';
+import type { DragState } from './useDragAndDrop';
 import type { BoardGeometry, DiagramOverlayState } from '../cogitate/types';
 import { DRAUGHTS_BOARD_GEOMETRY } from '../cogitate/types';
 import type { EventOverlayState } from './useEventOverlays';
@@ -83,6 +84,15 @@ export interface CogitateBoardProps {
    * are clickable as in standard American Rules.
    */
   editorMarchingOrdersGrid?: readonly ({ color: PieceColor; type: PieceType } | null)[];
+
+  // Drag-and-drop pass-through (Task 23.2)
+  dragState?: DragState;
+  pointerHandlers?: {
+    onPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
+    onPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
+    onPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void;
+    onPointerCancel: (e: React.PointerEvent<SVGSVGElement>) => void;
+  };
 }
 
 const OVERLAY_COLOR_MAP: Record<'green' | 'red' | 'blue', string> = {
@@ -136,6 +146,8 @@ function CogitateBoard({
   overlayState,
   lastMoveSquares,
   editorMarchingOrdersGrid,
+  dragState,
+  pointerHandlers,
 }: CogitateBoardProps) {
   void geometry;
   void onEditorDragDrop;
@@ -320,6 +332,8 @@ function CogitateBoard({
           marchingOrdersGrid={
             editorMarchingOrdersGrid ?? eventOverlayState?.marchingOrdersGrid ?? undefined
           }
+          dragState={dragState}
+          pointerHandlers={pointerHandlers}
         />
       </div>
       {(overlays || (validPlacementSquares && validPlacementSquares.size > 0) || pendingArrowFrom !== null) && (

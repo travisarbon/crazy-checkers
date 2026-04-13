@@ -26,6 +26,7 @@ import { getAllGameRecords } from '../../persistence/gameHistory';
 import type { GameRecord } from '../../persistence/gameHistory';
 import type { NormalizedEvaluation } from '../../cogitate/types';
 import CogitateBoard from '../CogitateBoard';
+import { useDragAndDrop } from '../useDragAndDrop';
 import EvaluationBar from '../EvaluationBar';
 import GameHistoryBrowser from '../GameHistoryBrowser';
 import { useEventOverlays } from '../useEventOverlays';
@@ -268,6 +269,22 @@ function TrainingSession({
     currentPosition?.activeColor,
   );
 
+  // Drag-and-drop for training position attempts (Task 23.2).
+  const trainingDrag = useDragAndDrop({
+    effectiveBoard: currentPosition?.board ?? (new Array(32).fill(null) as never),
+    activeColor: currentPosition?.activeColor ?? ('WHITE' as PieceColor),
+    selectablePieces,
+    legalDestinations,
+    selectedSquare,
+    isMidMultiJump: false,
+    handleSquareClick,
+    isAnimating: false,
+    isDisabled: session.isEvaluating,
+    isGameInProgress: session.phase === 'playing',
+    flipped: false,
+    activeEvents: currentPosition?.activeEvents ?? [],
+  });
+
   const evalForBar = useMemo<NormalizedEvaluation | null>(() => {
     if (!currentPosition) return null;
     const analysis = currentPosition.analysisResult;
@@ -438,6 +455,8 @@ function TrainingSession({
               selectedSquare={selectedSquare}
               legalMoveSquares={legalDestinations}
               eventOverlayState={eventOverlayState}
+              dragState={trainingDrag.dragState}
+              pointerHandlers={trainingDrag.pointerHandlers}
             />
           </div>
           <EvaluationBar

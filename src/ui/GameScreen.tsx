@@ -33,6 +33,7 @@ import EventAnnouncement from './EventAnnouncement';
 import ActiveEventsIndicator from './ActiveEventsIndicator';
 import { useGameInteraction } from './useGameInteraction';
 import type { HopDetails } from './useGameInteraction';
+import { useDragAndDrop } from './useDragAndDrop';
 import { useGameClock } from './useGameClock';
 import type { AnimationStep } from './useAnimationQueue';
 import { useAnimationQueue, buildAnimationSequence, ANIM_DURATION, ANIM_EASING } from './useAnimationQueue';
@@ -644,6 +645,22 @@ export default function GameScreen({
     moveConfirmation,
   });
 
+  // --- Drag-and-drop hook (Task 23.2) ---
+  const drag = useDragAndDrop({
+    effectiveBoard: interaction.effectiveBoard,
+    activeColor: gameState.activeColor,
+    selectablePieces: interaction.selectablePieces,
+    legalDestinations: interaction.legalDestinations,
+    selectedSquare: interaction.selectedSquare,
+    isMidMultiJump: interaction.isMidMultiJump,
+    handleSquareClick: interaction.handleSquareClick,
+    isAnimating: animationQueue.isAnimating,
+    isDisabled: isAIThinking,
+    isGameInProgress: gameState.status === GameStatus.InProgress,
+    flipped,
+    activeEvents: gameState.activeEvents,
+  });
+
   // --- Piece selection SFX ---
   const prevSelectedRef = useRef<number | null>(null);
   useEffect(() => {
@@ -660,6 +677,7 @@ export default function GameScreen({
         if (animationQueue.isAnimating) {
           animationQueue.skipAnimation();
         } else {
+          drag.cancelDrag();
           interaction.handleEscape();
         }
       }
@@ -668,7 +686,7 @@ export default function GameScreen({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [interaction, animationQueue]);
+  }, [interaction, animationQueue, drag]);
 
   // --- Undo handler ---
   const handleUndo = useCallback(() => {
@@ -794,6 +812,8 @@ export default function GameScreen({
           overlayState={animationQueue.overlayState}
           eventOverlayState={eventOverlayState}
           marchingOrdersGrid={eventOverlayState.marchingOrdersGrid ?? undefined}
+          dragState={drag.dragState}
+          pointerHandlers={drag.pointerHandlers}
         />
       </div>
       {/* Mobile: clock below board (White, or Black when flipped) */}

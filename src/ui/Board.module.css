@@ -110,6 +110,17 @@
   animation: pendingPulse 1s ease-in-out infinite;
 }
 
+/* ── Drag-and-drop (Task 23.2) ───────────────────────────── */
+
+.boardDragging {
+  touch-action: none;
+  cursor: grabbing;
+}
+
+.boardDragging * {
+  cursor: grabbing !important;
+}
+
 /* ── Reduced motion preference ───────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
