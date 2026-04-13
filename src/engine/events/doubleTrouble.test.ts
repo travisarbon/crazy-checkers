@@ -147,15 +147,17 @@ describe('selectRandomEvent (DoubleTrouble live)', () => {
 
   it('approximately 5% of draws trigger Double Trouble (2-element)', () => {
     let doubleTroubleCount = 0;
-    const trials = 2000;
+    const trials = 5000;
     for (let i = 0; i < trials; i++) {
       const events = selectRandomEvent();
       if (events.length === 2) doubleTroubleCount++;
     }
-    // 1/20 = 5%. Allow 2%–10% range for random variation.
+    // 1/20 = 5%. At n=5000 the 4-sigma band is roughly 3.1%–6.9%; we
+    // widen to 2%–10% (inclusive) so a single flaky run doesn't trip
+    // on boundary hits like exactly 0.02 or 0.10.
     const rate = doubleTroubleCount / trials;
-    expect(rate).toBeGreaterThan(0.02);
-    expect(rate).toBeLessThan(0.10);
+    expect(rate).toBeGreaterThanOrEqual(0.02);
+    expect(rate).toBeLessThanOrEqual(0.10);
   });
 });
 
