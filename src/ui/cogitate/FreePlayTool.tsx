@@ -481,8 +481,8 @@ function InlineGameSetup({ onStartGame }: InlineGameSetupProps) {
   return (
     <div data-testid="freeplay-inline-setup">
       <h3>Play From Position</h3>
-      <fieldset>
-        <legend>Opponent</legend>
+      <fieldset className={styles.setupFieldset}>
+        <legend className={styles.setupLegend}>Opponent</legend>
         <label>
           <input
             type="radio"
@@ -504,8 +504,8 @@ function InlineGameSetup({ onStartGame }: InlineGameSetupProps) {
           Pass & Play
         </label>
       </fieldset>
-      <fieldset>
-        <legend>Your color</legend>
+      <fieldset className={styles.setupFieldset}>
+        <legend className={styles.setupLegend}>Your color</legend>
         <label>
           <input
             type="radio"
@@ -528,8 +528,8 @@ function InlineGameSetup({ onStartGame }: InlineGameSetupProps) {
         </label>
       </fieldset>
       {opponent === 'cpu' && (
-        <fieldset>
-          <legend>Difficulty</legend>
+        <fieldset className={styles.setupFieldset}>
+          <legend className={styles.setupLegend}>Difficulty</legend>
           <label>
             <input
               type="radio"

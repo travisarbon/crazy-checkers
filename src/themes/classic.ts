@@ -18,5 +18,13 @@ export const classicTheme: Theme = {
   uiText: '#E8F5E9',
   uiAccent: '#66BB6A',
   uiDanger: '#EF5350',
+  uiSuccess: '#81C784',
+  uiWarning: '#FFB74D',
+  uiError: '#E57373',
+  uiSurface: '#254C33',
+  uiBorder: 'rgba(102, 187, 106, 0.3)',
+  uiHeading: '#FFFFFF',
+  uiTextMuted: 'rgba(232, 245, 233, 0.65)',
+  uiAccentContrast: '#0B2114',
   pieceShadow: true,
 };

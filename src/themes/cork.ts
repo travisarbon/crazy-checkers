@@ -18,5 +18,13 @@ export const corkTheme: Theme = {
   uiText: '#F0D9B5',
   uiAccent: '#D4A843',
   uiDanger: '#E53E3E',
+  uiSuccess: '#7FB87F',
+  uiWarning: '#F0B429',
+  uiError: '#E57373',
+  uiSurface: '#3D2418',
+  uiBorder: 'rgba(212, 168, 67, 0.3)',
+  uiHeading: '#F5E1B8',
+  uiTextMuted: 'rgba(240, 217, 181, 0.65)',
+  uiAccentContrast: '#2C1810',
   pieceShadow: true,
 };

@@ -18,5 +18,13 @@ export const currentTheme: Theme = {
   uiText: '#EEEEEE',
   uiAccent: '#64B5F6',
   uiDanger: '#CF6679',
+  uiSuccess: '#81C784',
+  uiWarning: '#FFB74D',
+  uiError: '#EF5350',
+  uiSurface: '#1E1E1E',
+  uiBorder: 'rgba(100, 181, 246, 0.3)',
+  uiHeading: '#FFFFFF',
+  uiTextMuted: 'rgba(238, 238, 238, 0.65)',
+  uiAccentContrast: '#0B1A29',
   pieceShadow: true,
 };

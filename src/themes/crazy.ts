@@ -18,5 +18,13 @@ export const crazyTheme: Theme = {
   uiText: '#1A1A1A',
   uiAccent: '#D50000',
   uiDanger: '#B71C1C',
+  uiSuccess: '#2E7D32',
+  uiWarning: '#E65100',
+  uiError: '#B71C1C',
+  uiSurface: '#FFFFFF',
+  uiBorder: 'rgba(26, 26, 26, 0.25)',
+  uiHeading: '#1A1A1A',
+  uiTextMuted: 'rgba(26, 26, 26, 0.7)',
+  uiAccentContrast: '#FFFFFF',
   pieceShadow: true,
 };

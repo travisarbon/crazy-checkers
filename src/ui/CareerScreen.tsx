@@ -212,10 +212,12 @@ function StatCard({
   label,
   value,
   testId,
+  longValue = false,
 }: {
   label: string;
   value: string;
   testId: string;
+  longValue?: boolean;
 }) {
   return (
     <div
@@ -225,7 +227,7 @@ function StatCard({
       data-testid={testId}
     >
       <span className={styles.statLabel}>{label}</span>
-      <span className={styles.statValue}>{value}</span>
+      <span className={longValue ? styles.statValueLong : styles.statValue}>{value}</span>
     </div>
   );
 }
@@ -778,6 +780,7 @@ export default function CareerScreen({ onBack }: CareerScreenProps) {
             label="Record"
             value={formatRecordWithIncomplete(summary.wins, summary.losses, summary.draws, summary.totalGames)}
             testId="stat-record"
+            longValue
           />
           <StatCard
             label="Best Streak"

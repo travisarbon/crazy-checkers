@@ -18,5 +18,13 @@ export const contrastTheme: Theme = {
   uiText: '#FFFFFF',
   uiAccent: '#FFD700',
   uiDanger: '#FF0000',
+  uiSuccess: '#00E676',
+  uiWarning: '#FFD54F',
+  uiError: '#FF5252',
+  uiSurface: '#1A1A1A',
+  uiBorder: 'rgba(255, 215, 0, 0.5)',
+  uiHeading: '#FFFFFF',
+  uiTextMuted: 'rgba(255, 255, 255, 0.7)',
+  uiAccentContrast: '#000000',
   pieceShadow: false,
 };

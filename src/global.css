@@ -8,3 +8,69 @@ html, body {
   overflow-x: hidden;
   min-height: 100vh;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Design tokens — spacing, typography, radius, z-index,
+   animation timing, and color-mix opacity levels.
+   (Phase 3 UI/UX Improvement Plan — Section 16)
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Spacing scale (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* Typography scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: clamp(1.5rem, 4vw, 2.25rem);
+  --text-3xl: clamp(2rem, 6vw, 3.5rem);
+
+  /* Font weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Border radius tokens */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Z-index scale */
+  --z-base: 1;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-overlay: 50;
+  --z-modal-backdrop: 100;
+  --z-modal: 101;
+  --z-toast: 200;
+
+  /* Animation timing */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-emphasis: 800ms;
+
+  /* Opacity scale (for color-mix tints) */
+  --tint-subtle: 5%;
+  --tint-light: 10%;
+  --tint-medium: 20%;
+  --tint-strong: 30%;
+  --tint-heavy: 50%;
+
+  /* Common disabled opacity */
+  --opacity-disabled: 0.4;
+}

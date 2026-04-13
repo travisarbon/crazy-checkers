@@ -44,8 +44,8 @@
   transform: translate(-50%, -50%);
   padding: 0 0.25rem;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.55);
-  color: #111;
+  background: color-mix(in srgb, var(--ui-surface, #fff) 70%, transparent);
+  color: var(--ui-text, #111);
   mix-blend-mode: normal;
   pointer-events: none;
   white-space: nowrap;
@@ -67,8 +67,8 @@
 }
 
 .error {
-  border-color: #c0392b;
-  background: rgba(192, 57, 43, 0.15);
+  border-color: var(--ui-error, #c0392b);
+  background: color-mix(in srgb, var(--ui-error, #c0392b) 15%, transparent);
 }
 
 .liveRegion {

@@ -26,12 +26,23 @@
 
 /* ── Mode button grid ─────────────────────────────────────── */
 
+/* 10 mode buttons total — use a 2-column layout at narrow widths
+   and a 5-column layout at wider widths so the grid always fills
+   evenly (5×2 or 2×5) and never leaves an orphaned final row. */
 .modeGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   width: 100%;
   max-width: 600px;
+  justify-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .modeGrid {
+    grid-template-columns: repeat(5, 1fr);
+    max-width: 900px;
+  }
 }
 
 .modeButton {
@@ -63,7 +74,7 @@
 }
 
 .modeButton.disabled {
-  opacity: 0.45;
+  opacity: var(--opacity-disabled, 0.4);
   cursor: not-allowed;
   border-color: currentColor;
 }

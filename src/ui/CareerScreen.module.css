@@ -44,6 +44,8 @@
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .statLabel {
@@ -57,6 +59,22 @@
   font-size: clamp(1.5rem, 4vw, 2.5rem);
   font-weight: 700;
   color: var(--ui-accent);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+/* Long-text variant — used for multi-part values like the Record stat
+   (e.g. "4W / 26L / 2D (7 incomplete)") that would otherwise overflow
+   the card when rendered at the default stat font size. */
+.statValueLong {
+  font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--ui-accent);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 /* ── Section 2: Track progress ────────────────────────────── */

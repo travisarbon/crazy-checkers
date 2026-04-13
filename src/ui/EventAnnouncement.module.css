@@ -23,8 +23,9 @@
   gap: 0.5rem;
   padding: 2rem 3rem;
   max-width: 90vw;
-  background: rgba(0, 0, 0, 0.88);
-  border-radius: 12px;
+  background: color-mix(in srgb, var(--ui-surface, #111) 92%, transparent);
+  color: var(--ui-text, #fff);
+  border-radius: var(--radius-lg, 12px);
   border: 2px solid var(--ui-accent, #c0392b);
 }
 
@@ -43,7 +44,7 @@
 .eventFlavor {
   font-size: 1.1rem;
   font-style: italic;
-  color: #fff;
+  color: var(--ui-text, #fff);
   opacity: 1;
   margin: 0.25rem 0 0;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);

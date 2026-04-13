@@ -33,6 +33,16 @@ export interface Theme {
   readonly uiAccent: string;
   readonly uiDanger: string;
 
+  // Extended UI semantic tokens (Phase 3 UI/UX plan)
+  readonly uiSuccess: string;
+  readonly uiWarning: string;
+  readonly uiError: string;
+  readonly uiSurface: string;
+  readonly uiBorder: string;
+  readonly uiHeading: string;
+  readonly uiTextMuted: string;
+  readonly uiAccentContrast: string;
+
   // Visual polish
   readonly pieceShadow: boolean;
 }
@@ -58,6 +68,14 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty('--ui-text', theme.uiText);
   root.style.setProperty('--ui-accent', theme.uiAccent);
   root.style.setProperty('--ui-danger', theme.uiDanger);
+  root.style.setProperty('--ui-success', theme.uiSuccess);
+  root.style.setProperty('--ui-warning', theme.uiWarning);
+  root.style.setProperty('--ui-error', theme.uiError);
+  root.style.setProperty('--ui-surface', theme.uiSurface);
+  root.style.setProperty('--ui-border', theme.uiBorder);
+  root.style.setProperty('--ui-heading', theme.uiHeading);
+  root.style.setProperty('--ui-text-muted', theme.uiTextMuted);
+  root.style.setProperty('--ui-accent-contrast', theme.uiAccentContrast);
 
   // Apply page background
   document.body.style.background = theme.uiBg;
