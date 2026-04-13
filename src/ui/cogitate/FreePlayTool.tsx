@@ -35,12 +35,16 @@ import {
   PlayerType,
 } from '../../engine/types';
 import type { MarchingOrdersGrid } from './usePositionEditor';
+import { extSquareToGrid } from '../../engine/events/marchingOrders';
 import { getBoardSquare, squareToGrid } from '../../engine/board';
 import { computeZobristHash } from '../../engine/zobrist';
 import { makeMove } from '../../engine/game';
+import { EVENT_METADATA_FACTORIES } from '../../engine/events';
 import { getAdapter } from '../../cogitate/CogitateGameAdapter';
 import type { CogitateGameAdapter } from '../../cogitate/CogitateGameAdapter';
 import '../../cogitate/adapters/registerAll';
+import { CHOICE_MODE_DATA } from '../../persistence/choiceModeData';
+import { choiceDisplayNameToId } from '../../cogitate/adapters/choiceAdapter';
 import { recordGame } from '../../persistence/gameHistory';
 import { serializeBoard } from '../../persistence/serialization';
 import type { SerializedActiveEvent } from '../../persistence/serialization';
@@ -177,6 +181,64 @@ function ensureMarchingOrdersMetadata(
   });
 }
 
+/** Build a lookup from Choice mode ids to their permanent CrazyEvent. */
+const CHOICE_MODE_PERMANENT_EVENT: ReadonlyMap<string, CrazyEvent | null> =
+  new Map(
+    CHOICE_MODE_DATA.map((def) => [
+      choiceDisplayNameToId(def.displayName),
+      def.event,
+    ]),
+  );
+
+/**
+ * Return the permanent CrazyEvent baked into `modeId`, or null for modes
+ * without a baked-in event (classic, crazy, chaos, extra-crazy-style
+ * Choice modes). FreePlay needs this so the permanent event is actually
+ * present in state.activeEvents — not just hidden inside the adapter's
+ * internal composite ruleset — which is required for the event decorator
+ * to see its own metadata.
+ */
+function getPermanentEventForMode(modeId: string): CrazyEvent | null {
+  if (modeId.startsWith('choice-')) {
+    return CHOICE_MODE_PERMANENT_EVENT.get(modeId) ?? null;
+  }
+  return null;
+}
+
+/**
+ * Compose the initial ActiveEvent[] for a Free Play game. Includes the
+ * Choice mode's permanent event (with properly-initialized metadata) when
+ * one exists, then the user-authored activeEvents (event-editor toggles).
+ */
+function composeInitialActiveEvents(
+  modeId: string,
+  board: BoardState,
+  userActiveEvents: readonly ActiveEvent[],
+): readonly ActiveEvent[] {
+  const permanentEventType = getPermanentEventForMode(modeId);
+  if (permanentEventType === null) return userActiveEvents;
+
+  const metadataFactory = EVENT_METADATA_FACTORIES.get(permanentEventType);
+  const metadata = metadataFactory
+    ? metadataFactory(board, PieceColors.White)
+    : undefined;
+
+  const permanent: ActiveEvent = {
+    type: permanentEventType,
+    remainingPlies: -1,
+    triggeredBy: PieceColors.White,
+    triggeredAtPly: 0,
+    permanent: true,
+    ...(metadata !== undefined ? { metadata } : {}),
+  };
+
+  // Drop any duplicate from userActiveEvents so the permanent one wins.
+  const filteredUser = userActiveEvents.filter(
+    (e) => e.type !== permanentEventType,
+  );
+  return [permanent, ...filteredUser];
+}
+
 function buildInitialState(
   adapter: CogitateGameAdapter,
   board: BoardState,
@@ -185,6 +247,16 @@ function buildInitialState(
   activeEvents: readonly ActiveEvent[],
 ): GameState {
   const ruleSet = adapter.getRuleSet(activeEvents);
+  // The adapter's ruleSet may already hold a permanent event internally;
+  // make sure it sees the exact same ActiveEvent array (with live
+  // metadata) that the game state also exposes, otherwise makeMove's
+  // subsequent setActiveEvents calls will clobber the permanent event.
+  const compositeWithSetActive = ruleSet as unknown as {
+    setActiveEvents?: (events: readonly ActiveEvent[]) => void;
+  };
+  if (typeof compositeWithSetActive.setActiveEvents === 'function') {
+    compositeWithSetActive.setActiveEvents(activeEvents);
+  }
   const initialHash = computeZobristHash(board, sideToMove);
   return {
     board,
@@ -307,15 +379,26 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
 
   const handleStartGame = useCallback(
     (players: PlayerSetup, flipped: boolean, difficulty: Difficulty) => {
-      const moActive = activeEvents.some(
+      // Compose: Choice mode's permanent event (if any) + user-authored
+      // event toggles. Without this, Choice modes silently degrade to
+      // Extra Crazy because the permanent event is only attached to the
+      // ruleSet internally, never to state.activeEvents — so the very
+      // first makeMove overwrites the ruleSet's currentActiveEvents and
+      // the permanent event vanishes.
+      const composedEvents = composeInitialActiveEvents(
+        selectedModeId,
+        editor.board,
+        activeEvents,
+      );
+      const moActive = composedEvents.some(
         (e) => e.type === CrazyEvent.MarchingOrders,
       );
       const seededEvents = moActive
         ? ensureMarchingOrdersMetadata(
-            activeEvents,
+            composedEvents,
             editor.getMarchingOrdersGrid(),
           )
-        : activeEvents;
+        : composedEvents;
       // When Marching Orders is active, the 64-grid itself is the source
       // of truth; its dark-square projection becomes the game's BoardState.
       const projectedBoard = moActive
@@ -333,7 +416,7 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
       setGameStartedAt(Date.now());
       setPhase('playing');
     },
-    [adapter, editor, sideToMove, activeEvents],
+    [adapter, editor, sideToMove, activeEvents, selectedModeId],
   );
 
   const handleBackToEditor = useCallback(() => {
@@ -741,6 +824,23 @@ function FreePlayGameView({
     return set;
   }, [legalMoves, selectedSquare]);
 
+  // Live Marching Orders 64-grid derived from the current game state's
+  // activeEvents metadata. Used to look up pieces on light squares during
+  // play (since the 32-slot BoardState doesn't store them).
+  const marchingOrdersGridForPlay = useMemo(() => {
+    const mo = gameState.activeEvents.find(
+      (e) => e.type === CrazyEvent.MarchingOrders,
+    );
+    if (!mo || !mo.metadata) return null;
+    const meta = mo.metadata as {
+      orthogonalGrid?: readonly (
+        | { color: PieceColor; type: PieceType }
+        | null
+      )[];
+    };
+    return meta.orthogonalGrid ?? null;
+  }, [gameState.activeEvents]);
+
   // Determine if current player is AI.
   const isAITurn = useMemo(() => {
     const active = gameState.activeColor === PieceColors.White
@@ -925,7 +1025,16 @@ function FreePlayGameView({
         return;
       }
 
-      const piece = getBoardSquare(gameState.board, sq);
+      // Piece lookup must consult the Marching Orders 64-grid for light
+      // squares (extSq 33-64) — those pieces don't live in the 32-slot
+      // BoardState. Fall back to getBoardSquare for dark squares.
+      const piece =
+        sqNum > 32
+          ? (() => {
+              const { row, col } = extSquareToGrid(sqNum);
+              return marchingOrdersGridForPlay?.[row * 8 + col] ?? null;
+            })()
+          : getBoardSquare(gameState.board, sq);
       if (
         piece !== null &&
         piece.color === gameState.activeColor &&
@@ -948,6 +1057,7 @@ function FreePlayGameView({
       legalDestinations,
       legalMoves,
       selectablePieces,
+      marchingOrdersGridForPlay,
       animationQueue.isAnimating,
       applyMove,
     ],

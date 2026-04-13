@@ -16,6 +16,14 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
+/* Default document text color follows the active theme. Without this
+   rule, h1/h2/h3/p/label elements inherit the browser default (black),
+   which on dark themes like Cork/Current/Contrast turned headings
+   and paragraphs near-black on dark backgrounds. */
+body {
+  color: var(--ui-text);
+}
+
 /* Display font for headings and hero titles — gives the game a playful,
    cohesive brand identity instead of the default system sans. */
 h1, h2, h3,

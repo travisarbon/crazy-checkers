@@ -44,7 +44,7 @@
 }
 
 .skipped {
-  background-color: #444;
+  background-color: color-mix(in srgb, var(--ui-text) var(--tint-strong), transparent);
 }
 
 .meta {

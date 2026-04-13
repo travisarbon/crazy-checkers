@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { GameRecord } from '../persistence/gameHistory';
 import { getAllGameRecords } from '../persistence/gameHistory';
 import { getMode } from '../persistence/gameModeRegistry';
-import { formatPlayerLabel, normalizeModeId } from '../utils/formatting';
+import { formatModeLabel, formatPlayerLabel, normalizeModeId } from '../utils/formatting';
 import styles from './GameHistoryBrowser.module.css';
 
 export interface GameHistoryBrowserProps {
@@ -148,10 +148,13 @@ export default function GameHistoryBrowser({
           >
             <option value="">All modes</option>
             {availableModes.map((mode) => {
-              const entry = getMode(normalizeModeId(mode));
+              const label = formatModeLabel(
+                mode,
+                (id) => getMode(id)?.displayName,
+              );
               return (
                 <option key={mode} value={mode}>
-                  {entry?.displayName ?? mode}
+                  {label}
                 </option>
               );
             })}
@@ -202,7 +205,10 @@ export default function GameHistoryBrowser({
                   }}
                 >
                   <span className={styles.modeBadge}>
-                    {getMode(normalizeModeId(game.mode))?.displayName ?? game.mode}
+                    {formatModeLabel(
+                      game.mode,
+                      (id) => getMode(id)?.displayName,
+                    )}
                   </span>
                   <span className={styles.meta}>
                     <span>{formatPlayers(game)}</span>

@@ -90,8 +90,10 @@ function EventEditor({
         flexDirection: 'column',
         gap: '0.4rem',
         padding: '0.5rem',
-        border: '1px solid var(--ui-border, #555)',
-        borderRadius: '0.35rem',
+        border: '1px solid var(--ui-border)',
+        borderRadius: 'var(--radius-md)',
+        background: 'var(--ui-surface)',
+        color: 'var(--ui-text)',
       }}
     >
       <div
@@ -139,10 +141,12 @@ function EventEditor({
               style={{
                 fontSize: '0.75rem',
                 padding: '0.2rem 0.4rem',
-                borderRadius: '999px',
-                border: '1px solid var(--ui-border, #555)',
-                background: active ? 'var(--quality-good, #4caf50)' : 'transparent',
-                color: active ? '#000' : 'inherit',
+                borderRadius: 'var(--radius-full)',
+                border: `1px solid ${active ? 'var(--ui-accent)' : 'var(--ui-border)'}`,
+                background: active ? 'var(--ui-accent)' : 'transparent',
+                color: active
+                  ? 'var(--ui-accent-contrast, var(--ui-bg))'
+                  : 'inherit',
                 cursor: 'pointer',
               }}
             >

@@ -82,6 +82,15 @@ function GameModeSelector({
         value={selectedModeId}
         onChange={(e) => { onModeSelect(e.target.value); }}
         data-testid="game-mode-selector-select"
+        style={{
+          background: 'var(--ui-surface)',
+          color: 'var(--ui-text)',
+          border: '1px solid var(--ui-border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '0.4rem 0.6rem',
+          fontFamily: 'inherit',
+          fontSize: '0.9rem',
+        }}
       >
         {GROUP_ORDER.map((group) => {
           const items = grouped.get(group);

@@ -26,13 +26,13 @@
 }
 
 .whiteMove {
-  background: color-mix(in srgb, #ffffff 80%, var(--ui-accent, #3498db) 20%);
-  color: #222;
+  background: color-mix(in srgb, var(--piece-white) 80%, var(--ui-accent) 20%);
+  color: var(--piece-black);
 }
 
 .blackMove {
-  background: color-mix(in srgb, #222 80%, var(--ui-accent, #3498db) 20%);
-  color: #f3f3f3;
+  background: color-mix(in srgb, var(--piece-black) 80%, var(--ui-accent) 20%);
+  color: var(--piece-white);
 }
 
 .ellipsis {
