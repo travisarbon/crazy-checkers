@@ -20,6 +20,7 @@ import {
   loadCodeUnlocks,
   saveCodeUnlocks,
   addCodeUnlock,
+  clearCodeUnlocks,
   isUnlocked,
   getTrackProgress,
 } from './unlockEvaluator';
@@ -776,6 +777,16 @@ describe('Code unlock persistence', () => {
     );
     const unlocks = loadCodeUnlocks();
     expect(unlocks.size).toBe(1);
+  });
+
+  it('clearCodeUnlocks removes the persisted key', () => {
+    localStorage.setItem(
+      CODE_UNLOCKS_KEY,
+      JSON.stringify(['chaos', 'choice-revolution']),
+    );
+    clearCodeUnlocks();
+    expect(localStorage.getItem(CODE_UNLOCKS_KEY)).toBeNull();
+    expect(loadCodeUnlocks().size).toBe(0);
   });
 });
 

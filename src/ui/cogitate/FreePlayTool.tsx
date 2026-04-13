@@ -303,10 +303,20 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [arrowFrom, setArrowFrom] = useState<Square | null>(null);
 
-  const marchingOrdersActive = useMemo(
-    () => activeEvents.some((e) => e.type === CrazyEvent.MarchingOrders),
-    [activeEvents],
-  );
+  // Marching Orders is "active in the editor" if it's either:
+  //   (a) a user-toggled event (Crazy/Chaos modes via EventEditor), or
+  //   (b) the selected mode's baked-in permanent event (e.g. the
+  //       "Rank and File" Choice mode, which the Event Editor never
+  //       surfaces because it only shows user-togglable events).
+  // Without (b), the editor wouldn't make light squares interactive
+  // in Rank and File, and the seeded 64-grid wouldn't flow into the
+  // game state on Start.
+  const marchingOrdersActive = useMemo(() => {
+    if (activeEvents.some((e) => e.type === CrazyEvent.MarchingOrders)) {
+      return true;
+    }
+    return getPermanentEventForMode(selectedModeId) === CrazyEvent.MarchingOrders;
+  }, [activeEvents, selectedModeId]);
 
   const handleBoardClick = useCallback(
     (sq: Square) => {

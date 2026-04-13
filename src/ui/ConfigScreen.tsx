@@ -1,9 +1,10 @@
 /**
  * Settings and configuration screen.
  * Provides theme picker, animation speed slider, move confirmation toggle,
- * and placeholder data management buttons.
+ * and data management (Export / Import / Reset Progress).
  */
 
+import { useRef, useState } from 'react';
 import type { Settings } from './settings';
 import type { AudioManager } from '../audio/audioManager';
 import { THEMES } from '../themes/theme';
@@ -12,6 +13,14 @@ import { SoundEvent } from '../audio/types';
 import BoardPreview from './BoardPreview';
 import TimeControlSection from './TimeControlSection';
 import ModeScreenShell from './ModeScreenShell';
+import ResetProgressDialog from './dialogs/ResetProgressDialog';
+import {
+  exportAll,
+  serializeExportEnvelope,
+  parseExportEnvelope,
+  importAll,
+  resetAll,
+} from '../persistence/dataManagement';
 import styles from './ConfigScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -325,27 +334,245 @@ function MoveConfirmationSection({
   );
 }
 
+function formatTimestampForFilename(ms: number): string {
+  const d = new Date(ms);
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  return (
+    String(d.getFullYear()) +
+    '-' + pad(d.getMonth() + 1) +
+    '-' + pad(d.getDate()) +
+    '-' + pad(d.getHours()) +
+    pad(d.getMinutes())
+  );
+}
+
 function DataSection() {
+  const [status, setStatus] = useState<{
+    kind: 'info' | 'error';
+    text: string;
+  } | null>(null);
+  const [pendingImport, setPendingImport] = useState<string | null>(null);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleExport(): Promise<void> {
+    try {
+      const envelope = await exportAll();
+      const blob = new Blob([serializeExportEnvelope(envelope)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `crazy-checkers-export-${formatTimestampForFilename(envelope.exportedAt)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setStatus({ kind: 'info', text: 'Exported.' });
+    } catch (err) {
+      console.warn('[Configure] export failed', err);
+      setStatus({ kind: 'error', text: 'Export failed — see browser console.' });
+    }
+  }
+
+  function handleImportClick(): void {
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileSelected(
+    e: React.ChangeEvent<HTMLInputElement>,
+  ): Promise<void> {
+    const file = e.target.files?.[0];
+    // Reset the input so re-selecting the same file triggers onChange again.
+    e.target.value = '';
+    if (!file) return;
+    let text: string;
+    try {
+      text = await file.text();
+    } catch {
+      setStatus({ kind: 'error', text: 'Could not read file.' });
+      return;
+    }
+    setPendingImport(text);
+  }
+
+  async function handleConfirmImport(): Promise<void> {
+    if (pendingImport === null) return;
+    const parsed = parseExportEnvelope(pendingImport);
+    setPendingImport(null);
+    if (parsed.kind === 'invalid-envelope') {
+      setStatus({ kind: 'error', text: `Import failed: ${parsed.reason}` });
+      return;
+    }
+    if (parsed.kind === 'unsupported-version') {
+      setStatus({
+        kind: 'error',
+        text: `This file is from a newer version of Crazy Checkers (schema v${String(parsed.actualVersion)}). Please update the app.`,
+      });
+      return;
+    }
+    setIsBusy(true);
+    const result = await importAll(parsed.envelope);
+    setIsBusy(false);
+    if (result.kind !== 'ok') {
+      setStatus({
+        kind: 'error',
+        text: `Import failed while writing ${result.slot}. Storage may be full or unavailable.`,
+      });
+      return;
+    }
+    setStatus({ kind: 'info', text: 'Imported. Reloading…' });
+    // Let the success message paint briefly before reload.
+    setTimeout(() => { window.location.reload(); }, 300);
+  }
+
+  async function handleResetConfirm(): Promise<void> {
+    setShowResetDialog(false);
+    setIsBusy(true);
+    try {
+      await resetAll();
+    } finally {
+      setIsBusy(false);
+    }
+    setStatus({ kind: 'info', text: 'Progress reset. Reloading…' });
+    setTimeout(() => { window.location.reload(); }, 300);
+  }
+
   return (
     <section className={styles.section} aria-labelledby="data-heading">
       <h2 id="data-heading" className={styles.sectionTitle}>
         Data
       </h2>
       <div className={styles.dataButtons}>
-        <button className={styles.dataButton} disabled title="Coming in a future update">
+        <button
+          type="button"
+          className={styles.dataButton}
+          onClick={() => { void handleExport(); }}
+          disabled={isBusy}
+          data-testid="config-export-data"
+        >
           Export Data
         </button>
         <button
+          type="button"
+          className={styles.dataButton}
+          onClick={handleImportClick}
+          disabled={isBusy}
+          data-testid="config-import-data"
+        >
+          Import Data
+        </button>
+        <button
+          type="button"
           className={[styles.dataButton, styles.dangerButton].filter(Boolean).join(' ')}
-          disabled
-          title="Coming in a future update"
+          onClick={() => { setShowResetDialog(true); }}
+          disabled={isBusy}
+          data-testid="config-reset-progress"
         >
           Reset Progress
         </button>
       </div>
-      <p className={styles.settingHint}>
-        Data management features will be available in a future update.
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        style={{ display: 'none' }}
+        onChange={(e) => { void handleFileSelected(e); }}
+        data-testid="config-import-file-input"
+      />
+      <p
+        className={styles.settingHint}
+        aria-live="polite"
+        data-testid="config-data-status"
+        style={
+          status?.kind === 'error'
+            ? { color: 'var(--ui-error)', opacity: 1 }
+            : undefined
+        }
+      >
+        {status?.text ??
+          'Export creates a backup of all your settings, games, and unlocks. Import replaces them. Reset erases everything.'}
       </p>
+
+      {pendingImport !== null && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="import-confirm-title"
+          data-testid="config-import-confirm"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0, 0, 0, 0.6)',
+            zIndex: 100,
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--ui-surface)',
+              color: 'var(--ui-text)',
+              border: '1px solid var(--ui-border)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.5rem',
+              maxWidth: '28rem',
+              width: '90%',
+            }}
+          >
+            <h3 id="import-confirm-title" style={{ margin: '0 0 0.5rem', color: 'var(--ui-accent)' }}>
+              Replace current data?
+            </h3>
+            <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', lineHeight: 1.4 }}>
+              Importing will overwrite settings, completed game history,
+              challenge progress, and unlocks on this device with the
+              contents of the selected file. This cannot be undone.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => { setPendingImport(null); }}
+                data-testid="config-import-cancel"
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: 'transparent',
+                  border: '1px solid var(--ui-border)',
+                  color: 'var(--ui-text)',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => { void handleConfirmImport(); }}
+                data-testid="config-import-confirm-btn"
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: 'var(--ui-accent)',
+                  color: 'var(--ui-accent-contrast, var(--ui-bg))',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer',
+                }}
+              >
+                Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showResetDialog && (
+        <ResetProgressDialog
+          onConfirm={() => { void handleResetConfirm(); }}
+          onCancel={() => { setShowResetDialog(false); }}
+        />
+      )}
     </section>
   );
 }

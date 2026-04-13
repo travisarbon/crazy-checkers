@@ -326,6 +326,18 @@ export function addCodeUnlock(modeId: string): boolean {
   return true;
 }
 
+/**
+ * Remove all redeemed code unlocks. Used by the Configure screen's
+ * Reset Progress action.
+ */
+export function clearCodeUnlocks(): void {
+  try {
+    localStorage.removeItem(CODE_UNLOCKS_KEY);
+  } catch {
+    // Fail silently — private-mode Safari, quota errors, etc.
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Build TrackUnlockResult objects from CareerSnapshot
 // ---------------------------------------------------------------------------

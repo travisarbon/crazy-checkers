@@ -88,12 +88,14 @@ describe('ConfigScreen', () => {
     expect(screen.getByLabelText('Require confirmation before executing a move')).toBeInTheDocument();
   });
 
-  it('renders data section with disabled buttons', () => {
+  it('renders data section with all three action buttons enabled', () => {
     renderConfig();
     const exportBtn = screen.getByRole('button', { name: 'Export Data' });
+    const importBtn = screen.getByRole('button', { name: 'Import Data' });
     const resetBtn = screen.getByRole('button', { name: 'Reset Progress' });
-    expect(exportBtn).toBeDisabled();
-    expect(resetBtn).toBeDisabled();
+    expect(exportBtn).not.toBeDisabled();
+    expect(importBtn).not.toBeDisabled();
+    expect(resetBtn).not.toBeDisabled();
   });
 
   // ── Theme switching tests ───────────────────────────────────────────

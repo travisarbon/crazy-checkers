@@ -280,6 +280,63 @@ describe('MarchingOrdersDecorator', () => {
     expect(event.remainingPlies).toBe(-1);
   });
 
+  it('preserves a pawn on a light square after a cross-turn cycle (regression)', () => {
+    // Regression for the Free Play Rank-and-File scenario: a pawn moves
+    // from a dark square onto a light square; on the next white turn,
+    // that pawn must still be selectable and its orthogonal captures
+    // must be generated. Previously broken because the composite
+    // ruleSet's currentActiveEvents was not re-synced after
+    // drainPendingMetadataUpdates, so the light-square piece vanished
+    // from the decorator's view.
+    //
+    // Setup: a single white pawn on dark (5, 2). After white moves UP
+    // to light (4, 2) and black passes (no black pieces so black's
+    // turn resolves into a no-legal-moves game over), the regression
+    // case is the metadata inspection right after applyMove — the
+    // 64-grid must contain the pawn at (4, 2), and the state's
+    // ruleSet (which will be reused by the UI's useMemo before the
+    // next makeMove call) must also see that updated grid.
+    const startGrid = makeGrid([
+      { row: 5, col: 2, color: W, type: PieceType.Pawn },
+    ]);
+    const board = projectGridToBoard(startGrid);
+    const event = createMOEvent(startGrid, false);
+    const state = crazyStateWithBoard(board, W, [event]);
+
+    const moves = getCurrentLegalMoves(state);
+    const moveUp = moves.find(
+      (m) =>
+        m.captured.length === 0 &&
+        (m.path[0] as number) === gridToExtSquare(4, 2),
+    );
+    expect(moveUp).toBeDefined();
+    if (!moveUp) return;
+    const nextState = makeMove(state, moveUp);
+
+    // The new active-event metadata must include the light-square piece.
+    const moEvent = nextState.activeEvents.find(
+      (e) => e.type === CrazyEvent.MarchingOrders,
+    );
+    const md = moEvent?.metadata as unknown as MarchingOrdersMetadata | undefined;
+    expect(md?.orthogonalGrid[4 * 8 + 2]).toEqual({
+      color: W,
+      type: PieceType.Pawn,
+    });
+
+    // The composite ruleSet must also see the updated context (the UI
+    // calls ruleSet.getLegalMoves between turns via a useMemo). With
+    // the old bug, the ruleSet's cached activeEventsContext was the
+    // pre-move grid, and syncGridFromBoard would wipe the pawn.
+    const postMoves = nextState.ruleSet.getLegalMoves(
+      nextState.board,
+      PieceColor.Black,
+    );
+    // Nothing to assert about black's moves specifically; the relevant
+    // point is that the state-vs-ruleSet read path doesn't throw and
+    // the light-square pawn is discoverable via the metadata above.
+    expect(postMoves).toBeDefined();
+  });
+
   it('is registered in EVENT_DECORATOR_REGISTRY', () => {
     expect(EVENT_DECORATOR_REGISTRY.has(CrazyEvent.MarchingOrders)).toBe(true);
   });

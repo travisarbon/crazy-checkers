@@ -230,8 +230,24 @@
   background: transparent;
   color: var(--ui-text);
   font-size: 0.9rem;
-  cursor: not-allowed;
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    transform 100ms ease;
+}
+
+.dataButton:hover:not(:disabled) {
+  background: var(--ui-accent);
+  color: var(--ui-accent-contrast, var(--ui-bg));
+  transform: scale(1.02);
+}
+
+.dataButton:disabled {
   opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+  transform: none;
 }
 
 .dataButton:focus-visible {
@@ -242,6 +258,11 @@
 .dangerButton {
   border-color: var(--ui-danger);
   color: var(--ui-danger);
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: var(--ui-danger);
+  color: var(--ui-accent-contrast, var(--ui-bg));
 }
 
 /* ── Small phone (360px) ────────────────────────────────────── */
