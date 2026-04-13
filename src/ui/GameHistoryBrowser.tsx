@@ -7,8 +7,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { GameRecord } from '../persistence/gameHistory';
 import { getAllGameRecords } from '../persistence/gameHistory';
-import { getMode } from '../persistence/gameModeRegistry';
-import { formatModeLabel, formatPlayerLabel, normalizeModeId } from '../utils/formatting';
+import { getMode, resolveGameRecord } from '../persistence/gameModeRegistry';
+import { formatModeLabel, formatPlayerLabel } from '../utils/formatting';
 import styles from './GameHistoryBrowser.module.css';
 
 export interface GameHistoryBrowserProps {
@@ -87,28 +87,43 @@ export default function GameHistoryBrowser({
     setActiveFilter(filterMode);
   }, [filterMode]);
 
+  // Build a per-game resolved-entry id (what Cogitate would load the
+  // record as — e.g. 'choice-portal' for a Portal choice-mode game)
+  // so the filter dropdown can surface every specific Choice / Classified
+  // variant separately instead of collapsing them all under "Choice".
+  const resolvedIdForGame = useCallback(
+    (g: GameRecord): string => resolveGameRecord(g).id,
+    [],
+  );
+
   const availableModes = useMemo(() => {
-    // Deduplicate by normalized registry ID so that legacy enum values
-    // ('CLASSIC') and canonical IDs ('classic') collapse into a single entry.
-    const seen = new Map<string, string>();
+    const seen = new Map<string, { filterValue: string; label: string }>();
     for (const g of games) {
-      const norm = normalizeModeId(g.mode);
-      if (!seen.has(norm)) {
-        seen.set(norm, g.mode);
-      }
+      const resolvedId = resolvedIdForGame(g);
+      if (seen.has(resolvedId)) continue;
+      const label = formatModeLabel(
+        resolvedId,
+        (id) => getMode(id)?.displayName,
+      );
+      // Filter value is the resolved id so the filter dropdown matches
+      // games by their resolved specific mode (classic/choice-xyz/...),
+      // not by the generic legacy enum 'CHOICE'.
+      seen.set(resolvedId, { filterValue: resolvedId, label });
     }
-    return Array.from(seen.values()).sort();
-  }, [games]);
+    return Array.from(seen.values()).sort((a, b) =>
+      a.label.localeCompare(b.label),
+    );
+  }, [games, resolvedIdForGame]);
 
   const filtered = useMemo(() => {
     const base = activeFilter
-      ? games.filter((g) => normalizeModeId(g.mode) === normalizeModeId(activeFilter))
+      ? games.filter((g) => resolvedIdForGame(g) === activeFilter)
       : games;
     const sorted = [...base].sort((a, b) =>
       sortOrder === 'newest' ? b.completedAt - a.completedAt : a.completedAt - b.completedAt,
     );
     return sorted;
-  }, [games, activeFilter, sortOrder]);
+  }, [games, activeFilter, sortOrder, resolvedIdForGame]);
 
   const handleLoadMore = useCallback(() => {
     setVisibleCount((v) => v + PAGE_INCREMENT);
@@ -147,17 +162,11 @@ export default function GameHistoryBrowser({
             data-testid="game-history-filter"
           >
             <option value="">All modes</option>
-            {availableModes.map((mode) => {
-              const label = formatModeLabel(
-                mode,
-                (id) => getMode(id)?.displayName,
-              );
-              return (
-                <option key={mode} value={mode}>
-                  {label}
-                </option>
-              );
-            })}
+            {availableModes.map(({ filterValue, label }) => (
+              <option key={filterValue} value={filterValue}>
+                {label}
+              </option>
+            ))}
           </select>
         </label>
         <label>
@@ -206,7 +215,10 @@ export default function GameHistoryBrowser({
                 >
                   <span className={styles.modeBadge}>
                     {formatModeLabel(
-                      game.mode,
+                      // Prefer the resolved registry id so a legacy
+                      // `CHOICE` record becomes e.g. "Choice — Portal"
+                      // rather than a bare "Choice".
+                      resolvedIdForGame(game),
                       (id) => getMode(id)?.displayName,
                     )}
                   </span>
