@@ -21,17 +21,23 @@
 
 .backButton,
 .homeLink {
+  display: inline-flex;
+  align-items: center;
   background: none;
-  border: 1px solid var(--ui-border, #555);
-  color: var(--ui-text, inherit);
-  padding: 0.35rem 0.75rem;
-  border-radius: 0.35rem;
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text);
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .backButton:hover,
 .homeLink:hover {
-  background: var(--ui-surface-hover, rgba(255, 255, 255, 0.06));
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
+  border-color: var(--ui-accent);
 }
 
 .backButton:focus-visible,
@@ -48,16 +54,16 @@
 
 .empty {
   padding: 1rem;
-  border: 1px dashed var(--ui-border, #555);
-  border-radius: 0.5rem;
+  border: 1px dashed var(--ui-border);
+  border-radius: var(--radius-lg);
   text-align: center;
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text-muted);
 }
 
 .loading {
   padding: 1rem;
   text-align: center;
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text-muted);
 }
 
 .error {
@@ -109,14 +115,15 @@
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.75rem;
-  border: 1px solid var(--ui-border, #555);
-  border-radius: 0.5rem;
-  background-color: var(--ui-surface, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--ui-surface);
+  color: var(--ui-text);
 }
 
 .contextLabel {
   font-weight: var(--font-semibold);
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text-muted);
 }
 
 .actionBar {
@@ -128,12 +135,18 @@
 
 .actionButton {
   background: none;
-  border: 1px solid var(--ui-border, #555);
-  color: var(--ui-text, inherit);
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text);
   padding: 0.5rem 1rem;
-  border-radius: 0.35rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: var(--font-semibold);
+  min-height: 44px;
+}
+
+.actionButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
+  border-color: var(--ui-accent);
 }
 
 .actionButton:focus-visible {
@@ -142,13 +155,13 @@
 }
 
 .actionButton:disabled {
-  opacity: 0.5;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
 .actionPrimary {
-  background-color: var(--quality-good, #4caf50);
-  color: #000;
+  background-color: var(--ui-accent);
+  color: var(--ui-accent-contrast, var(--ui-bg));
   border-color: transparent;
 }
 
@@ -159,10 +172,12 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 2rem;
-  border: 1px solid var(--ui-border, #555);
-  border-radius: 0.5rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-lg);
   text-align: center;
   align-self: center;
+  background: var(--ui-surface);
+  color: var(--ui-text);
 }
 
 .summaryStat {
@@ -187,7 +202,7 @@
 }
 
 .evaluating {
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text-muted);
   font-style: italic;
 }
 
@@ -200,12 +215,17 @@
 
 .modeChip {
   background: none;
-  border: 1px solid var(--ui-border, #555);
-  color: var(--ui-text, inherit);
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text);
   padding: 0.25rem 0.6rem;
   border-radius: var(--radius-full);
   cursor: pointer;
   font-size: 0.85rem;
+}
+
+.modeChip:hover:not(.modeChipActive) {
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
+  border-color: var(--ui-accent);
 }
 
 .modeChip:focus-visible {
@@ -214,8 +234,8 @@
 }
 
 .modeChipActive {
-  background-color: var(--quality-good, #4caf50);
-  color: #000;
+  background-color: var(--ui-accent);
+  color: var(--ui-accent-contrast, var(--ui-bg));
   border-color: transparent;
 }
 

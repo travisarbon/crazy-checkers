@@ -109,8 +109,8 @@
 
 .deepAnalyzeButton {
   appearance: none;
-  background: var(--ui-accent, #3498db);
-  color: #fff;
+  background: var(--ui-accent);
+  color: var(--ui-accent-contrast, var(--ui-bg));
   border: none;
   border-radius: var(--radius-md);
   padding: 0.5rem 0.75rem;

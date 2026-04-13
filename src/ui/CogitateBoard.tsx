@@ -10,8 +10,9 @@
  */
 
 import { memo, useMemo, type RefObject } from 'react';
-import type { BoardState, Square } from '../engine/types';
+import type { BoardState, PieceColor, PieceType, Square } from '../engine/types';
 import { squareToGrid } from '../engine/board';
+import { extSquareToGrid } from '../engine/events/marchingOrders';
 import Board from './Board';
 import type { BoardGeometry, DiagramOverlayState } from '../cogitate/types';
 import { DRAUGHTS_BOARD_GEOMETRY } from '../cogitate/types';
@@ -29,6 +30,11 @@ const BOARD_EXTENT = 800;
 
 const ALL_PLAYABLE_SQUARES: ReadonlySet<number> = new Set(
   Array.from({ length: 32 }, (_, i) => i + 1),
+);
+
+/** Extended 64-square set used in Marching Orders mode (dark + light). */
+const ALL_PLAYABLE_SQUARES_EXT: ReadonlySet<number> = new Set(
+  Array.from({ length: 64 }, (_, i) => i + 1),
 );
 
 export interface CogitateBoardProps {
@@ -69,6 +75,14 @@ export interface CogitateBoardProps {
   explosionState?: ExplosionState | null;
   overlayState?: OverlayState | null;
   lastMoveSquares?: { from: Square; to: Square } | null;
+
+  /**
+   * Optional 64-element grid that, when supplied, makes light squares
+   * interactive in editor mode (used by the Free Play editor when
+   * Marching Orders is active). When omitted, only dark squares (1-32)
+   * are clickable as in standard American Rules.
+   */
+  editorMarchingOrdersGrid?: readonly ({ color: PieceColor; type: PieceType } | null)[];
 }
 
 const OVERLAY_COLOR_MAP: Record<'green' | 'red' | 'blue', string> = {
@@ -83,7 +97,10 @@ interface Pos {
 }
 
 function squareCenter(sq: Square, flipped: boolean): Pos {
-  const { row, col } = squareToGrid(sq);
+  // Support extended squares 33-64 used by Marching Orders for light squares.
+  const sqNum = sq as number;
+  const { row, col } =
+    sqNum > 32 ? extSquareToGrid(sqNum) : squareToGrid(sq);
   const renderRow = flipped ? 7 - row : row;
   return {
     cx: col * SQUARE_SIZE + SQUARE_SIZE / 2,
@@ -118,6 +135,7 @@ function CogitateBoard({
   explosionState,
   overlayState,
   lastMoveSquares,
+  editorMarchingOrdersGrid,
 }: CogitateBoardProps) {
   void geometry;
   void onEditorDragDrop;
@@ -281,7 +299,13 @@ function CogitateBoard({
           flipped={flipped}
           selectedSquare={selectedSquare ?? null}
           legalMoveSquares={legalMoveSquares}
-          selectablePieces={editorMode ? ALL_PLAYABLE_SQUARES : undefined}
+          selectablePieces={
+            editorMode
+              ? editorMarchingOrdersGrid
+                ? ALL_PLAYABLE_SQUARES_EXT
+                : ALL_PLAYABLE_SQUARES
+              : undefined
+          }
           onSquareClick={boardClickHandler}
           eventOverlayState={eventOverlayState}
           animatingPieces={animatingPieces}
@@ -293,7 +317,9 @@ function CogitateBoard({
           explosionState={explosionState}
           overlayState={overlayState}
           lastMoveSquares={lastMoveSquares ?? null}
-          marchingOrdersGrid={eventOverlayState?.marchingOrdersGrid ?? undefined}
+          marchingOrdersGrid={
+            editorMarchingOrdersGrid ?? eventOverlayState?.marchingOrdersGrid ?? undefined
+          }
         />
       </div>
       {(overlays || (validPlacementSquares && validPlacementSquares.size > 0) || pendingArrowFrom !== null) && (

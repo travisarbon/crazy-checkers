@@ -3,15 +3,16 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.75rem;
-  border: 1px solid var(--ui-border, #555);
-  border-radius: 0.5rem;
-  background-color: var(--ui-surface, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--ui-surface);
+  color: var(--ui-text);
 }
 
 .sectionTitle {
   font-weight: var(--font-semibold);
   margin: 0 0 0.25rem 0;
-  color: var(--ui-text, #111);
+  color: var(--ui-heading);
   font-size: 0.8rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -30,12 +31,17 @@
   justify-content: center;
   gap: 0.25rem;
   padding: 0.4rem;
-  border: 2px solid var(--ui-border, #555);
-  border-radius: 0.35rem;
+  border: 2px solid var(--ui-border);
+  border-radius: var(--radius-md);
   background: none;
-  color: var(--ui-text, inherit);
+  color: var(--ui-text);
   cursor: pointer;
   font-size: var(--text-xs);
+}
+
+.paletteItem:hover:not(.paletteItemActive) {
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
+  border-color: var(--ui-accent);
 }
 
 .paletteItem:focus-visible {
@@ -44,10 +50,13 @@
 }
 
 .paletteItemActive {
-  border-color: var(--quality-good, #4caf50);
-  background: var(--ui-surface-hover, rgba(76, 175, 80, 0.15));
+  border-color: var(--ui-accent);
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
 }
 
+/* Piece token visuals — mirror the board piece colors from the current
+   theme so the editor's palette stays in sync when the user switches
+   themes instead of always showing #eee / #111. */
 .pieceIcon {
   width: 2.2rem;
   height: 2.2rem;
@@ -56,16 +65,17 @@
   align-items: center;
   justify-content: center;
   font-weight: var(--font-bold);
-  color: #000;
+  border: 1px solid var(--ui-border);
 }
 
 .pieceWhite {
-  background: #eee;
+  background: var(--piece-white);
+  color: var(--piece-black);
 }
 
 .pieceBlack {
-  background: #111;
-  color: #fff;
+  background: var(--piece-black);
+  color: var(--piece-white);
 }
 
 .kingMark {
@@ -79,7 +89,7 @@
 
 .selectedLabel {
   font-size: 0.8rem;
-  color: var(--ui-text, #111);
+  color: var(--ui-text);
 }
 
 .sideToMove {
@@ -98,17 +108,22 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.35rem 0.6rem;
-  border: 1px solid var(--ui-border, #555);
-  border-radius: 0.35rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
   background: none;
-  color: var(--ui-text, inherit);
+  color: var(--ui-text);
   font-size: 0.85rem;
 }
 
+.sideRadio:hover:not(.sideRadioActive) {
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
+  border-color: var(--ui-accent);
+}
+
 .sideRadioActive {
-  border-color: var(--quality-good, #4caf50);
-  background: var(--ui-surface-hover, rgba(76, 175, 80, 0.15));
+  border-color: var(--ui-accent);
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
 }
 
 .validation {
@@ -116,23 +131,23 @@
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.5rem;
-  border-radius: 0.35rem;
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
 }
 
 .validationOk {
-  background: rgba(76, 175, 80, 0.1);
-  color: var(--quality-good, #4caf50);
+  background: color-mix(in srgb, var(--ui-success) var(--tint-light), transparent);
+  color: var(--ui-success);
 }
 
 .validationWarn {
-  background: rgba(255, 193, 7, 0.1);
-  color: var(--quality-inaccuracy, #ffb300);
+  background: color-mix(in srgb, var(--ui-warning) var(--tint-light), transparent);
+  color: var(--ui-warning);
 }
 
 .validationError {
-  background: rgba(244, 67, 54, 0.1);
-  color: var(--quality-blunder, #f44336);
+  background: color-mix(in srgb, var(--ui-error) var(--tint-light), transparent);
+  color: var(--ui-error);
 }
 
 .validationList {
@@ -149,16 +164,17 @@
 
 .actionButton {
   background: none;
-  border: 1px solid var(--ui-border, #555);
-  color: var(--ui-text, inherit);
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text);
   padding: 0.35rem 0.75rem;
-  border-radius: 0.35rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 0.85rem;
 }
 
 .actionButton:hover {
-  background: var(--ui-surface-hover, rgba(255, 255, 255, 0.06));
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
+  border-color: var(--ui-accent);
 }
 
 .actionButton:focus-visible {

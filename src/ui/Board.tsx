@@ -253,8 +253,14 @@ function Board({
                 const moExtSq = marchingOrdersGrid ? gridToExtSquare(row, col) : 0;
                 const moIsLegalDest = marchingOrdersGrid && !isAnimating && (legalMoveSquares?.has(moExtSq) ?? false);
                 const moIsSelected = marchingOrdersGrid && !isAnimating && selectedSquare !== null && (selectedSquare as number) === moExtSq;
-                const moIsSelectable = marchingOrdersGrid && moPiece !== null && (selectablePieces?.has(moExtSq) ?? false);
-                const moClickable = marchingOrdersGrid && (moIsSelectable || moIsLegalDest);
+                // Light-square selectability: in game mode the square must
+                // already hold a piece (via marchingOrdersGrid); in editor
+                // mode (where selectablePieces covers the extended set 1-64)
+                // any light square in the set is clickable for placement.
+                const moInSelectableSet = selectablePieces?.has(moExtSq) ?? false;
+                const moIsSelectable = marchingOrdersGrid && moInSelectableSet && moPiece !== null;
+                const moIsEditorPlaceable = marchingOrdersGrid && moInSelectableSet && moPiece === null;
+                const moClickable = marchingOrdersGrid && (moIsSelectable || moIsEditorPlaceable || moIsLegalDest);
 
                 const moIsLastMove =
                   lastMoveSquares != null &&

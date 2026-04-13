@@ -20,12 +20,22 @@
 }
 
 .backButton {
+  display: inline-flex;
+  align-items: center;
   background: none;
-  border: 1px solid var(--ui-border, #555);
-  color: var(--ui-text, inherit);
-  padding: 0.35rem 0.75rem;
-  border-radius: 0.35rem;
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text);
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.backButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
+  border-color: var(--ui-accent);
 }
 
 .backButton:focus-visible {
@@ -74,7 +84,7 @@
 
 .sectionDivider {
   border: none;
-  border-top: 1px solid var(--ui-border, #555);
+  border-top: 1px solid var(--ui-border);
   margin: 0.5rem 0;
 }
 
@@ -145,9 +155,11 @@
 }
 
 .loadModalContent {
-  background: var(--ui-background, #222);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border);
   padding: 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-lg);
   max-width: 40rem;
   width: 90%;
   max-height: 80vh;
@@ -155,16 +167,16 @@
 }
 
 .playingLabel {
-  color: var(--ui-text-secondary, #bbb);
+  color: var(--ui-text-muted);
   font-size: 0.9rem;
 }
 
 .gameOverBanner {
   padding: 0.75rem;
-  background: var(--ui-surface, rgba(76, 175, 80, 0.15));
-  border: 1px solid var(--quality-good, #4caf50);
-  border-radius: 0.35rem;
-  color: var(--ui-text, inherit);
+  background: var(--ui-surface);
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 45%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--ui-text);
   text-align: center;
 }
 
@@ -180,7 +192,7 @@
   padding: 0.4rem 0.75rem;
   font-size: 0.9rem;
   font-weight: var(--font-semibold);
-  color: var(--ui-bg);
+  color: var(--ui-accent-contrast, var(--ui-bg));
   background: var(--ui-accent);
   border: none;
   border-radius: var(--radius-md);

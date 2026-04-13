@@ -9,7 +9,6 @@
  */
 
 import type { ReactNode } from 'react';
-import Icon from '../Icon';
 
 interface CogitateToolHeaderProps {
   readonly title: ReactNode;
@@ -44,8 +43,8 @@ export default function CogitateToolHeader({
         onClick={onBack}
         data-testid={backTestId}
       >
-        <Icon name="arrow-left" size={14} />
-        <span>{backLabel}</span>
+        {'\u2190 '}
+        {backLabel}
       </button>
       <h2 className={titleClassName}>{title}</h2>
       {onHome && (
@@ -55,8 +54,7 @@ export default function CogitateToolHeader({
           onClick={onHome}
           data-testid={homeTestId}
         >
-          <Icon name="home" size={14} />
-          <span>Cogitate home</span>
+          Cogitate
         </button>
       )}
     </header>

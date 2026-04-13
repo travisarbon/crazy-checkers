@@ -4,8 +4,9 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.6rem;
-  border-top: 1px solid var(--ui-border, #555);
-  background: var(--ui-surface, rgba(255, 255, 255, 0.03));
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text);
 }
 
 .group {
@@ -17,17 +18,22 @@
 .divider {
   width: 1px;
   height: 1.5rem;
-  background: var(--ui-border, #555);
+  background: var(--ui-border);
 }
 
 .toolButton {
   background: none;
-  border: 1px solid var(--ui-border, #555);
-  color: var(--ui-text, inherit);
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text);
   padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.8rem;
+}
+
+.toolButton:hover:not(:disabled):not(.toolButtonActive) {
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
+  border-color: var(--ui-accent);
 }
 
 .toolButton:focus-visible {
@@ -36,8 +42,8 @@
 }
 
 .toolButtonActive {
-  background: var(--quality-good, #4caf50);
-  color: #000;
+  background: var(--ui-accent);
+  color: var(--ui-accent-contrast, var(--ui-bg));
   border-color: transparent;
 }
 
@@ -50,7 +56,7 @@
 }
 
 .colorSwatchActive {
-  border-color: var(--ui-text, #fff);
+  border-color: var(--ui-text);
 }
 
 .colorGreen { background: #2ecc71; }
@@ -59,16 +65,21 @@
 
 .actionButton {
   background: none;
-  border: 1px solid var(--ui-border, #555);
-  color: var(--ui-text, inherit);
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text);
   padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.8rem;
 }
 
+.actionButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
+  border-color: var(--ui-accent);
+}
+
 .actionButton:disabled {
-  opacity: 0.5;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 

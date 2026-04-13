@@ -23,16 +23,19 @@ import type {
   BoardState,
   GameState,
   PieceColor,
+  PieceType,
   PlayerSetup,
   Square,
 } from '../../engine/types';
 import {
+  CrazyEvent,
   GameMode,
   GameStatus,
   PieceColor as PieceColors,
   PlayerType,
 } from '../../engine/types';
-import { getBoardSquare } from '../../engine/board';
+import type { MarchingOrdersGrid } from './usePositionEditor';
+import { getBoardSquare, squareToGrid } from '../../engine/board';
 import { computeZobristHash } from '../../engine/zobrist';
 import { makeMove } from '../../engine/game';
 import { getAdapter } from '../../cogitate/CogitateGameAdapter';
@@ -124,6 +127,56 @@ function modeIdToEngineMode(modeId: string): GameMode {
   return GameMode.Classic;
 }
 
+/**
+ * Project a 64-element Marching Orders grid down to a 32-slot dark-square
+ * BoardState for engine consumption. Light-square pieces live only in MO
+ * metadata once play begins.
+ */
+function projectMarchingOrdersGridToBoard(grid: MarchingOrdersGrid): BoardState {
+  const board: (null | { color: PieceColor; type: PieceType })[] = new Array<
+    null | { color: PieceColor; type: PieceType }
+  >(32).fill(null);
+  for (let sq = 1; sq <= 32; sq++) {
+    const { row, col } = squareToGrid(sq as Square);
+    const piece = grid[row * 8 + col];
+    if (piece) {
+      board[sq - 1] = { color: piece.color, type: piece.type };
+    }
+  }
+  return board as BoardState;
+}
+
+/**
+ * Ensure Marching Orders has the metadata it needs (64-element grid)
+ * before the decorator runs. When the editor has placed pieces on light
+ * squares, splice those into the grid so the game starts with the full
+ * edited position instead of only the dark-square projection.
+ */
+function ensureMarchingOrdersMetadata(
+  activeEvents: readonly ActiveEvent[],
+  editorGrid: MarchingOrdersGrid | null,
+): readonly ActiveEvent[] {
+  if (activeEvents.every((e) => e.type !== CrazyEvent.MarchingOrders)) {
+    return activeEvents;
+  }
+  return activeEvents.map((e) => {
+    if (e.type !== CrazyEvent.MarchingOrders) return e;
+    // Prefer the editor's 64-grid (which already includes light pieces).
+    // Fall back to empty grid — the MO decorator will sync from the 32-
+    // square board on its first move.
+    const grid =
+      editorGrid ??
+      (new Array(64).fill(null) as MarchingOrdersGrid);
+    return {
+      ...e,
+      metadata: {
+        orthogonalGrid: grid,
+        applied: false,
+      } as unknown as Readonly<Record<string, unknown>>,
+    };
+  });
+}
+
 function buildInitialState(
   adapter: CogitateGameAdapter,
   board: BoardState,
@@ -177,6 +230,11 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
   const diagram = useDiagramState();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [arrowFrom, setArrowFrom] = useState<Square | null>(null);
+
+  const marchingOrdersActive = useMemo(
+    () => activeEvents.some((e) => e.type === CrazyEvent.MarchingOrders),
+    [activeEvents],
+  );
 
   const handleBoardClick = useCallback(
     (sq: Square) => {
@@ -249,19 +307,33 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
 
   const handleStartGame = useCallback(
     (players: PlayerSetup, flipped: boolean, difficulty: Difficulty) => {
+      const moActive = activeEvents.some(
+        (e) => e.type === CrazyEvent.MarchingOrders,
+      );
+      const seededEvents = moActive
+        ? ensureMarchingOrdersMetadata(
+            activeEvents,
+            editor.getMarchingOrdersGrid(),
+          )
+        : activeEvents;
+      // When Marching Orders is active, the 64-grid itself is the source
+      // of truth; its dark-square projection becomes the game's BoardState.
+      const projectedBoard = moActive
+        ? projectMarchingOrdersGridToBoard(editor.getMarchingOrdersGrid())
+        : editor.board;
       const gs = buildInitialState(
         adapter,
-        editor.board,
+        projectedBoard,
         sideToMove,
         players,
-        activeEvents,
+        seededEvents,
       );
       setPlayingState(gs);
       setPlayingSetup({ players, flipped, difficulty });
       setGameStartedAt(Date.now());
       setPhase('playing');
     },
-    [adapter, editor.board, sideToMove, activeEvents],
+    [adapter, editor, sideToMove, activeEvents],
   );
 
   const handleBackToEditor = useCallback(() => {
@@ -365,6 +437,9 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
               overlays={diagram.overlays}
               svgRef={svgRef}
               pendingArrowFrom={arrowFrom}
+              editorMarchingOrdersGrid={
+                marchingOrdersActive ? editor.getMarchingOrdersGrid() : undefined
+              }
             />
           </div>
           <EvaluationBar
@@ -372,6 +447,16 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
             orientation="horizontal"
             state={evaluation ? 'evaluated' : 'loading'}
             className={styles.evalBarHorizontal}
+          />
+          <DiagramToolbar
+            activeTool={diagram.activeTool}
+            onToolChange={diagram.setActiveTool}
+            activeColor={diagram.activeColor}
+            onColorChange={diagram.setActiveColor}
+            hasOverlays={diagram.hasOverlays}
+            onClearAll={diagram.clearAll}
+            onExportPNG={handleExportPNG}
+            isExporting={isExporting}
           />
         </div>
 
@@ -398,17 +483,6 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
           <InlineGameSetup onStartGame={handleStartGame} />
         </aside>
       </div>
-
-      <DiagramToolbar
-        activeTool={diagram.activeTool}
-        onToolChange={diagram.setActiveTool}
-        activeColor={diagram.activeColor}
-        onColorChange={diagram.setActiveColor}
-        hasOverlays={diagram.hasOverlays}
-        onClearAll={diagram.clearAll}
-        onExportPNG={handleExportPNG}
-        isExporting={isExporting}
-      />
 
       {showLoadPosition && (
         <div
@@ -951,6 +1025,16 @@ function FreePlayGameView({
             state={evaluation ? 'evaluated' : 'loading'}
             className={styles.evalBarHorizontal}
           />
+          <DiagramToolbar
+            activeTool={activeTool}
+            onToolChange={onToolChange}
+            activeColor={activeColor}
+            onColorChange={onColorChange}
+            hasOverlays={hasDiagramOverlays}
+            onClearAll={onClearDiagram}
+            onExportPNG={onExportPNG}
+            isExporting={isExporting}
+          />
         </div>
 
         <aside className={styles.sidePanel}>
@@ -1014,17 +1098,6 @@ function FreePlayGameView({
           onDismiss={() => { setAnnouncementEvents([]); }}
         />
       )}
-
-      <DiagramToolbar
-        activeTool={activeTool}
-        onToolChange={onToolChange}
-        activeColor={activeColor}
-        onColorChange={onColorChange}
-        hasOverlays={hasDiagramOverlays}
-        onClearAll={onClearDiagram}
-        onExportPNG={onExportPNG}
-        isExporting={isExporting}
-      />
     </div>
   );
 }
