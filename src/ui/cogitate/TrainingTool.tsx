@@ -114,7 +114,7 @@ export default function TrainingTool({
           rightSlot={
             <button
               type="button"
-              className={styles.actionButton}
+              className={styles.backButton}
               onClick={() => {
                 void loadPositionsFor();
               }}
@@ -538,7 +538,7 @@ function TrainingSession({
         ) : (
           <button
             type="button"
-            className={[styles.actionButton, styles.actionPrimary].filter(Boolean).join(' ')}
+            className={styles.backButton}
             onClick={() => {
               session.nextPosition();
             }}
