@@ -21,15 +21,15 @@ Examples include *King for a Day*, *Live Grenade*, *Opposite Day*, *Up in the Ai
 
 ### Choice Mode
 
-Curated "always-on" game variants where a single event is permanent for the whole game instead of appearing randomly. Eight Choice modes ship by default (King for a Day, Live Grenade, Hot Potato, Opposite Day, Up in the Air, No Touching!, Flipped Script, Ghost Walk); more unlock as you progress.
+Curated "always-on" game variants where a single event is permanent for the whole game instead of appearing randomly. Forty Choice modes are defined, each with its own display name (e.g. *Revolution* for King for a Day, *Boom Box* for Live Grenade, *Phantom Zone* for Ghost Walk). All modes start locked and unlock in tiered groups of eight by advancing through the Career tracks described below.
 
 ### Chaos Mode
 
-All 40 events active at once on a single game. For the daring.
+An amped-up Crazy Mode where the Double Trouble meta-event fires on *every* capture — not just multi-jumps — so every single jump triggers two simultaneous random events. Events stack rapidly, typically leaving 4–6 events active at once.
 
 ### Challenge Mode
 
-A library of hand-curated checkers puzzles organized by difficulty (Easy / Medium / Hard). Each puzzle gives you a position and asks for the best move or forced sequence. Solutions are validated by the engine; progress is persisted and feeds into Career unlocks.
+A library of procedurally-generated checkers puzzles (see `scripts/generatePuzzles.ts`) organized by difficulty (Easy / Medium / Hard). Each puzzle gives you a position and asks for the best move or forced sequence. Solutions are validated by the engine; progress is persisted and feeds into Career unlocks.
 
 ### Cogitate
 
@@ -50,23 +50,33 @@ Slot reserved for 30+ additional abstract-strategy board games in Phase 4. The C
 
 ## Career & Unlocks
 
-A five-track Career screen tracks your progress across Classic play, Crazy Mode event discovery, Choice Mode completions, Challenge Mode solves, and Cogitate training streaks. Completing milestones unlocks additional Choice Modes, Challenge difficulty tiers, and Code-Mode entries. Unlocks persist across sessions via IndexedDB.
+The Career screen tracks progress across five unlock tracks, each of which opens a tier of eight Choice modes:
+
+| Track | Unlocks Choice modes | Advances by |
+|-------|----------------------|-------------|
+| Puzzle Mastery | 1–8 | Completing Challenge puzzles |
+| Chaos Veteran | 9–16 | Winning Crazy Mode games vs. Hard CPU |
+| Rule Bender | 17–24 | Winning Choice Mode games vs. Hard CPU |
+| Lifer | 25–32 | Reaching cross-mode career milestones |
+| World Player | 33–40 | Winning Classified games vs. Hard CPU (Phase 4) |
+
+Code Mode entries can also unlock hidden Choice modes and Classified previews. Unlock state is persisted in localStorage; detailed game history and challenge records are persisted in IndexedDB.
 
 ## Data Management
 
-Configure → Data lets you export all persisted state (settings, game history, Career progress, Challenge records, Cogitate training logs) as a JSON envelope, re-import an envelope to restore, or reset all progress with a guarded confirmation. Exports carry the running app version for future schema migration.
+Configure → Data lets you export all persisted state as a versioned JSON envelope, re-import an envelope to restore, or reset everything with a guarded confirmation. The envelope covers settings, in-progress game, unlock state, code-unlock records, redemption history, IndexedDB game history (including Cogitate analyses and training positions stored on game records), and Challenge records. Envelopes carry the running app version to support future schema migration.
 
 ## Features
 
 - Classic, Crazy, Choice, Chaos, Challenge, Cogitate, Code, and Classified (preview) modes
 - AI opponent at two difficulty levels (Easy and Hard) — minimax + alpha-beta + iterative deepening + quiescence + event-aware evaluation, executed in a Web Worker
-- Forty Crazy-mode events with unique announcements, overlays, and per-event audio cues
+- Forty Crazy-mode events with unique announcements and overlays, plus a unified event-trigger SFX
 - Five visual themes: Crazy (default), Cork, Current, Classic, and Contrast (high-visibility)
 - Full keyboard navigation and screen-reader support (WCAG 2.1 AA)
 - Drag-and-drop and click-to-move interactions on board and in Free Play
 - Responsive layout for desktop and mobile
 - Persistent settings, in-progress game, game history, Career progress, Challenge records, and Cogitate analyses
-- Audio system with configurable sound effects, per-event cues, and music mapping
+- Audio system with configurable sound effects, a unified event-trigger cue, and per-mode music mapping
 - Game clock with time controls and per-game overrides
 - Smooth move and event animations with configurable speed and reduced-motion respect
 - Data export / import / reset across every persisted store
@@ -80,7 +90,7 @@ Configure → Data lets you export all persisted state (settings, game history, 
 | Board rendering | SVG components |
 | State management | Zustand |
 | AI execution | Web Worker via Comlink |
-| Persistence | localStorage (settings, in-progress game), IndexedDB via idb (game history, Career, Challenge records, Cogitate analyses) |
+| Persistence | localStorage (settings, in-progress game, unlock state, code-unlock records), IndexedDB via idb (game history incl. Cogitate analyses, Challenge records) |
 | Build tool | Vite |
 | Testing | Vitest (unit), Playwright (e2e), axe-core (a11y) |
 | CI/CD | GitHub Actions -> GitHub Pages |
@@ -152,7 +162,7 @@ src/
 │   └── cogitate/  # Cogitate-tool React components (Replay, Analysis, Training, Free Play)
 ├── audio/         # Audio system (AudioManager, packs, music mapping, event cues)
 ├── themes/        # Five visual themes with CSS custom property mapping
-├── persistence/   # Settings, game history, Career, Challenge records, Cogitate analyses
+├── persistence/   # Settings, unlock state, game history (incl. Cogitate analyses), Challenge records
 ├── data/          # Puzzle data, event reference data, unlock codes
 └── utils/         # Notation conversion, timer, performance benchmarks
 ```
