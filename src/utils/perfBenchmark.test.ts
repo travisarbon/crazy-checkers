@@ -12,6 +12,23 @@
 import { describe, it, expect } from 'vitest';
 import { runAIBenchmark, BENCHMARK_POSITIONS } from './perfBenchmark';
 import { playSingleGame, createSeededRandom } from '../ai/validation/selfPlay';
+import {
+  CrazyEvent,
+  GameMode,
+  GameStatus,
+  PieceColor,
+  PieceType,
+  PlayerType,
+  type ActiveEvent,
+  type BoardState,
+  type GameState,
+  type Piece,
+  type SquareState,
+} from '../engine/types';
+import { createAmericanRules } from '../engine/rules';
+import { createCompositeRuleSet } from '../engine/compositeRuleSet';
+import { iterativeSearch } from '../ai/search';
+import { HARD_CONFIG, toSearchConfig } from '../ai/difficulty';
 
 // ---------------------------------------------------------------------------
 // AI benchmark tests
@@ -77,6 +94,104 @@ describe('AI benchmark', () => {
         `Position "${r.position}" took ${r.searchTimeMs.toFixed(1)}ms (max: 2100ms)`,
       ).toBeLessThanOrEqual(2100);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Crazy mode — 5 simultaneous events (Task 25.1)
+// ---------------------------------------------------------------------------
+
+describe('Crazy — 5-event stack', () => {
+  it('should complete AI search within 3000ms median with 5 concurrent events', { timeout: 60_000 }, () => {
+    const WP: Piece = { color: PieceColor.White, type: PieceType.Pawn };
+    const WK: Piece = { color: PieceColor.White, type: PieceType.King };
+    const BP: Piece = { color: PieceColor.Black, type: PieceType.Pawn };
+    const BK: Piece = { color: PieceColor.Black, type: PieceType.King };
+
+    const pieces: Record<number, Piece> = {
+      // Decorator-heavy midgame: mixed pawns + kings, symmetric material.
+      1: BP,
+      2: BP,
+      6: BP,
+      10: BK,
+      11: BP,
+      14: BP,
+      15: BK,
+      19: BP,
+      17: WP,
+      18: WK,
+      22: WP,
+      23: WP,
+      26: WK,
+      27: WP,
+      30: WP,
+      31: WP,
+    };
+    const board: SquareState[] = new Array<SquareState>(32).fill(null);
+    for (const [sq, piece] of Object.entries(pieces)) {
+      board[Number(sq) - 1] = piece;
+    }
+
+    const ruleSet = createCompositeRuleSet(createAmericanRules());
+    const activeEvents: ActiveEvent[] = [
+      { type: CrazyEvent.KingForADay, remainingPlies: 2, triggeredBy: PieceColor.White, triggeredAtPly: 0 },
+      { type: CrazyEvent.OppositeDay, remainingPlies: 4, triggeredBy: PieceColor.White, triggeredAtPly: 0 },
+      { type: CrazyEvent.UpInTheAir, remainingPlies: 4, triggeredBy: PieceColor.White, triggeredAtPly: 0 },
+      { type: CrazyEvent.NoTouching, remainingPlies: 2, triggeredBy: PieceColor.White, triggeredAtPly: 0 },
+      { type: CrazyEvent.HotPotato, remainingPlies: 2, triggeredBy: PieceColor.White, triggeredAtPly: 0 },
+    ];
+    ruleSet.setActiveEvents(activeEvents);
+
+    const state: GameState = {
+      board: board as BoardState,
+      activeColor: PieceColor.White,
+      status: GameStatus.InProgress,
+      result: null,
+      ruleSet,
+      players: { white: PlayerType.CpuHard, black: PlayerType.CpuHard },
+      moveHistory: [],
+      positionHashes: [0n],
+      halfMoveClock: 0,
+      plyCount: 0,
+      mode: GameMode.Crazy,
+      activeEvents,
+    };
+
+    const searchConfig = toSearchConfig(HARD_CONFIG);
+    const REPS = 3;
+    const timings: number[] = [];
+    let lastDepth = 0;
+    let lastNodes = 0;
+
+    for (let i = 0; i < REPS; i++) {
+      const start = performance.now();
+      const result = iterativeSearch(state, searchConfig);
+      const elapsed = performance.now() - start;
+      timings.push(elapsed);
+      lastDepth = result.depth;
+      lastNodes = result.nodesEvaluated;
+    }
+
+    // Median of runs 2–3 (discard run 1 as JIT warmup).
+    const laterRuns = timings.slice(1).sort((a, b) => a - b);
+    const median = laterRuns.length % 2 === 0
+      ? ((laterRuns[0] ?? 0) + (laterRuns[1] ?? 0)) / 2
+      : (laterRuns[Math.floor(laterRuns.length / 2)] ?? 0);
+    const maxMs = Math.max(...timings);
+
+    console.log('\n┌──────────────────────────────────────────────────────────┐');
+    console.log('│          AI BENCHMARK — 5 CONCURRENT EVENTS              │');
+    console.log('├──────────────────────────────────────────────────────────┤');
+    console.log(`│ Events: KingForADay + OppositeDay + UpInTheAir +         │`);
+    console.log(`│         NoTouching + HotPotato                           │`);
+    console.log(`│ Runs (ms): ${timings.map((t) => t.toFixed(1)).join(', ').padEnd(46)}│`);
+    console.log(`│ Median (runs 2–3): ${median.toFixed(1)}ms`.padEnd(59) + '│');
+    console.log(`│ Max: ${maxMs.toFixed(1)}ms`.padEnd(59) + '│');
+    console.log(`│ Depth: ${String(lastDepth)} | Nodes: ${String(lastNodes)}`.padEnd(59) + '│');
+    console.log(`│ Threshold: ≤3000ms median`.padEnd(59) + '│');
+    console.log('└──────────────────────────────────────────────────────────┘');
+
+    expect(median).toBeLessThanOrEqual(3000);
   });
 });
 
