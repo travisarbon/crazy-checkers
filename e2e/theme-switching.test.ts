@@ -25,8 +25,9 @@ test.describe('Theme switching', () => {
       getComputedStyle(document.documentElement).getPropertyValue('--board-dark').trim(),
     );
 
-    // Select a different theme — Classic
-    await page.getByRole('radio', { name: 'Classic' }).click();
+    // Select a different theme — Classic (scope to radiogroup to avoid menu-button collision)
+    const themeGroup = page.getByRole('radiogroup', { name: 'Theme selection' });
+    await themeGroup.getByRole('radio', { name: 'Classic' }).click();
 
     // Read the new board-dark color
     const newBoardDark = await page.evaluate(() =>
@@ -40,7 +41,8 @@ test.describe('Theme switching', () => {
   test('selected theme renders on the game board', async ({ page }) => {
     // Switch to Classic theme
     await page.getByRole('button', { name: 'Configure' }).click();
-    await page.getByRole('radio', { name: 'Classic' }).click();
+    const themeGroup = page.getByRole('radiogroup', { name: 'Theme selection' });
+    await themeGroup.getByRole('radio', { name: 'Classic' }).click();
 
     // Read the expected board-dark color
     const expectedBoardDark = await page.evaluate(() =>
@@ -48,9 +50,9 @@ test.describe('Theme switching', () => {
     );
 
     // Navigate back and start a game
-    await page.getByRole('button', { name: 'Back to main menu' }).click();
+    await page.getByRole('button', { name: 'Back to previous screen' }).click();
     await page.getByRole('button', { name: 'Classic' }).click();
-    await page.getByTestId('setup-start').click();
+    await page.getByTestId('start-game-button').click();
     await page.getByTestId('game-screen').waitFor();
 
     // Verify the board uses the same theme colors
@@ -63,7 +65,8 @@ test.describe('Theme switching', () => {
   test('theme persists after page reload', async ({ page }) => {
     // Switch to Cork theme
     await page.getByRole('button', { name: 'Configure' }).click();
-    await page.getByRole('radio', { name: 'Cork' }).click();
+    const themeGroup = page.getByRole('radiogroup', { name: 'Theme selection' });
+    await themeGroup.getByRole('radio', { name: 'Cork' }).click();
 
     const corkBoardDark = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--board-dark').trim(),
@@ -81,7 +84,9 @@ test.describe('Theme switching', () => {
 
     // Also verify via the config screen that Cork is still selected
     await page.getByRole('button', { name: 'Configure' }).click();
-    const corkRadio = page.getByRole('radio', { name: 'Cork' });
+    const corkRadio = page
+      .getByRole('radiogroup', { name: 'Theme selection' })
+      .getByRole('radio', { name: 'Cork' });
     await expect(corkRadio).toHaveAttribute('aria-checked', 'true');
   });
 });

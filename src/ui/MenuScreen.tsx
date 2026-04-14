@@ -124,8 +124,22 @@ export default function MenuScreen({
       </header>
 
       <nav className={styles.modeGrid} aria-label="Game modes">
-        {MODES.filter((m) => isModeVisible(m, unlockSnapshot)).map((mode) => {
+        {(() => {
+          const visible = MODES.filter((m) => isModeVisible(m, unlockSnapshot));
+          const unlockOrder = new Map<string, number>();
+          let staggerIndex = 0;
+          for (const m of visible) {
+            if (getNewlyUnlockedFlag(m.id, newlyUnlocked)) {
+              unlockOrder.set(m.id, staggerIndex);
+              staggerIndex += 1;
+            }
+          }
+          return visible.map((mode) => {
           const isNewlyUnlocked = getNewlyUnlockedFlag(mode.id, newlyUnlocked);
+          const staggerIdx = unlockOrder.get(mode.id) ?? 0;
+          const revealStyle = isNewlyUnlocked
+            ? { animationDelay: String(staggerIdx * 400) + 'ms' }
+            : undefined;
           return (
             <button
               key={mode.id}
@@ -139,6 +153,7 @@ export default function MenuScreen({
                   : `${mode.label} — Coming Soon`
               }
               title={mode.description}
+              style={revealStyle}
               onAnimationEnd={isNewlyUnlocked ? () => { onUnlockAnimationEnd(mode.id as 'choice' | 'classified' | 'chaos'); } : undefined}
               onClick={() => {
                 handleModeClick(mode.id);
@@ -149,7 +164,8 @@ export default function MenuScreen({
               {!mode.enabled && <span className={styles.badge}>Coming Soon</span>}
             </button>
           );
-        })}
+          });
+        })()}
       </nav>
 
       {/* Screen reader announcement for newly unlocked modes */}

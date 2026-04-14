@@ -1,8 +1,8 @@
 /* Shared section styling — used by ExpandableDetailPanel, EventDiagram,
    ConfigScreen sections, and all mode sub-menu content sections.
 
-   NOTE: this file isn't currently imported anywhere — components
-   replicate these patterns inline. Kept for future consolidation. */
+   Radius convention: cards -> --radius-md, panels/sections -> --radius-lg,
+   buttons -> --radius-md, inputs -> --radius-sm. */
 
 .section {
   border: 1px solid color-mix(in srgb, var(--ui-accent) var(--tint-strong, 30%), transparent);
@@ -17,8 +17,82 @@
   margin: 0 0 var(--space-4, 1rem) 0;
 }
 
+/* Stat value — dashboard figure sizing shared by Career/Challenge screens. */
+.statValue {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: var(--font-bold, 700);
+  color: var(--ui-accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+/* Primary and secondary buttons — standard Phase 3 action buttons. */
+.btnPrimary {
+  background: var(--ui-accent);
+  color: var(--ui-accent-contrast, var(--ui-bg));
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 1.25rem;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: opacity var(--duration-fast);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  background: transparent;
+  color: var(--ui-text);
+  border: 1px solid var(--ui-text);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  font-size: var(--text-base);
+  font-weight: var(--font-normal);
+  cursor: pointer;
+  transition: opacity var(--duration-fast);
+}
+
+.btnSecondary:hover:not(:disabled) {
+  opacity: 0.75;
+}
+
+.btnSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Animated loading text — a subtle opacity pulse that signals the UI is
+   still processing without changing the rendered text. */
+.loadingText {
+  text-align: center;
+  opacity: 0.65;
+  padding: 2rem 0;
+  font-size: var(--text-base);
+  animation: loadingPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.85; }
+}
+
 @media (max-width: 479px) {
   .section {
     padding: var(--space-4, 1rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingText {
+    animation: none;
+    opacity: 0.65;
   }
 }

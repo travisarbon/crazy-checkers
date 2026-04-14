@@ -249,9 +249,7 @@
 
 /* Loading state */
 .loading {
-  text-align: center;
-  opacity: 0.55;
-  padding: 2rem 0;
+  composes: loadingText from './shared.module.css';
 }
 
 /* Responsive adjustments */
