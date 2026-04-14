@@ -111,21 +111,20 @@ export default function TrainingTool({
           headerClassName={styles.selectHeader}
           backButtonClassName={styles.backButton}
           titleClassName={styles.title}
+          rightSlot={
+            <button
+              type="button"
+              className={styles.actionButton}
+              onClick={() => {
+                void loadPositionsFor();
+              }}
+              disabled={isLoading}
+              data-testid="training-train-all"
+            >
+              {isLoading ? 'Loading…' : 'Train All'}
+            </button>
+          }
         />
-
-        <div className={styles.actionBar}>
-          <button
-            type="button"
-            className={[styles.actionButton, styles.actionPrimary].filter(Boolean).join(' ')}
-            onClick={() => {
-              void loadPositionsFor();
-            }}
-            disabled={isLoading}
-            data-testid="training-train-all"
-          >
-            {isLoading ? 'Loading…' : 'Train All'}
-          </button>
-        </div>
 
         {loadError && (
           <p className={styles.error} role="alert" data-testid="training-selection-error">

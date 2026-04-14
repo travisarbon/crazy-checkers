@@ -21,6 +21,7 @@ interface CogitateToolHeaderProps {
   readonly backButtonClassName?: string;
   readonly titleClassName?: string;
   readonly homeLinkClassName?: string;
+  readonly rightSlot?: ReactNode;
 }
 
 export default function CogitateToolHeader({
@@ -34,6 +35,7 @@ export default function CogitateToolHeader({
   backButtonClassName,
   titleClassName,
   homeLinkClassName,
+  rightSlot,
 }: CogitateToolHeaderProps) {
   return (
     <header className={headerClassName} data-testid="cogitate-tool-header">
@@ -47,6 +49,9 @@ export default function CogitateToolHeader({
         {backLabel}
       </button>
       <h2 className={titleClassName}>{title}</h2>
+      {rightSlot !== undefined && (
+        <div style={{ marginLeft: 'auto' }}>{rightSlot}</div>
+      )}
       {onHome && (
         <button
           type="button"
