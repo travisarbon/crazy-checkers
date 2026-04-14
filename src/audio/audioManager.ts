@@ -38,9 +38,17 @@ export class AudioManager {
    */
   private dynamicBuffers: Map<string, AudioBuffer> = new Map();
 
-  /** Current music playback state. */
-  private musicElement: HTMLAudioElement | null = null;
-  private musicSource: MediaElementAudioSourceNode | null = null;
+  /**
+   * Current music playback state.
+   *
+   * We use a decoded AudioBuffer + AudioBufferSourceNode with `loop = true`
+   * rather than an HTMLAudioElement, because HTMLAudioElement has a known
+   * ~100–400ms loop gap in Safari/Chrome. AudioBuffer looping is
+   * sample-accurate and gapless.
+   */
+  private musicSourceNode: AudioBufferSourceNode | null = null;
+  private musicGainNode: GainNode | null = null;
+  private musicBuffers: Map<MusicTrack, AudioBuffer> = new Map();
   private currentMusicTrack: MusicTrack | null = null;
 
   /**
@@ -213,7 +221,7 @@ export class AudioManager {
    */
   playMusic(track: MusicTrack): void {
     // Same track already playing — preserve continuity
-    if (this.currentMusicTrack === track && this.musicElement && !this.musicElement.paused) {
+    if (this.currentMusicTrack === track && this.musicSourceNode) {
       return;
     }
 
@@ -239,32 +247,65 @@ export class AudioManager {
     this.startMusicTrack(track, nodes);
   }
 
-  /** Creates an HTMLAudioElement and routes it through the Web Audio graph. */
+  /**
+   * Fetches and decodes a music asset into an AudioBuffer, caching it for reuse.
+   * Returns null on failure (missing file, network error, decode error).
+   */
+  private async loadMusicBuffer(
+    track: MusicTrack,
+    nodes: AudioNodes,
+  ): Promise<AudioBuffer | null> {
+    const cached = this.musicBuffers.get(track);
+    if (cached) return cached;
+
+    const asset = this.pack.music[track];
+    if (!asset) return null;
+
+    try {
+      const response = await fetch(asset.url);
+      if (!response.ok) return null;
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = await nodes.context.decodeAudioData(arrayBuffer);
+      this.musicBuffers.set(track, buffer);
+      return buffer;
+    } catch (err) {
+      console.warn(`AudioManager: Failed to load music track "${track}":`, err);
+      return null;
+    }
+  }
+
+  /**
+   * Starts a music track via AudioBufferSourceNode with seamless looping.
+   * If the buffer is not yet decoded, decode asynchronously then start.
+   */
   private startMusicTrack(track: MusicTrack, nodes: AudioNodes): void {
     const asset = this.pack.music[track];
     if (!asset) return;
 
     this.stopMusicInternal();
-
-    // Set crossOrigin before src so the browser makes a CORS-ready request
-    const audio = new Audio();
-    audio.crossOrigin = 'anonymous';
-    audio.loop = true;
-    audio.src = asset.url;
-
-    const source = nodes.context.createMediaElementSource(audio);
-    const assetGain = nodes.context.createGain();
-    assetGain.gain.value = asset.volume ?? 1.0;
-    source.connect(assetGain);
-    assetGain.connect(nodes.musicGain);
-
-    this.musicElement = audio;
-    this.musicSource = source;
     this.currentMusicTrack = track;
 
-    audio.play().catch((err: unknown) => {
-      console.warn('AudioManager: Music playback failed:', err);
-    });
+    void (async () => {
+      const buffer = await this.loadMusicBuffer(track, nodes);
+      if (!buffer) return;
+      // Abort if the user requested a different track while we were decoding.
+      if (this.currentMusicTrack !== track) return;
+
+      const source = nodes.context.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+
+      const gain = nodes.context.createGain();
+      gain.gain.value = asset.volume ?? 1.0;
+
+      source.connect(gain);
+      gain.connect(nodes.musicGain);
+
+      this.musicSourceNode = source;
+      this.musicGainNode = gain;
+
+      source.start(0);
+    })();
   }
 
   /** Stops the current music track. */
@@ -275,14 +316,14 @@ export class AudioManager {
   }
 
   private stopMusicInternal(): void {
-    if (this.musicElement) {
-      this.musicElement.pause();
-      this.musicElement.src = '';
-      this.musicElement = null;
+    if (this.musicSourceNode) {
+      try { this.musicSourceNode.stop(0); } catch { /* already stopped */ }
+      this.musicSourceNode.disconnect();
+      this.musicSourceNode = null;
     }
-    if (this.musicSource) {
-      this.musicSource.disconnect();
-      this.musicSource = null;
+    if (this.musicGainNode) {
+      this.musicGainNode.disconnect();
+      this.musicGainNode = null;
     }
   }
 
@@ -305,19 +346,12 @@ export class AudioManager {
     nodes.sfxGain.gain.setValueAtTime(this.settings.sfxVolume, nodes.context.currentTime);
     nodes.musicGain.gain.setValueAtTime(this.settings.musicVolume, nodes.context.currentTime);
 
-    // If muted, pause music element to save resources
-    if (this.settings.muted && this.musicElement && !this.musicElement.paused) {
-      this.musicElement.pause();
-    } else if (!this.settings.muted && this.currentMusicTrack) {
-      if (this.musicElement && this.musicElement.paused) {
-        // Resume existing paused music element
-        this.musicElement.play().catch(() => {
-          /* ignore */
-        });
-      } else if (!this.musicElement && nodes.context.state === 'running') {
-        // No element yet (was muted when playMusic was called) — start now
-        this.startMusicTrack(this.currentMusicTrack, nodes);
-      }
+    // If muted, stop the source to save resources.
+    if (this.settings.muted) {
+      this.stopMusicInternal();
+    } else if (this.currentMusicTrack && !this.musicSourceNode && nodes.context.state === 'running') {
+      // Unmuted and no source running — (re)start the desired track.
+      this.startMusicTrack(this.currentMusicTrack, nodes);
     }
   }
 
@@ -330,6 +364,7 @@ export class AudioManager {
     this.stopMusic();
     this.sfxBuffers.clear();
     this.dynamicBuffers.clear();
+    this.musicBuffers.clear();
     this.pack = pack;
 
     if (this.nodes) {
@@ -356,6 +391,7 @@ export class AudioManager {
     this.stopMusic();
     this.sfxBuffers.clear();
     this.dynamicBuffers.clear();
+    this.musicBuffers.clear();
     if (this.nodes && this.nodes.context.state !== 'closed') {
       this.nodes.context.close().catch(() => {
         /* ignore */

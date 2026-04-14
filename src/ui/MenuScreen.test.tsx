@@ -188,7 +188,7 @@ describe('MenuScreen', () => {
       unlockSnapshot: { choiceUnlocked: true, classifiedUnlocked: false, chaosUnlocked: false },
       newlyUnlocked: { choice: true, classified: false, chaos: false },
     });
-    const btn = screen.getByRole('button', { name: 'Choice' });
+    const btn = screen.getByRole('button', { name: 'Choice — newly unlocked' });
     expect(btn.className).toContain('unlockReveal');
   });
 

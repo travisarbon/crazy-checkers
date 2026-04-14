@@ -6,6 +6,7 @@
 import { memo } from 'react';
 import type { DiagramColor } from '../../cogitate/types';
 import type { DiagramTool } from './useDiagramState';
+import { useToolbarNavigation } from '../hooks/useToolbarNavigation';
 import styles from './DiagramToolbar.module.css';
 
 export interface DiagramToolbarProps {
@@ -44,8 +45,17 @@ function DiagramToolbar({
   className,
 }: DiagramToolbarProps) {
   const cls = [styles.toolbar, className ?? ''].filter(Boolean).join(' ');
+  const { setContainer: toolbarRef, onKeyDown: toolbarKeyDown } =
+    useToolbarNavigation<HTMLDivElement>();
   return (
-    <div className={cls} role="toolbar" aria-label="Diagram tools" data-testid="diagram-toolbar">
+    <div
+      className={cls}
+      role="toolbar"
+      aria-label="Diagram tools"
+      data-testid="diagram-toolbar"
+      ref={toolbarRef}
+      onKeyDown={toolbarKeyDown}
+    >
       <div className={styles.group}>
         {TOOLS.map(({ tool, label }) => {
           const isActive = activeTool === tool;
@@ -78,6 +88,7 @@ function DiagramToolbar({
               role="radio"
               aria-checked={isActive}
               aria-label={`${color} color`}
+              tabIndex={isActive ? 0 : -1}
               className={[
                 styles.colorSwatch,
                 styles[colorKey],

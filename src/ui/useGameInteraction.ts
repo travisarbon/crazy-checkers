@@ -9,7 +9,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { ActiveEvent, BoardState, GameState, Move, Piece, Square, SquareState } from '../engine/types';
 import { CrazyEvent, GameStatus } from '../engine/types';
-import { getBoardSquare } from '../engine/board';
+import { getBoardSquare, gridToSquare, squareToGrid } from '../engine/board';
 import { extSquareToGrid } from '../engine/events/marchingOrders';
 import type { MarchingOrdersMetadata } from '../engine/events/marchingOrders';
 import { getMovesToSquare, getJumpsForPiece } from '../engine/moves';
@@ -124,19 +124,22 @@ function getPieceAtSquare(
 
 /**
  * Create a temporary board showing the piece at `to`, with `from` vacated
- * and the captured piece removed. Used for rendering and for computing
- * continuation jumps during a multi-jump chain.
+ * and (optionally) the captured piece removed. Used for rendering and for
+ * computing continuation jumps during a multi-jump chain. `captured` may be
+ * null for friendly leapfrog hops, which do not remove the leapt-over piece.
  */
 function applyPartialHop(
   board: BoardState,
   from: Square,
   to: Square,
-  captured: Square,
+  captured: Square | null,
 ): BoardState {
   const newBoard = [...board] as SquareState[];
   const piece = getBoardSquare(board, from);
   newBoard[(from as number) - 1] = null;
-  newBoard[(captured as number) - 1] = null;
+  if (captured !== null) {
+    newBoard[(captured as number) - 1] = null;
+  }
   newBoard[(to as number) - 1] = piece;
   return newBoard;
 }
@@ -169,16 +172,80 @@ function getContinuationJumps(
 }
 
 /**
- * Find the captured square for a hop from `from` to `to` by looking at the
- * legal moves' first path entry.
+ * Returns the dark squares strictly between two dark squares `a` and `b` that
+ * lie on the same diagonal, in order from `a` toward `b`. Empty array if they
+ * are not on a common diagonal or either is an extended (light) square.
  */
-function findCapturedForHop(_from: Square, to: Square, legalMoves: Move[]): Square | null {
-  for (const move of legalMoves) {
-    if (move.path.length > 0 && (move.path[0] as number) === (to as number)) {
-      return move.captured.length > 0 ? (move.captured[0] ?? null) : null;
-    }
+function diagonalSquaresBetween(a: Square, b: Square): Square[] {
+  if ((a as number) > 32 || (b as number) > 32) return [];
+  const g1 = squareToGrid(a);
+  const g2 = squareToGrid(b);
+  const dRow = g2.row - g1.row;
+  const dCol = g2.col - g1.col;
+  if (Math.abs(dRow) !== Math.abs(dCol) || dRow === 0) return [];
+  const stepRow = Math.sign(dRow);
+  const stepCol = Math.sign(dCol);
+  const out: Square[] = [];
+  let r = g1.row + stepRow;
+  let c = g1.col + stepCol;
+  while (r !== g2.row && c !== g2.col) {
+    const sq = gridToSquare(r, c);
+    if (sq === null) return [];
+    out.push(sq);
+    r += stepRow;
+    c += stepCol;
   }
-  return null;
+  return out;
+}
+
+/**
+ * Resolves a single hop click against a list of candidate full-chain moves.
+ * Returns `{ matched: true, capturedSquare }` where `capturedSquare` is the
+ * piece removed by this hop, or null for a friendly leapfrog hop.
+ *
+ * Handles three variants: (a) standard 2-diagonal jumps where the captured
+ * piece is at the midpoint, (b) flying jumps (Up in the Air) where the
+ * captured piece lies anywhere along the diagonal between `fromStep` and
+ * `toStep`, and (c) Leapfrog chains whose `captured` array has fewer entries
+ * than `path` (friendly leapfrog hops contribute no capture).
+ */
+interface HopResolution {
+  readonly matched: boolean;
+  readonly capturedSquare: Square | null;
+}
+
+function resolveHop(
+  fromStep: Square,
+  toStep: Square,
+  candidateMoves: readonly Move[],
+): HopResolution {
+  for (const move of candidateMoves) {
+    // Find the index at which `toStep` appears in the move path.
+    const hopIndex = move.path.findIndex(p => (p as number) === (toStep as number));
+    if (hopIndex < 0) continue;
+
+    // Verify that the previous step matches `fromStep` (move.from for the
+    // first hop, or the prior path entry for continuations).
+    const prevSq = hopIndex === 0 ? move.from : move.path[hopIndex - 1];
+    if (prevSq === undefined || (prevSq as number) !== (fromStep as number)) continue;
+
+    // Walk the diagonal between fromStep and toStep and find which square
+    // (if any) is this move's captured piece for this hop. For standard
+    // jumps the diagonal has a single midpoint; for flying jumps it may
+    // have multiple empty squares and one capture; for friendly leapfrog
+    // hops no square on the diagonal appears in `move.captured`.
+    const between = diagonalSquaresBetween(fromStep, toStep);
+    const capturedSet = new Set(move.captured.map(c => c as number));
+    let capturedHere: Square | null = null;
+    for (const mid of between) {
+      if (capturedSet.has(mid as number)) {
+        capturedHere = mid;
+        break;
+      }
+    }
+    return { matched: true, capturedSquare: capturedHere };
+  }
+  return { matched: false, capturedSquare: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -232,28 +299,57 @@ export function useGameInteraction({
   const legalMoves = useMemo(() => {
     if (selectedSquare === null) return [];
 
-    if (intermediateBoard !== null) {
-      // Mid-multi-jump: continuation jumps from the current landing.
-      // Uses flying jumps when Up in the Air is active.
-      return getContinuationJumps(intermediateBoard, selectedSquare, gameState.activeEvents);
+    if (intermediateBoard !== null && multiJumpProgress !== null) {
+      // Mid-multi-jump: project the full legal chains (including Leapfrog's
+      // mixed friendly-leapfrog + enemy-capture chains) whose path prefix
+      // matches what the player has already clicked. This gives us the set
+      // of valid next-hop destinations without re-deriving them from the
+      // intermediate board (which would miss friendly leapfrogs).
+      const allMoves = getCurrentLegalMoves(gameState);
+      const prefix = multiJumpProgress.pathSoFar;
+      const originSq = multiJumpProgress.from;
+      const matching: Move[] = [];
+      for (const m of allMoves) {
+        if ((m.from as number) !== (originSq as number)) continue;
+        if (m.path.length <= prefix.length) continue;
+        let ok = true;
+        for (let i = 0; i < prefix.length; i++) {
+          if ((m.path[i] as number) !== (prefix[i] as number)) { ok = false; break; }
+        }
+        if (!ok) continue;
+        // Surface the move as-is; callers filter by path[prefix.length].
+        matching.push(m);
+      }
+
+      // Fall back to engine continuation detection if the full-chain lookup
+      // yields nothing (e.g. caller is inspecting a non-Leapfrog state).
+      if (matching.length === 0) {
+        return getContinuationJumps(intermediateBoard, selectedSquare, gameState.activeEvents);
+      }
+      return matching;
     }
 
     // Use getCurrentLegalMoves (routes through CompositeEventRuleSet) and filter.
     // Use numeric comparison so extended square numbers (33-64 from Marching Orders) work.
     const allMoves = getCurrentLegalMoves(gameState);
     return allMoves.filter((m) => (m.from as number) === (selectedSquare as number));
-  }, [selectedSquare, intermediateBoard, gameState]);
+  }, [selectedSquare, intermediateBoard, multiJumpProgress, gameState]);
 
   // ── Derived state: destination squares ───────────────────────────────
   const legalDestinations = useMemo(() => {
     const set = new Set<number>();
+    // During mid-multi-jump we index into the next path step (after the
+    // clicks already committed). Otherwise (idle/selected) the valid
+    // destination is the first step of each move.
+    const pathIndex = multiJumpProgress !== null ? multiJumpProgress.pathSoFar.length : 0;
     for (const move of legalMoves) {
-      if (move.path.length > 0) {
-        set.add(move.path[0] as number);
+      const step = move.path[pathIndex];
+      if (step !== undefined) {
+        set.add(step as number);
       }
     }
     return set as ReadonlySet<number>;
-  }, [legalMoves]);
+  }, [legalMoves, multiJumpProgress]);
 
   // ── Derived state: selectable pieces ─────────────────────────────────
   const selectablePieces = useMemo(() => {
@@ -290,21 +386,36 @@ export function useGameInteraction({
           return;
         }
 
-        const captured = findCapturedForHop(selectedSquare, sq, legalMoves);
-        if (captured === null) return;
+        // Candidate full-chain moves at this depth whose next path step is `sq`.
+        const prefix = multiJumpProgress.pathSoFar;
+        const candidateMoves = legalMoves.filter(
+          (m) =>
+            m.path.length > prefix.length &&
+            (m.path[prefix.length] as number) === (sq as number),
+        );
+        const hop = resolveHop(selectedSquare, sq, candidateMoves);
+        if (!hop.matched) return;
 
         const applyHopResult = () => {
-          const newBoard = applyPartialHop(intermediateBoard, selectedSquare, sq, captured);
+          const newBoard = applyPartialHop(intermediateBoard, selectedSquare, sq, hop.capturedSquare);
           const newPath = [...multiJumpProgress.pathSoFar, sq];
-          const newCaptured = [...multiJumpProgress.capturedSoFar, captured];
+          const newCaptured = hop.capturedSquare !== null
+            ? [...multiJumpProgress.capturedSoFar, hop.capturedSquare]
+            : multiJumpProgress.capturedSoFar;
 
-          // Check for continuations from the new landing
-          const continuations = getContinuationJumps(newBoard, sq, gameState.activeEvents);
+          // Any candidate move has content past this step → chain continues
+          const hasContinuation = candidateMoves.some(m => m.path.length > newPath.length);
 
           // Notify about this hop for per-hop animation
-          onHopComplete?.({ from: selectedSquare, to: sq, captured, boardAfter: newBoard, isContinuation: true });
+          onHopComplete?.({
+            from: selectedSquare,
+            to: sq,
+            captured: hop.capturedSquare ?? selectedSquare,
+            boardAfter: newBoard,
+            isContinuation: true,
+          });
 
-          if (continuations.length > 0) {
+          if (hasContinuation) {
             // More jumps available — stay in mid-multi-jump
             setSelectedSquare(sq);
             setIntermediateBoard(newBoard);
@@ -362,23 +473,12 @@ export function useGameInteraction({
         const isJump = movesForDest.some((m) => m.captured.length > 0);
 
         if (isJump) {
-          const captured = findCapturedForHop(selectedSquare, sq, legalMoves);
-          if (captured === null) return;
-
           // Marching Orders: the 32-square board can't represent intermediate
           // light-square positions, so execute multi-jump moves atomically.
-          //
-          // Leapfrog: friendly-piece leapfrogs produce hops that have no
-          // captured square, so per-hop click processing (which identifies
-          // each hop by its captured piece) cannot encode a mixed chain of
-          // friendly leapfrogs + enemy captures. Execute atomically instead.
           const marchingOrdersActive = gameState.activeEvents.some(
             e => e.type === CrazyEvent.MarchingOrders,
           );
-          const leapfrogActive = gameState.activeEvents.some(
-            e => e.type === CrazyEvent.Leapfrog,
-          );
-          if (marchingOrdersActive || leapfrogActive) {
+          if (marchingOrdersActive) {
             const fullMove = movesForDest.find(m => m.captured.length > 0);
             if (fullMove) {
               clearSelection();
@@ -388,27 +488,41 @@ export function useGameInteraction({
             return;
           }
 
-          const applyFirstHop = () => {
-            const newBoard = applyPartialHop(effectiveBoard, selectedSquare, sq, captured);
-            const continuations = getContinuationJumps(newBoard, sq, gameState.activeEvents);
+          // Candidate full-chain moves whose first step is this square.
+          const candidateMoves = legalMoves.filter(
+            (m) => (m.path[0] as number) === (sq as number) && m.captured.length > 0,
+          );
+          const hop = resolveHop(selectedSquare, sq, candidateMoves);
+          if (!hop.matched) return;
 
-            if (continuations.length > 0) {
-              // Multi-jump: enter mid-multi-jump phase
-              // Notify about first hop for per-hop animation
-              onHopComplete?.({ from: selectedSquare, to: sq, captured, boardAfter: newBoard, isContinuation: false });
+          const applyFirstHop = () => {
+            const newBoard = applyPartialHop(effectiveBoard, selectedSquare, sq, hop.capturedSquare);
+            const hasContinuation = candidateMoves.some(m => m.path.length > 1);
+            const initialCaptured: Square[] = hop.capturedSquare !== null
+              ? [hop.capturedSquare]
+              : [];
+
+            if (hasContinuation) {
+              onHopComplete?.({
+                from: selectedSquare,
+                to: sq,
+                captured: hop.capturedSquare ?? selectedSquare,
+                boardAfter: newBoard,
+                isContinuation: false,
+              });
               setSelectedSquare(sq);
               setIntermediateBoard(newBoard);
               setMultiJumpProgress({
                 from: selectedSquare,
                 pathSoFar: [sq],
-                capturedSoFar: [captured],
+                capturedSoFar: initialCaptured,
               });
             } else {
-              // Single jump — execute immediately
+              // Single-hop move — execute immediately.
               const completeMove: Move = {
                 from: selectedSquare,
                 path: [sq],
-                captured: [captured],
+                captured: initialCaptured,
               };
               clearSelection();
               const newState = makeMove(gameState, completeMove);

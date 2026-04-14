@@ -35,6 +35,7 @@ import TrainingProgressBar from './TrainingProgressBar';
 import TrainingFeedback from './TrainingFeedback';
 import { useTrainingSession } from './useTrainingSession';
 import CogitateToolHeader from './CogitateToolHeader';
+import { useToolbarNavigation } from '../hooks/useToolbarNavigation';
 import styles from './TrainingTool.module.css';
 
 export interface TrainingToolProps {
@@ -107,12 +108,9 @@ export default function TrainingTool({
           onBack={onBack}
           backLabel="Back"
           backTestId="training-back-to-home"
-          onHome={onBack}
-          homeTestId="training-select-home-shortcut"
           headerClassName={styles.selectHeader}
           backButtonClassName={styles.backButton}
           titleClassName={styles.title}
-          homeLinkClassName={styles.homeLink}
         />
 
         <div className={styles.actionBar}>
@@ -179,6 +177,8 @@ function TrainingSession({
 
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { setContainer: toolbarNavRef, onKeyDown: toolbarNavKeyDown } =
+    useToolbarNavigation<HTMLDivElement>();
 
   // Reset selection when the position or phase changes (state-setter-during-render
   // pattern to avoid a follow-up setState effect).
@@ -517,7 +517,13 @@ function TrainingSession({
         </aside>
       </div>
 
-      <div className={styles.actionBar} role="toolbar" aria-label="Training controls">
+      <div
+        className={styles.actionBar}
+        role="toolbar"
+        aria-label="Training controls"
+        ref={toolbarNavRef}
+        onKeyDown={toolbarNavKeyDown}
+      >
         {session.phase === 'playing' ? (
           <button
             type="button"

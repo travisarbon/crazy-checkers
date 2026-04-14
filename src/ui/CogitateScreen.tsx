@@ -5,6 +5,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAudioManager } from '../audio/useAudioManager';
+import { MusicTrack } from '../audio/types';
 import ModeScreenShell from './ModeScreenShell';
 import ReplayTool from './cogitate/ReplayTool';
 import AnalysisTool from './cogitate/AnalysisTool';
@@ -104,6 +106,7 @@ function ToolCard({
     <article
       className={[styles.card, available ? '' : styles.cardDisabled].filter(Boolean).join(' ')}
       data-testid={testId}
+      aria-disabled={!available}
     >
       <div className={styles.cardHeader}>
         <span className={styles.cardIcon} aria-hidden="true">
@@ -141,6 +144,15 @@ export default function CogitateScreen({ onBack, initialView, initialGameId }: C
   const [refreshKey, setRefreshKey] = useState(0);
   const availability = useToolAvailability(refreshKey);
   useCogitateHistory({ view, setView });
+  const audioManager = useAudioManager();
+
+  // Switch to the Cogitate soundtrack only once the player is actually
+  // inside a tool; on the home screen, leave the main-menu track playing.
+  useEffect(() => {
+    if (view.kind !== 'cogitate-home') {
+      audioManager?.playMusic(MusicTrack.MidnightWalk);
+    }
+  }, [view.kind, audioManager]);
 
   const previousViewRef = useRef<CogitateView['kind']>('cogitate-home');
   const replayRef = useRef<HTMLButtonElement>(null);

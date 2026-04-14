@@ -65,18 +65,18 @@
 }
 
 .difficultyBadge[data-tier="easy"] {
-  border-color: #4caf50;
-  color: #4caf50;
+  border-color: var(--ui-success);
+  color: var(--ui-success);
 }
 
 .difficultyBadge[data-tier="medium"] {
-  border-color: #ff9800;
-  color: #ff9800;
+  border-color: var(--ui-warning);
+  color: var(--ui-warning);
 }
 
 .difficultyBadge[data-tier="hard"] {
-  border-color: #f44336;
-  color: #f44336;
+  border-color: var(--ui-error);
+  color: var(--ui-error);
 }
 
 .timerDisplay {
@@ -139,7 +139,7 @@
 }
 
 .statusError {
-  color: #f44336;
+  color: var(--ui-error);
   animation: incorrectShake 200ms ease-out;
 }
 
@@ -154,8 +154,8 @@
 }
 
 @keyframes incorrectFlash {
-  0% { background: rgba(244, 67, 54, 0.15); }
-  100% { background: rgba(244, 67, 54, 0); }
+  0% { background: color-mix(in srgb, var(--ui-error) 15%, transparent); }
+  100% { background: color-mix(in srgb, var(--ui-error) 0%, transparent); }
 }
 
 /* ── Responsive ───────────────────────────────────────────── */

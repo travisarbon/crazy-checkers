@@ -10,13 +10,14 @@ export const SCREEN_MUSIC: Record<string, MusicTrack> = {
   config: MusicTrack.ProjectTethys,
   career: MusicTrack.ProjectTethys,
   code: MusicTrack.ProjectTethys,
-  choice: MusicTrack.PuzzleBattle,
-  'choice-detail': MusicTrack.PuzzleBattle,
+  // Note: `choice`, `choice-detail`, and `cogitate` intentionally omitted.
+  // For Choice, music starts when the player launches a game (handled by
+  // GAME_MODE_MUSIC on the game screen). For Cogitate, music starts when
+  // the player launches a specific tool (see CogitateScreen).
   challenge: MusicTrack.ModernFuturistic,
   'challenge-game': MusicTrack.ModernFuturistic,
   classified: MusicTrack.PuzzleBattle,
   'classified-detail': MusicTrack.PuzzleBattle,
-  cogitate: MusicTrack.MidnightWalk,
 };
 
 /**

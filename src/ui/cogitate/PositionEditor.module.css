@@ -37,6 +37,8 @@
   color: var(--ui-text);
   cursor: pointer;
   font-size: var(--text-xs);
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .paletteItem:hover:not(.paletteItemActive) {
@@ -107,13 +109,15 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.35rem 0.6rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-md);
   cursor: pointer;
   background: none;
   color: var(--ui-text);
   font-size: 0.85rem;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .sideRadio:hover:not(.sideRadioActive) {
@@ -166,10 +170,12 @@
   background: none;
   border: 1px solid var(--ui-border);
   color: var(--ui-text);
-  padding: 0.35rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 0.85rem;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .actionButton:hover {

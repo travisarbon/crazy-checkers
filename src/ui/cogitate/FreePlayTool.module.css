@@ -22,8 +22,8 @@
 .backButton {
   display: inline-flex;
   align-items: center;
-  background: none;
-  border: 1px solid var(--ui-border);
+  background: transparent;
+  border: 2px solid var(--ui-accent);
   color: var(--ui-text);
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
@@ -31,16 +31,23 @@
   cursor: pointer;
   min-width: 44px;
   min-height: 44px;
+  transition: background-color var(--duration-fast), color var(--duration-fast);
 }
 
 .backButton:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
-  border-color: var(--ui-accent);
+  background-color: var(--ui-accent);
+  color: var(--ui-bg);
 }
 
 .backButton:focus-visible {
   outline: 3px solid var(--ui-accent);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backButton {
+    transition: none;
+  }
 }
 
 .layout {

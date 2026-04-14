@@ -10,6 +10,7 @@ import { memo } from 'react';
 import type { PieceColor } from '../../engine/types';
 import { PieceColor as PieceColors, PieceType } from '../../engine/types';
 import type { PieceDefinition, ValidationResult } from '../../cogitate/types';
+import { useToolbarNavigation } from '../hooks/useToolbarNavigation';
 import styles from './PositionEditor.module.css';
 
 export interface PositionEditorProps {
@@ -69,6 +70,10 @@ function PositionEditor({
   className,
 }: PositionEditorProps) {
   const rootClass = [styles.root, className ?? ''].filter(Boolean).join(' ');
+  const { setContainer: paletteRef, onKeyDown: paletteKeyDown } =
+    useToolbarNavigation<HTMLDivElement>();
+  const { setContainer: sideToMoveRef, onKeyDown: sideToMoveKeyDown } =
+    useToolbarNavigation<HTMLDivElement>();
 
   const validationTone = !validation.isLegal
     ? styles.validationError
@@ -85,12 +90,19 @@ function PositionEditor({
           role="radiogroup"
           aria-label="Piece palette"
           data-testid="position-editor-palette"
+          ref={paletteRef}
+          onKeyDown={paletteKeyDown}
         >
-          {piecePalette.map((piece) => {
+          {piecePalette.map((piece, index) => {
             const isActive =
               selectedPiece !== null &&
               selectedPiece.color === piece.color &&
               selectedPiece.type === piece.type;
+            // Roving tabindex: active if selected, else first item gets tabIndex 0 when
+            // nothing is selected so keyboard users can enter the group.
+            const hasActive = selectedPiece !== null;
+            const isFirst = index === 0;
+            const tabIndex = isActive || (!hasActive && isFirst) ? 0 : -1;
             const classes = [
               styles.paletteItem,
               isActive ? styles.paletteItemActive : '',
@@ -103,6 +115,7 @@ function PositionEditor({
                 type="button"
                 role="radio"
                 aria-checked={isActive}
+                tabIndex={tabIndex}
                 className={classes}
                 onClick={() => {
                   onPieceSelect(isActive ? null : piece);
@@ -128,11 +141,14 @@ function PositionEditor({
           className={styles.sideToMoveRadios}
           role="radiogroup"
           aria-label="Side to move"
+          ref={sideToMoveRef}
+          onKeyDown={sideToMoveKeyDown}
         >
           <button
             type="button"
             role="radio"
             aria-checked={sideToMove === PieceColors.White}
+            tabIndex={sideToMove === PieceColors.White ? 0 : -1}
             className={[
               styles.sideRadio,
               sideToMove === PieceColors.White ? styles.sideRadioActive : '',
@@ -148,6 +164,7 @@ function PositionEditor({
             type="button"
             role="radio"
             aria-checked={sideToMove === PieceColors.Black}
+            tabIndex={sideToMove === PieceColors.Black ? 0 : -1}
             className={[
               styles.sideRadio,
               sideToMove === PieceColors.Black ? styles.sideRadioActive : '',

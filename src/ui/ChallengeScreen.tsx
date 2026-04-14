@@ -60,7 +60,12 @@ function StatCard({
 }) {
   const isEmpty = value === emptyValue;
   return (
-    <div className={styles.statCard} data-testid={testId}>
+    <div
+      className={styles.statCard}
+      data-testid={testId}
+      role="group"
+      aria-label={`${label}: ${value}`}
+    >
       {icon && (
         <span
           aria-hidden="true"
@@ -116,6 +121,21 @@ function PerformanceHistoryTable({
   return (
     <div className={styles.historyTableWrapper}>
       <table className={styles.historyTable} data-testid="history-table">
+        <caption
+          style={{
+            position: 'absolute',
+            width: '1px',
+            height: '1px',
+            padding: 0,
+            margin: '-1px',
+            overflow: 'hidden',
+            clip: 'rect(0, 0, 0, 0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+        >
+          Challenge attempt history
+        </caption>
         <thead>
           <tr>
             <th>Puzzle</th>

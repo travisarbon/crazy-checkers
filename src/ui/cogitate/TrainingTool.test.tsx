@@ -36,7 +36,9 @@ describe('TrainingTool', () => {
     const tool = screen.getByTestId('training-tool');
     expect(tool.dataset.phase).toBe('select');
     expect(screen.getByTestId('training-train-all')).toBeInTheDocument();
-    expect(screen.getByTestId('training-select-home-shortcut')).toBeInTheDocument();
+    // Level-1 (source selection) should not render a Cogitate-home shortcut,
+    // matching Replay/Analysis level-1 behavior.
+    expect(screen.queryByTestId('training-select-home-shortcut')).toBeNull();
   });
 
   it('calls onBack when the back button is clicked', () => {

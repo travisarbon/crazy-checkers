@@ -31,6 +31,23 @@ import { CHOICE_MODE_DATA } from '../persistence/choiceModeData';
 import styles from './CareerScreen.module.css';
 
 // ---------------------------------------------------------------------------
+// Accessibility helpers
+// ---------------------------------------------------------------------------
+
+/** Inline visually-hidden style (mirrors the standard sr-only recipe). */
+const VISUALLY_HIDDEN: React.CSSProperties = {
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+};
+
+// ---------------------------------------------------------------------------
 // Lifer track Choice mode name lookup
 // ---------------------------------------------------------------------------
 
@@ -240,6 +257,7 @@ function OpponentBreakdownTable({
   return (
     <div className={styles.modeStatTableWrapper}>
       <table className={styles.modeStatTable}>
+        <caption style={VISUALLY_HIDDEN}>Opponent breakdown</caption>
         <thead>
           <tr>
             <th>Opponent</th>
@@ -295,6 +313,7 @@ function ChoiceModeTable({
   return (
     <div className={styles.modeStatTableWrapper}>
       <table className={styles.modeStatTable}>
+        <caption style={VISUALLY_HIDDEN}>Choice mode progression</caption>
         <thead>
           <tr>
             <th>#</th>
@@ -460,6 +479,7 @@ function renderEventStats(
       <h3 className={styles.subsectionTitle}>Event Frequency</h3>
       <div className={styles.modeStatTableWrapper}>
         <table className={styles.modeStatTable}>
+          <caption style={VISUALLY_HIDDEN}>Event frequency and win rate</caption>
           <thead>
             <tr>
               <th>Event</th>
@@ -563,6 +583,7 @@ function renderClassifiedWaves(
   return (
     <div className={styles.modeStatTableWrapper}>
       <table className={styles.modeStatTable}>
+        <caption style={VISUALLY_HIDDEN}>Classified wave progression</caption>
         <thead>
           <tr>
             <th>Wave</th>

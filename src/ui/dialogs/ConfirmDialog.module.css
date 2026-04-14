@@ -66,6 +66,8 @@
   font-weight: var(--font-semibold);
   cursor: pointer;
   transition: opacity var(--duration-fast);
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .primaryButton:hover {
@@ -87,6 +89,8 @@
   font-weight: var(--font-medium);
   cursor: pointer;
   transition: opacity var(--duration-fast);
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .secondaryButton:hover {

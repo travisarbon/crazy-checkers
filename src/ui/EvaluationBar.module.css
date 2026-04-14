@@ -1,6 +1,6 @@
 .root {
   position: relative;
-  background: rgba(0, 0, 0, 0.1);
+  background: color-mix(in srgb, var(--ui-text) 10%, transparent);
   border: 1px solid var(--ui-border, rgba(0, 0, 0, 0.2));
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -54,16 +54,16 @@
 .loading {
   background: repeating-linear-gradient(
     135deg,
-    rgba(128, 128, 128, 0.25),
-    rgba(128, 128, 128, 0.25) 6px,
-    rgba(128, 128, 128, 0.4) 6px,
-    rgba(128, 128, 128, 0.4) 12px
+    color-mix(in srgb, var(--ui-text) 25%, transparent),
+    color-mix(in srgb, var(--ui-text) 25%, transparent) 6px,
+    color-mix(in srgb, var(--ui-text) 40%, transparent) 6px,
+    color-mix(in srgb, var(--ui-text) 40%, transparent) 12px
   );
   animation: pulse 1200ms ease-in-out infinite;
 }
 
 .unavailable {
-  background: rgba(128, 128, 128, 0.3);
+  background: color-mix(in srgb, var(--ui-text) 30%, transparent);
 }
 
 .error {

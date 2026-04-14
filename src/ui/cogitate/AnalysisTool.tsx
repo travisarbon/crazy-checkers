@@ -51,6 +51,7 @@ import { useReplayNavigation } from './useReplayNavigation';
 import AnalysisDetailPanel from './AnalysisDetailPanel';
 import QualitySummaryBar from './QualitySummaryBar';
 import CogitateToolHeader from './CogitateToolHeader';
+import { useToolbarNavigation } from '../hooks/useToolbarNavigation';
 import styles from './AnalysisTool.module.css';
 
 export interface AnalysisToolProps {
@@ -218,6 +219,10 @@ function AnalysisView({
   const abortRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const { setContainer: transportNavRef, onKeyDown: transportNavKeyDown } =
+    useToolbarNavigation<HTMLDivElement>();
+  const { setContainer: tabsNavRef, onKeyDown: tabsNavKeyDown } =
+    useToolbarNavigation<HTMLDivElement>({ selector: '[role="tab"]' });
 
   const modeDisplayName = resolveGameRecord(game).displayName;
 
@@ -520,15 +525,23 @@ function AnalysisView({
             {analysisStatus === 'idle' && 'Waiting…'}
           </p>
 
-          <div className={styles.mobileTabs} role="tablist" aria-label="Analysis panels">
+          <div
+            className={styles.mobileTabs}
+            role="tablist"
+            aria-label="Analysis panels"
+            ref={tabsNavRef}
+            onKeyDown={tabsNavKeyDown}
+          >
             <button
               type="button"
               role="tab"
               aria-selected={mobileTab === 'moves'}
+              tabIndex={mobileTab === 'moves' ? 0 : -1}
               className={[styles.tabButton, mobileTab === 'moves' ? styles.tabActive : '']
                 .filter(Boolean)
                 .join(' ')}
               onClick={() => { setMobileTab('moves'); }}
+              onFocus={() => { setMobileTab('moves'); }}
               data-testid="analysis-tab-moves"
             >
               Moves
@@ -537,10 +550,12 @@ function AnalysisView({
               type="button"
               role="tab"
               aria-selected={mobileTab === 'analysis'}
+              tabIndex={mobileTab === 'analysis' ? 0 : -1}
               className={[styles.tabButton, mobileTab === 'analysis' ? styles.tabActive : '']
                 .filter(Boolean)
                 .join(' ')}
               onClick={() => { setMobileTab('analysis'); }}
+              onFocus={() => { setMobileTab('analysis'); }}
               data-testid="analysis-tab-analysis"
             >
               Analysis
@@ -584,6 +599,8 @@ function AnalysisView({
         role="toolbar"
         aria-label="Analysis controls"
         data-testid="analysis-transport-bar"
+        ref={transportNavRef}
+        onKeyDown={transportNavKeyDown}
       >
         <TransportButton
           label="First move"

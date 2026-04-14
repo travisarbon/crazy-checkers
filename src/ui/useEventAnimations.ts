@@ -396,9 +396,21 @@ function buildLiveGrenadeDetonation(
   return steps;
 }
 
-function buildHotPotatoEffect(move: Move, event: ActiveEvent): AnimationStep[] {
+function buildHotPotatoEffect(
+  move: Move,
+  event: ActiveEvent,
+  boardBefore: BoardState,
+  boardAfter: BoardState,
+): AnimationStep[] {
   const landingSquare = move.path[move.path.length - 1];
   if (landingSquare === undefined) return [];
+
+  // Only animate when the piece actually changed color. For permanent
+  // Imposter, the engine fires only every 5 plies; other turns must not
+  // play the swap animation.
+  const before = getBoardSquare(boardBefore, move.from);
+  const after = getBoardSquare(boardAfter, landingSquare);
+  if (!before || !after || before.color === after.color) return [];
 
   return [
     {
@@ -911,7 +923,7 @@ export function useEventAnimations(_options: { flipped: boolean; }) {
           steps.push(...buildLiveGrenadeDetonation(move, boardBefore, boardAfter));
         }
         if (event.type === CrazyEvent.HotPotato) {
-          steps.push(...buildHotPotatoEffect(move, event));
+          steps.push(...buildHotPotatoEffect(move, event, boardBefore, boardAfter));
         }
         // Tier 2/3 mid-move effects
         if (event.type === CrazyEvent.Conscription && move.captured.length > 0) {

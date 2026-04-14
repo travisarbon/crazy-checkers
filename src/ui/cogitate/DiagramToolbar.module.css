@@ -25,10 +25,12 @@
   background: none;
   border: 1px solid var(--ui-border);
   color: var(--ui-text);
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem 0.75rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.8rem;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .toolButton:hover:not(:disabled):not(.toolButtonActive) {
@@ -48,11 +50,17 @@
 }
 
 .colorSwatch {
-  width: 1.25rem;
-  height: 1.25rem;
+  min-width: 44px;
+  min-height: 44px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
+  background-color: transparent;
+  background-clip: content-box;
+  padding: 11px;
+  box-sizing: border-box;
 }
 
 .colorSwatchActive {
@@ -67,10 +75,12 @@
   background: none;
   border: 1px solid var(--ui-border);
   color: var(--ui-text);
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem 0.75rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.8rem;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .actionButton:hover:not(:disabled) {

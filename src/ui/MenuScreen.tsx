@@ -131,7 +131,13 @@ export default function MenuScreen({
               key={mode.id}
               className={`${styles.modeButton ?? ''} ${!mode.enabled ? (styles.disabled ?? '') : ''} ${isNewlyUnlocked ? (styles.unlockReveal ?? '') : ''}`}
               disabled={!mode.enabled}
-              aria-label={mode.enabled ? mode.label : `${mode.label} — Coming Soon`}
+              aria-label={
+                mode.enabled
+                  ? isNewlyUnlocked
+                    ? `${mode.label} — newly unlocked`
+                    : mode.label
+                  : `${mode.label} — Coming Soon`
+              }
               title={mode.description}
               onAnimationEnd={isNewlyUnlocked ? () => { onUnlockAnimationEnd(mode.id as 'choice' | 'classified' | 'chaos'); } : undefined}
               onClick={() => {

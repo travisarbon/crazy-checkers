@@ -41,7 +41,6 @@ import { useEventAnimations } from './useEventAnimations';
 import { useEventOverlays } from './useEventOverlays';
 import { useAudioManager } from '../audio/useAudioManager';
 import { SoundEvent } from '../audio/types';
-import { getEventSound } from '../audio/eventSoundMapping';
 import styles from './GameScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -431,16 +430,9 @@ export default function GameScreen({
         setAnnouncementEvents((prev) =>
           prev.length > 0 ? [...prev, ...triggered] : triggered,
         );
-        // Play event-specific SFX for the first triggered event, falling back
-        // to the generic EventTrigger sound if no mapping exists.
+        // Every triggered event plays the unified event-trigger SFX.
         if (audioManager) {
-          const first = triggered[0];
-          const eventSound = first ? getEventSound(first.type) : null;
-          if (eventSound) {
-            void audioManager.playUrl(eventSound.url, eventSound.volume);
-          } else {
-            audioManager.play(SoundEvent.EventTrigger);
-          }
+          audioManager.play(SoundEvent.EventTrigger);
         }
       }
 

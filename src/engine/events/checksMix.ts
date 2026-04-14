@@ -270,6 +270,16 @@ export class ChecksMixDecorator extends EventDecorator {
     );
     if (checksMixEntries.length === 0) return board;
 
+    // Skip the shuffle when Marching Orders is active. Marching Orders
+    // tracks the live board on a 64-square orthogonal grid (dark + light),
+    // but `shuffleBoard` only knows about the 32-square dark-square
+    // projection. Reshuffling in that state loses light-square pieces and
+    // leaves MO's grid metadata inconsistent — previously this produced a
+    // crash when a subsequent move indexed into the stale grid.
+    if (this.activeEventsContext.some((e) => e.type === CrazyEvent.MarchingOrders)) {
+      return board;
+    }
+
     // Use base rules (no event decorators) for mandatory-capture validation.
     const baseRules = this.getBaseRuleSet();
 

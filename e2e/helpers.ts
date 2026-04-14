@@ -97,7 +97,34 @@ export async function clearAppStorage(page: Page): Promise<void> {
     localStorage.removeItem('crazy-checkers-settings');
     localStorage.removeItem('crazy-checkers-saved-game');
     localStorage.removeItem('crazy-checkers-game-history');
+    localStorage.removeItem('crazy-checkers-unlock-state');
+    localStorage.removeItem('crazy-checkers-code-unlocks');
+    localStorage.removeItem('crazy-checkers-redemption-history');
   });
+}
+
+/**
+ * Clear all IndexedDB data (games + challenges).
+ */
+export async function clearAppIndexedDb(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    await new Promise<void>((resolve) => {
+      const req = indexedDB.deleteDatabase('crazy-checkers');
+      req.onsuccess = () => { resolve(); };
+      req.onerror = () => { resolve(); };
+      req.onblocked = () => { resolve(); };
+    });
+  });
+}
+
+/**
+ * Dismiss resume dialog if present.
+ */
+export async function dismissResumeDialog(page: Page): Promise<void> {
+  const resumeDiscard = page.getByTestId('resume-discard');
+  if (await resumeDiscard.isVisible({ timeout: 500 }).catch(() => false)) {
+    await resumeDiscard.click();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -171,4 +198,216 @@ export async function waitForEventAnnouncement(
     const nameEl = page.getByTestId('event-announcement-name');
     await nameEl.waitFor({ state: 'visible', timeout: 5000 });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3 Task 24.2 helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Wait for a screen with the given testId to become visible.
+ */
+export async function waitForScreen(page: Page, testId: string): Promise<void> {
+  await page.getByTestId(testId).waitFor({ state: 'visible', timeout: 10000 });
+}
+
+/** Generic menu → named button → screen navigation. */
+async function gotoMenuAndClick(
+  page: Page,
+  buttonName: string,
+  screenTestId: string,
+): Promise<void> {
+  await page.goto('/');
+  await dismissResumeDialog(page);
+  await page.getByRole('button', { name: buttonName }).click();
+  await waitForScreen(page, screenTestId);
+}
+
+export async function navigateToChallenge(page: Page): Promise<void> {
+  await gotoMenuAndClick(page, 'Challenge', 'challenge-screen');
+}
+
+export async function navigateToChoice(page: Page): Promise<void> {
+  await gotoMenuAndClick(page, 'Choice', 'choice-screen');
+}
+
+export async function navigateToCareer(page: Page): Promise<void> {
+  await gotoMenuAndClick(page, 'Career', 'career-screen');
+}
+
+export async function navigateToCogitate(page: Page): Promise<void> {
+  await gotoMenuAndClick(page, 'Cogitate', 'cogitate-screen');
+}
+
+export async function navigateToCode(page: Page): Promise<void> {
+  await gotoMenuAndClick(page, 'Code', 'code-screen');
+}
+
+/**
+ * Navigate to the Code screen, enter a code, and submit it.
+ */
+export async function redeemCode(page: Page, code: string): Promise<void> {
+  await navigateToCode(page);
+  await page.getByTestId('code-input').fill(code);
+  await page.getByTestId('redeem-button').click();
+  await page.getByTestId('status-message').waitFor({ state: 'visible', timeout: 5000 });
+}
+
+/**
+ * Seed code-based unlocks directly in localStorage (faster than redeeming via UI).
+ */
+export async function seedCodeUnlocks(
+  page: Page,
+  modeIds: readonly string[],
+): Promise<void> {
+  await page.evaluate((ids) => {
+    localStorage.setItem('crazy-checkers-code-unlocks', JSON.stringify([...ids].sort()));
+  }, modeIds);
+}
+
+/**
+ * Set the viewport size to a preset breakpoint.
+ */
+export async function setViewport(
+  page: Page,
+  size: 'mobile' | 'mobile-wide' | 'desktop' | 'large-desktop',
+): Promise<void> {
+  const sizes = {
+    mobile: { width: 375, height: 667 },
+    'mobile-wide': { width: 390, height: 844 },
+    desktop: { width: 1280, height: 720 },
+    'large-desktop': { width: 1440, height: 900 },
+  } as const;
+  await page.setViewportSize(sizes[size]);
+}
+
+/**
+ * Seed `count` solved challenge records into IndexedDB.
+ * Uses puzzleIds 1..count to satisfy the unlock evaluator which counts distinct
+ * solved puzzleIds.
+ */
+export async function injectChallengeRecords(
+  page: Page,
+  count: number,
+): Promise<void> {
+  await page.evaluate(async (n) => {
+    const records = Array.from({ length: n }, (_, idx) => ({
+      id: `seed-challenge-${String(idx + 1)}`,
+      puzzleId: idx + 1,
+      solved: true,
+      solveTimeMs: 5000,
+      rating: 3,
+      movesPlayed: ['11-15'],
+      attemptNumber: 1,
+      completedAt: Date.now() - (n - idx) * 1000,
+    }));
+
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open('crazy-checkers', 3);
+      req.onupgradeneeded = () => {
+        const upgradeDb = req.result;
+        if (!upgradeDb.objectStoreNames.contains('games')) {
+          const store = upgradeDb.createObjectStore('games', { keyPath: 'id' });
+          store.createIndex('by-mode', 'mode');
+          store.createIndex('by-completedAt', 'completedAt');
+          store.createIndex('by-result', 'result');
+        }
+        if (!upgradeDb.objectStoreNames.contains('challenges')) {
+          const challengeStore = upgradeDb.createObjectStore('challenges', { keyPath: 'id' });
+          challengeStore.createIndex('by-puzzleId', 'puzzleId');
+          challengeStore.createIndex('by-completedAt', 'completedAt');
+        }
+      };
+      req.onsuccess = () => { resolve(req.result); };
+      req.onerror = () => { reject(req.error); };
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('challenges', 'readwrite');
+      const store = tx.objectStore('challenges');
+      for (const record of records) {
+        store.put(record);
+      }
+      tx.oncomplete = () => { resolve(); };
+      tx.onerror = () => { reject(tx.error); };
+    });
+    db.close();
+  }, count);
+}
+
+export interface SeededGameRecord {
+  id?: string;
+  mode: string;
+  playerWhite: string;
+  playerBlack: string;
+  result: string;
+  reason: string;
+  moves: string[];
+  boardStates: string[];
+  startedAt: number;
+  completedAt: number;
+}
+
+/**
+ * Seed game records into IndexedDB.
+ */
+export async function injectGameRecords(
+  page: Page,
+  records: readonly SeededGameRecord[],
+): Promise<void> {
+  await page.evaluate(async (rawRecords) => {
+    const withIds = rawRecords.map((r, idx) => ({
+      ...r,
+      id: r.id ?? `seed-game-${String(idx + 1)}`,
+    }));
+
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open('crazy-checkers', 3);
+      req.onupgradeneeded = () => {
+        const upgradeDb = req.result;
+        if (!upgradeDb.objectStoreNames.contains('games')) {
+          const store = upgradeDb.createObjectStore('games', { keyPath: 'id' });
+          store.createIndex('by-mode', 'mode');
+          store.createIndex('by-completedAt', 'completedAt');
+          store.createIndex('by-result', 'result');
+        }
+        if (!upgradeDb.objectStoreNames.contains('challenges')) {
+          const challengeStore = upgradeDb.createObjectStore('challenges', { keyPath: 'id' });
+          challengeStore.createIndex('by-puzzleId', 'puzzleId');
+          challengeStore.createIndex('by-completedAt', 'completedAt');
+        }
+      };
+      req.onsuccess = () => { resolve(req.result); };
+      req.onerror = () => { reject(req.error); };
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('games', 'readwrite');
+      const store = tx.objectStore('games');
+      for (const record of withIds) {
+        store.put(record);
+      }
+      tx.oncomplete = () => { resolve(); };
+      tx.onerror = () => { reject(tx.error); };
+    });
+    db.close();
+  }, records as unknown as SeededGameRecord[]);
+}
+
+/**
+ * Build the canonical 32-char initial board state snapshot.
+ * (Black pawns on 1–12, white pawns on 21–32.)
+ */
+export function initialBoardSnapshot(): string {
+  return 'bbbbbbbbbbbb........wwwwwwwwwwww';
+}
+
+/**
+ * Build a minimal GameRecord snapshot list of length `plies + 1`, starting
+ * from the initial board and leaving it unchanged (suitable for Replay UI
+ * smoke tests that verify navigation, not move accuracy).
+ */
+export function buildPaddedBoardStates(plies: number): string[] {
+  const init = initialBoardSnapshot();
+  return new Array(plies + 1).fill(init);
 }

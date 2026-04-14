@@ -30,6 +30,7 @@ import GameHistoryBrowser from '../GameHistoryBrowser';
 import { useEventOverlays } from '../useEventOverlays';
 import ActiveEventsIndicator from './ActiveEventsIndicator';
 import CogitateToolHeader from './CogitateToolHeader';
+import { useToolbarNavigation } from '../hooks/useToolbarNavigation';
 import { useReplayNavigation } from './useReplayNavigation';
 import { formatEvaluationScore } from '../EvaluationBar';
 import { formatPlayerLabel } from '../../utils/formatting';
@@ -173,6 +174,8 @@ function ReplayView({ game, adapter, onBackToSelect, onBackToHome }: ReplayViewP
 
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const { setContainer: transportNavRef, onKeyDown: transportNavKeyDown } =
+    useToolbarNavigation<HTMLDivElement>();
 
   // Keyboard shortcuts (arrow keys, Home, End, Space).
   useEffect(() => {
@@ -365,6 +368,8 @@ function ReplayView({ game, adapter, onBackToSelect, onBackToHome }: ReplayViewP
         role="toolbar"
         aria-label="Replay controls"
         data-testid="replay-transport-bar"
+        ref={transportNavRef}
+        onKeyDown={transportNavKeyDown}
       >
         <TransportButton
           label="First move"

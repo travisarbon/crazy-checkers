@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { RoyalDecreeDecorator } from './royalDecree';
+import { RoyalDecreeDecorator, filterToKingMoves } from './royalDecree';
 import { createAmericanRules } from '../rules';
 import { makeMove, getCurrentLegalMoves } from '../game';
 import { computeZobristHash } from '../zobrist';
@@ -21,6 +21,7 @@ import {
   PieceType,
   PlayerType,
 } from '../types';
+import type { Square } from '../types';
 import type { ActiveEvent, BoardState, GameState, Move, PlayerSetup } from '../types';
 import { W, B, P, K, buildBoard } from '../test-utils';
 import { getBoardSquare } from '../board';
@@ -117,6 +118,38 @@ describe('RoyalDecreeDecorator', () => {
   it('is registered', () => {
     expect(EVENT_DECORATOR_REGISTRY.has(CrazyEvent.RoyalDecree)).toBe(true);
     expect(IMPLEMENTED_EVENTS).toContain(CrazyEvent.RoyalDecree);
+  });
+
+  it('keeps king jumps originating from Marching Orders light squares', () => {
+    // Regression: with Marching Orders + Royal Decree active, a white king
+    // living on a light square (33-64) was filtered out of king-jump
+    // detection because filterToKingMoves only consulted the 32-square
+    // board. The player was falsely declared stalemated.
+    const grid: ({ color: PieceColor; type: PieceType } | null)[] =
+      new Array<{ color: PieceColor; type: PieceType } | null>(64).fill(null);
+    grid[3 * 8 + 3] = { color: W, type: K };
+    grid[3 * 8 + 4] = { color: B, type: P };
+    const moEvent = createActiveEvent(CrazyEvent.MarchingOrders, W, 0, {
+      orthogonalGrid: grid,
+      applied: true,
+    } as unknown as Readonly<Record<string, unknown>>);
+
+    const kingFrom = 46 as Square; // light (3,3)
+    const kingTo = 47 as Square;   // light (3,5)
+    const innerMove: Move = {
+      from: kingFrom,
+      path: [kingTo],
+      captured: [kingTo], // opaque capture entry — content irrelevant here
+    };
+
+    // Empty 32-square board so the king is not visible via getBoardSquare —
+    // this is what used to cause the bug. hasKing must still resolve true
+    // via the MO grid.
+    const emptyBoard: BoardState = new Array(32).fill(null);
+
+    const filtered = filterToKingMoves(emptyBoard, [innerMove], W, [moEvent]);
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0]?.from).toBe(innerMove.from);
   });
 
   it('pawn jumps blocked → king simple moves regenerated', () => {

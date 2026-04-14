@@ -77,11 +77,17 @@ export default function CodeScreen({ onBack, onCodeRedeemed }: CodeScreenProps) 
 
   const audioManager = useAudioManager();
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     return () => {
       if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     };
+  }, []);
+
+  // Auto-focus the code input on mount so users can begin typing immediately.
+  useEffect(() => {
+    inputRef.current?.focus();
   }, []);
 
   function scheduleAutoDismiss(): void {
@@ -168,6 +174,7 @@ export default function CodeScreen({ onBack, onCodeRedeemed }: CodeScreenProps) 
         </p>
         <form className={styles.entryForm} onSubmit={handleSubmit}>
           <input
+            ref={inputRef}
             className={styles.codeInput}
             type="text"
             value={inputValue}
@@ -175,6 +182,10 @@ export default function CodeScreen({ onBack, onCodeRedeemed }: CodeScreenProps) 
             onFocus={handleInputFocus}
             placeholder="Enter unlock code..."
             aria-label="Unlock code"
+            aria-invalid={statusMessage?.kind === 'invalid' ? true : undefined}
+            aria-errormessage={
+              statusMessage?.kind === 'invalid' ? 'code-status-message' : undefined
+            }
             maxLength={MAX_INPUT_LENGTH}
             autoComplete="off"
             autoCapitalize="characters"
@@ -194,9 +205,10 @@ export default function CodeScreen({ onBack, onCodeRedeemed }: CodeScreenProps) 
 
         {statusMessage !== null && (
           <div
+            id="code-status-message"
             className={classNames(styles.status, styles[statusMessage.kind])}
-            role="status"
-            aria-live="polite"
+            role={statusMessage.kind === 'invalid' ? 'alert' : 'status'}
+            aria-live={statusMessage.kind === 'invalid' ? 'assertive' : 'polite'}
             data-testid="status-message"
           >
             {statusMessage.kind === 'success' && (

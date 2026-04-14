@@ -52,12 +52,12 @@ describe('resolveMusicTrack', () => {
     expect(resolveMusicTrack('game', GameMode.Classic, 'extraCrazy')).toBe(MusicTrack.SpaceDance);
   });
 
-  it('returns PuzzleBattle for choice screen', () => {
-    expect(resolveMusicTrack('choice')).toBe(MusicTrack.PuzzleBattle);
+  it('returns null for choice screen so menu music keeps playing until a game starts', () => {
+    expect(resolveMusicTrack('choice')).toBeNull();
   });
 
-  it('returns PuzzleBattle for choice-detail screen', () => {
-    expect(resolveMusicTrack('choice-detail')).toBe(MusicTrack.PuzzleBattle);
+  it('returns null for choice-detail screen so menu music keeps playing until a game starts', () => {
+    expect(resolveMusicTrack('choice-detail')).toBeNull();
   });
 
   it('returns ModernFuturistic for challenge screen', () => {
@@ -76,8 +76,8 @@ describe('resolveMusicTrack', () => {
     expect(resolveMusicTrack('classified-detail')).toBe(MusicTrack.PuzzleBattle);
   });
 
-  it('returns MidnightWalk for cogitate screen', () => {
-    expect(resolveMusicTrack('cogitate')).toBe(MusicTrack.MidnightWalk);
+  it('returns null for cogitate screen so menu music keeps playing until a tool is launched', () => {
+    expect(resolveMusicTrack('cogitate')).toBeNull();
   });
 
   it('returns null for unknown screen', () => {

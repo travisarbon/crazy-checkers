@@ -23,8 +23,8 @@
 .homeLink {
   display: inline-flex;
   align-items: center;
-  background: none;
-  border: 1px solid var(--ui-border);
+  background: transparent;
+  border: 2px solid var(--ui-accent);
   color: var(--ui-text);
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
@@ -32,18 +32,26 @@
   cursor: pointer;
   min-width: 44px;
   min-height: 44px;
+  transition: background-color var(--duration-fast), color var(--duration-fast);
 }
 
 .backButton:hover,
 .homeLink:hover {
-  background: color-mix(in srgb, var(--ui-accent) var(--tint-light), transparent);
-  border-color: var(--ui-accent);
+  background-color: var(--ui-accent);
+  color: var(--ui-bg);
 }
 
 .backButton:focus-visible,
 .homeLink:focus-visible {
   outline: 3px solid var(--ui-accent);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backButton,
+  .homeLink {
+    transition: none;
+  }
 }
 
 .selectBody {
@@ -67,7 +75,7 @@
 }
 
 .error {
-  color: var(--quality-blunder, #f44336);
+  color: var(--quality-blunder, var(--ui-error));
   padding: 0.5rem 0;
 }
 
@@ -142,6 +150,7 @@
   cursor: pointer;
   font-weight: var(--font-semibold);
   min-height: 44px;
+  min-width: 44px;
 }
 
 .actionButton:hover:not(:disabled) {
@@ -217,10 +226,12 @@
   background: none;
   border: 1px solid var(--ui-border);
   color: var(--ui-text);
-  padding: 0.25rem 0.6rem;
+  padding: 0.5rem 0.85rem;
   border-radius: var(--radius-full);
   cursor: pointer;
   font-size: 0.85rem;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .modeChip:hover:not(.modeChipActive) {

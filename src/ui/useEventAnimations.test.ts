@@ -423,8 +423,15 @@ describe('buildMidMoveEffects', () => {
       const hook = getHook();
       const move = makeMove(5, [10]);
       const event = makeActiveEvent(CrazyEvent.HotPotato, PieceColor.White);
+      // Before: piece is white at origin; after: piece switched to black at landing.
+      const boardBefore = boardWith([
+        { sq: 5, color: PieceColor.White, type: PieceType.Pawn },
+      ]);
+      const boardAfter = boardWith([
+        { sq: 10, color: PieceColor.Black, type: PieceType.Pawn },
+      ]);
 
-      const steps = hook.buildMidMoveEffects(move, [event], emptyBoard(), emptyBoard());
+      const steps = hook.buildMidMoveEffects(move, [event], boardBefore, boardAfter);
 
       expect(steps).toHaveLength(1);
       expect(steps[0]).toMatchObject({
@@ -440,8 +447,14 @@ describe('buildMidMoveEffects', () => {
       const hook = getHook();
       const move = makeMove(20, [15]);
       const event = makeActiveEvent(CrazyEvent.HotPotato, PieceColor.Black);
+      const boardBefore = boardWith([
+        { sq: 20, color: PieceColor.Black, type: PieceType.Pawn },
+      ]);
+      const boardAfter = boardWith([
+        { sq: 15, color: PieceColor.White, type: PieceType.Pawn },
+      ]);
 
-      const steps = hook.buildMidMoveEffects(move, [event], emptyBoard(), emptyBoard());
+      const steps = hook.buildMidMoveEffects(move, [event], boardBefore, boardAfter);
 
       expect(steps).toHaveLength(1);
       expect(steps[0]).toMatchObject({
@@ -450,6 +463,23 @@ describe('buildMidMoveEffects', () => {
         fromColor: PieceColor.Black,
         toColor: PieceColor.White,
       });
+    });
+
+    it('produces no steps when piece color is unchanged (permanent Imposter non-firing ply)', () => {
+      const hook = getHook();
+      const move = makeMove(5, [10]);
+      const event = makeActiveEvent(CrazyEvent.HotPotato, PieceColor.White);
+      // Same color before and after — engine did not fire the switch this ply.
+      const boardBefore = boardWith([
+        { sq: 5, color: PieceColor.White, type: PieceType.Pawn },
+      ]);
+      const boardAfter = boardWith([
+        { sq: 10, color: PieceColor.White, type: PieceType.Pawn },
+      ]);
+
+      const steps = hook.buildMidMoveEffects(move, [event], boardBefore, boardAfter);
+
+      expect(steps).toHaveLength(0);
     });
   });
 });

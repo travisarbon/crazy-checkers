@@ -68,7 +68,7 @@ import { useAnimationQueue, buildAnimationSequence, type AnimationStep } from '.
 import { useEventAnimations } from '../useEventAnimations';
 import { useEventOverlays } from '../useEventOverlays';
 import { useDragAndDrop } from '../useDragAndDrop';
-import { getEffectiveBoard } from '../../engine/game';
+import { getEffectiveBoard, getCurrentLegalMoves } from '../../engine/game';
 import type { Difficulty } from '../../ai/difficulty';
 import { deserializeBoardState } from '../../persistence/serialization';
 import GameModeSelector from './GameModeSelector';
@@ -946,8 +946,11 @@ function FreePlayGameView({
 
   const displayBoard = animationQueue.animationBoard ?? gameState.board;
 
+  // Use getCurrentLegalMoves so permanent-event decorators (Shrinking Board,
+  // Marching Orders, etc.) see up-to-date activeEvents context and apply any
+  // onTurnStart board transformations before move generation.
   const legalMoves = useMemo(
-    () => gameState.ruleSet.getLegalMoves(gameState.board, gameState.activeColor),
+    () => getCurrentLegalMoves(gameState),
     [gameState],
   );
 

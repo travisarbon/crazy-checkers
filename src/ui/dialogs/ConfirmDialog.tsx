@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './ConfirmDialog.module.css';
 
 // ---------------------------------------------------------------------------
@@ -92,7 +93,7 @@ export default function ConfirmDialog({
     }
   }
 
-  return (
+  const content = (
     <>
       <div className={styles.backdrop} aria-hidden="true" data-testid="confirm-backdrop" />
       <div
@@ -131,4 +132,7 @@ export default function ConfirmDialog({
       </div>
     </>
   );
+
+  if (typeof document === 'undefined') return content;
+  return createPortal(content, document.body);
 }

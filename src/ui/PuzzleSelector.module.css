@@ -16,8 +16,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 32px;
-  min-width: 32px;
+  min-width: 0;
   font-size: 0.7rem;
   border: 2px solid transparent;
   border-radius: var(--radius-sm);
@@ -94,8 +93,6 @@
 /* ── Small phone (< 480px) ─────────────────────────────────── */
 @media (max-width: 479px) {
   .cell {
-    min-height: 26px;
-    min-width: 26px;
     font-size: 0.6rem;
   }
 

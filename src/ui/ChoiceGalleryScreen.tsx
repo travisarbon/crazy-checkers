@@ -6,7 +6,7 @@
  * and navigation to the Choice detail screen.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import ModeScreenShell from './ModeScreenShell';
 import BoardPreviewLarge from './BoardPreviewLarge';
 import GalleryDialogBox from './GalleryDialogBox';
@@ -139,10 +139,14 @@ function GalleryCard({
   mode,
   unlockStatus,
   onClick,
+  isActive = false,
+  onFocus,
 }: {
   readonly mode: ChoiceModeDefinition;
   readonly unlockStatus: ChoiceModeUnlockStatus | undefined;
   readonly onClick: () => void;
+  readonly isActive?: boolean;
+  readonly onFocus?: () => void;
 }) {
   const isLocked = !(unlockStatus?.unlocked ?? false);
   const trackBadgeClass = TRACK_BADGE_CLASSES.get(mode.track) ?? '';
@@ -156,8 +160,11 @@ function GalleryCard({
   return (
     <button
       className={cardClasses.join(' ')}
+      role="gridcell"
       onClick={isLocked ? undefined : onClick}
+      onFocus={onFocus}
       disabled={isLocked}
+      tabIndex={isLocked ? undefined : isActive ? 0 : -1}
       aria-label={
         isLocked
           ? `${mode.displayName} \u2014 locked. ${mode.unlockThreshold}`
@@ -212,6 +219,102 @@ function EventCallout({ mode }: { readonly mode: ChoiceModeDefinition }) {
       triggered randomly and lasts for a limited duration. In{' '}
       <strong>{mode.displayName}</strong>, the effect is permanent and always
       active.
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Gallery grid with keyboard navigation (WAI-ARIA Grid pattern)
+// ---------------------------------------------------------------------------
+
+function GalleryGrid({
+  modes,
+  unlockEvaluation,
+  onCardClick,
+}: {
+  readonly modes: readonly ChoiceModeDefinition[];
+  readonly unlockEvaluation: UnlockEvaluation | null;
+  readonly onCardClick: (choiceNumber: number) => void;
+}) {
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const buttons = gridRef.current?.querySelectorAll<HTMLButtonElement>(
+        'button:not([disabled])',
+      );
+      if (!buttons || buttons.length === 0) return;
+      const total = buttons.length;
+
+      // Derive column count from computed grid-template-columns.
+      const firstBtn = buttons[0];
+      const top = firstBtn?.getBoundingClientRect().top ?? 0;
+      let cols = 1;
+      for (let i = 1; i < total; i++) {
+        const rect = buttons[i]?.getBoundingClientRect();
+        if (!rect) continue;
+        if (Math.abs(rect.top - top) < 2) {
+          cols = i + 1;
+        } else {
+          break;
+        }
+      }
+
+      let next: number;
+      switch (e.key) {
+        case 'ArrowRight':
+          next = activeIndex + 1 < total ? activeIndex + 1 : activeIndex;
+          break;
+        case 'ArrowLeft':
+          next = activeIndex - 1 >= 0 ? activeIndex - 1 : activeIndex;
+          break;
+        case 'ArrowDown':
+          next = activeIndex + cols < total ? activeIndex + cols : activeIndex;
+          break;
+        case 'ArrowUp':
+          next = activeIndex - cols >= 0 ? activeIndex - cols : activeIndex;
+          break;
+        case 'Home':
+          next = e.ctrlKey
+            ? 0
+            : Math.floor(activeIndex / cols) * cols;
+          break;
+        case 'End':
+          next = e.ctrlKey
+            ? total - 1
+            : Math.min(total - 1, Math.floor(activeIndex / cols) * cols + cols - 1);
+          break;
+        default:
+          return;
+      }
+      if (next !== activeIndex) {
+        e.preventDefault();
+        setActiveIndex(next);
+        buttons[next]?.focus();
+      }
+    },
+    [activeIndex],
+  );
+
+  return (
+    <div
+      className={styles.gallery}
+      role="grid"
+      aria-label="Choice mode gallery"
+      ref={gridRef}
+      onKeyDown={handleKeyDown}
+    >
+      {modes.map((mode, idx) => (
+        <GalleryCard
+          key={mode.choiceNumber}
+          mode={mode}
+          unlockStatus={unlockEvaluation?.choiceModes.get(mode.choiceNumber)}
+          isActive={idx === activeIndex}
+          onFocus={() => { setActiveIndex(idx); }}
+          onClick={() => { onCardClick(mode.choiceNumber); }}
+        />
+      ))}
     </div>
   );
 }
@@ -367,20 +470,13 @@ export default function ChoiceGalleryScreen({
       </div>
 
       {/* Gallery grid — locked modes are hidden entirely */}
-      <div className={styles.gallery} role="grid" aria-label="Choice mode gallery">
-        {CHOICE_MODE_DATA
-          .filter((mode) =>
-            unlockEvaluation?.choiceModes.get(mode.choiceNumber)?.unlocked ?? false,
-          )
-          .map((mode) => (
-            <GalleryCard
-              key={mode.choiceNumber}
-              mode={mode}
-              unlockStatus={unlockEvaluation?.choiceModes.get(mode.choiceNumber)}
-              onClick={() => { handleCardClick(mode.choiceNumber); }}
-            />
-          ))}
-      </div>
+      <GalleryGrid
+        modes={CHOICE_MODE_DATA.filter((mode) =>
+          unlockEvaluation?.choiceModes.get(mode.choiceNumber)?.unlocked ?? false,
+        )}
+        unlockEvaluation={unlockEvaluation}
+        onCardClick={handleCardClick}
+      />
       {totalUnlocked === 0 && (
         <p className={styles.emptyState} data-testid="choice-empty">
           No Choice modes unlocked yet. Complete challenges, win Crazy games, and
