@@ -404,27 +404,6 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
     [marchingOrdersActive, editor],
   );
 
-  // Drag-and-drop for the editor (Task 23.2). Editor mode uses
-  // onEditorDragDrop to reposition pieces; activeColor and selectablePieces
-  // are unused in this mode but typed as required.
-  const editorDrag = useDragAndDrop({
-    effectiveBoard: editor.board,
-    activeColor: PieceColors.White,
-    selectablePieces: new Set<number>(),
-    legalDestinations: new Set<number>(),
-    selectedSquare: null,
-    isMidMultiJump: false,
-    handleSquareClick: () => undefined,
-    isAnimating: false,
-    isDisabled: false,
-    isGameInProgress: false,
-    flipped: false,
-    activeEvents: [],
-    editorMode: true,
-    onEditorDragDrop: editor.handleDragDrop,
-    marchingOrdersGrid: editorMarchingOrdersGrid,
-  });
-
   const handleBoardClick = useCallback(
     (sq: Square) => {
       if (diagram.activeTool === 'highlight') {
@@ -455,6 +434,29 @@ export default function FreePlayTool({ onBack }: FreePlayToolProps) {
     },
     [arrowFrom, diagram, editor],
   );
+
+  // Drag-and-drop for the editor (Task 23.2). Editor mode uses
+  // onEditorDragDrop to reposition pieces; activeColor and selectablePieces
+  // are unused in this mode but typed as required. handleSquareClick is
+  // still invoked for taps-without-drag so diagram tools (annotation /
+  // highlight / arrow) can target occupied squares.
+  const editorDrag = useDragAndDrop({
+    effectiveBoard: editor.board,
+    activeColor: PieceColors.White,
+    selectablePieces: new Set<number>(),
+    legalDestinations: new Set<number>(),
+    selectedSquare: null,
+    isMidMultiJump: false,
+    handleSquareClick: handleBoardClick,
+    isAnimating: false,
+    isDisabled: false,
+    isGameInProgress: false,
+    flipped: false,
+    activeEvents: [],
+    editorMode: true,
+    onEditorDragDrop: editor.handleDragDrop,
+    marchingOrdersGrid: editorMarchingOrdersGrid,
+  });
 
   // Reset pending arrow state when tool changes.
   const [trackedTool, setTrackedTool] = useState(diagram.activeTool);

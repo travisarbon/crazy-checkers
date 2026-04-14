@@ -376,7 +376,10 @@ export function useDragAndDrop(options: UseDragAndDropOptions): UseDragAndDropRe
     if (phaseRef.current === 'pending') {
       phaseRef.current = 'idle';
       const sq = startSquareRef.current;
-      if (sq !== null && !live.editorMode) {
+      if (sq !== null) {
+        // Editor mode still needs taps on occupied squares to reach
+        // handleSquareClick so diagram tools (annotation / highlight /
+        // arrow) can act on squares holding pieces.
         live.handleSquareClick(sq);
       }
       return;
