@@ -1,0 +1,61 @@
+.chrome {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: var(--ui-text);
+  font-family: var(--font-ui, sans-serif);
+}
+
+.capturedBar {
+  width: 100%;
+  min-height: 1.75rem;
+}
+
+.body {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.boardArea {
+  display: flex;
+  flex-direction: row;
+  gap: 0.25rem;
+}
+
+.ranks {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--ui-text-muted);
+  min-width: 1rem;
+}
+
+.boardWrap {
+  position: relative;
+  flex: 1 1 auto;
+}
+
+.sidePanel {
+  min-width: 8rem;
+  border-left: 1px solid var(--ui-border);
+  padding-left: 0.5rem;
+}
+
+.files {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--ui-text-muted);
+  padding-left: 1rem;
+}
+
+.filesSpacer {
+  display: inline-block;
+  min-width: 1rem;
+}

@@ -206,6 +206,80 @@ function buildRegistry(): Map<string, ModeRegistryEntry> {
 const registry = buildRegistry();
 
 // ---------------------------------------------------------------------------
+// Phase 4 — Classified live registration hooks (Task 27.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Opaque shape matching src/engine/classified/registry::ClassifiedRegistryEntry.
+ * Declared locally so this module stays free of the Phase 4 classified
+ * subtree at import time; the Classified registry passes entries that match
+ * this structural shape.
+ */
+interface ClassifiedEntryLike {
+  readonly gameId: string;
+  readonly modeId: string;
+  readonly classifiedNumber: number;
+  readonly displayName: string;
+  readonly wave: number;
+  readonly family: string;
+  readonly boardGeometry: { readonly serializedKey: string };
+}
+
+/**
+ * Internal: installs a live Classified game entry into the registry.
+ * Called exclusively by src/engine/classified/registry.ts during
+ * `registerClassifiedGame`. The `modeId` (e.g. `classified-russian-draughts`)
+ * shadows any placeholder entry that shares the same classifiedNumber via
+ * the merged lookup in `getClassifiedGames()`.
+ */
+export function _registerClassifiedMode(entry: ClassifiedEntryLike): void {
+  const modeEntry: ModeRegistryEntry = Object.freeze({
+    id: entry.modeId,
+    displayName: entry.displayName,
+    category: 'classified' as ModeCategory,
+    wave: entry.wave,
+    family: entry.family,
+    tracksContribution: ['world-player'] as readonly TrackId[],
+    excludeFromCareer: false,
+    unlockRequirement: null,
+    engineMode: entry.modeId,
+    permanentEvent: null,
+    choiceDescription: null,
+    choiceNumber: null,
+    classifiedIndex: entry.classifiedNumber,
+    boardGeometry: entry.boardGeometry.serializedKey,
+    implemented: true,
+  });
+  registry.set(entry.modeId, modeEntry);
+}
+
+/** Internal: removes a live Classified entry (registry rollback + test resets). */
+export function _unregisterClassifiedMode(modeId: string): void {
+  registry.delete(modeId);
+}
+
+/**
+ * Returns every Classified entry — live registrations take precedence over
+ * placeholders that share a classifiedNumber. Sorted by classifiedNumber
+ * ascending (with Tier 0 fixtures at 0 / -1 placed first).
+ */
+export function getClassifiedGames(): readonly ModeRegistryEntry[] {
+  const byNumber = new Map<number, ModeRegistryEntry>();
+  for (const [, entry] of registry) {
+    if (entry.category !== 'classified') continue;
+    if (entry.classifiedIndex === null) continue;
+    const existing = byNumber.get(entry.classifiedIndex);
+    // Live registrations (implemented: true) always win over placeholders.
+    if (!existing || (entry.implemented && !existing.implemented)) {
+      byNumber.set(entry.classifiedIndex, entry);
+    }
+  }
+  return [...byNumber.values()].sort(
+    (a, b) => (a.classifiedIndex ?? 0) - (b.classifiedIndex ?? 0),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Lookup event → Choice entry index (built once)
 // ---------------------------------------------------------------------------
 

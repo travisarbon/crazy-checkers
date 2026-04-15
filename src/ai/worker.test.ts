@@ -203,3 +203,46 @@ describe('deserializeGameState — Crazy mode', () => {
     expect(deserialized.activeEvents).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 4 — extensible rule-set registry (Task 27.4 / X-04 closure)
+// ---------------------------------------------------------------------------
+
+import {
+  getRuleSet,
+  listRegisteredRuleSetIds,
+  registerRuleSet,
+} from './worker';
+
+describe('registerRuleSet / getRuleSet', () => {
+  it('american is pre-registered at module load', () => {
+    expect(listRegisteredRuleSetIds()).toContain('american');
+    expect(getRuleSet('american')).not.toBeNull();
+  });
+
+  it('registerRuleSet installs a new factory and getRuleSet resolves it', () => {
+    registerRuleSet('task274-test', createAmericanRules);
+    expect(getRuleSet('task274-test')).not.toBeNull();
+    expect(listRegisteredRuleSetIds()).toContain('task274-test');
+  });
+
+  it('getRuleSet returns null for an unknown id', () => {
+    expect(getRuleSet('never-heard-of-this-id')).toBeNull();
+  });
+
+  it('deserializeGameState throws the canonical error for unknown rule-set ids', () => {
+    const state = createTestGameState();
+    const serialized = { ...serializeForTest(state), ruleSetId: 'not-a-rule-set' };
+    expect(() => deserializeGameState(serialized)).toThrow(
+      /Unknown ruleSetId: not-a-rule-set/,
+    );
+  });
+
+  it('registerRuleSet replaces an existing factory when the id matches', () => {
+    const sentinel: unknown = {};
+    registerRuleSet('american', (() => sentinel) as never);
+    expect(getRuleSet('american') as unknown).toBe(sentinel);
+    // Restore so subsequent tests see a real AmericanRules instance.
+    registerRuleSet('american', createAmericanRules);
+  });
+});

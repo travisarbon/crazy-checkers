@@ -22,7 +22,9 @@
     "generate-puzzles": "tsx scripts/generatePuzzles.ts",
     "generate-puzzles:verbose": "tsx scripts/generatePuzzles.ts --verbose",
     "generate-puzzles:quick": "tsx scripts/generatePuzzles.ts --quick",
-    "validate-puzzles": "vitest run src/data/puzzleData.test.ts"
+    "validate-puzzles": "vitest run src/data/puzzleData.test.ts",
+    "check:bundle": "tsx scripts/check-bundle-split.ts",
+    "check:piece-stubs": "tsx scripts/check-piece-stubs.ts"
   },
   "dependencies": {
     "comlink": "^4.4.2",

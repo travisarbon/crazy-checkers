@@ -16,6 +16,18 @@ import type {
 } from './types';
 import type { EvaluationProvider } from './EvaluationProvider';
 import type { NotationAdapter } from './NotationAdapter';
+import type { PieceDefinition as ClassifiedPieceDefinition } from '../engine/classified/pieceVocabulary';
+
+/**
+ * T7-08 extension (Task 27.4): on-board vs. in-hand piece palette split.
+ *
+ * The Phase 3 `getPiecePalette()` returns the union; Classified games
+ * (especially Tier 7 Shogi family) expose the two sub-lists separately via
+ * the optional `getOnBoardPalette` / `getHandPalette` methods. Phase 3
+ * adapters leave these undefined and keep working unchanged.
+ */
+export type CogitateOnBoardPalette = readonly ClassifiedPieceDefinition[];
+export type CogitateHandReserve = readonly ClassifiedPieceDefinition[];
 
 export interface CogitateGameAdapter {
   /** Unique mode identifier matching GameModeRegistry (e.g., 'classic'). */
@@ -56,6 +68,20 @@ export interface CogitateGameAdapter {
 
   /** Return the evaluation provider for this game mode. */
   getEvaluationProvider(): EvaluationProvider;
+
+  /**
+   * T7-08 (Task 27.4): on-board sub-palette using the Phase 4
+   * `PieceVocabulary` descriptor shape. Optional on Phase 3 adapters;
+   * required for Tier 7 Shogi-family games.
+   */
+  getOnBoardPalette?(): CogitateOnBoardPalette;
+
+  /**
+   * T7-08 (Task 27.4): in-hand sub-palette using the Phase 4
+   * `PieceVocabulary` descriptor shape. Empty for games without a hand;
+   * optional on Phase 3 adapters.
+   */
+  getHandPalette?(): CogitateHandReserve;
 }
 
 // ---------------------------------------------------------------------------

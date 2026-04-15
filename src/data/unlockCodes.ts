@@ -166,6 +166,20 @@ function buildUnlockCodesTable(): Record<string, UnlockCodeEntry> {
     category: 'master',
   };
 
+  // TEST-ONLY — Task 27.4 Tier 0 fixture unlock keys. Not referenced by any
+  // Code Mode UI surface (the fixtures register with implemented: true but
+  // the gallery only renders CLASSIFIED_PLACEHOLDER_DATA indexes 1..64).
+  table['TESTTIERZERO'] = {
+    targets: ['classified-test-tier-0'],
+    description: 'TEST-ONLY — Tier 0 fixture (checkers clone)',
+    category: 'debug',
+  };
+  table['TESTTIERSHOGI'] = {
+    targets: ['classified-test-tier-shogi'],
+    description: 'TEST-ONLY — Tier 0 fixture (shogi clone, hand pathway)',
+    category: 'debug',
+  };
+
   return table;
 }
 

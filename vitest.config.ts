@@ -25,6 +25,8 @@ export default defineConfig({
         'src/engine/game.ts': { lines: 95 },
         'src/engine/zobrist.ts': { lines: 95 },
         'src/ai/evaluator.ts': { lines: 95 },
+        'src/engine/adjacency/**': { lines: 95, branches: 90 },
+        'src/engine/coordinates/**': { lines: 95, branches: 90 },
       },
     },
   },

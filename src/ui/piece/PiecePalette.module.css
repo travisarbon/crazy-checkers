@@ -1,0 +1,41 @@
+.palette {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  outline: none;
+}
+
+.paletteGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+  gap: 8px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 4px;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--ui-text);
+  outline: none;
+}
+
+.option:focus-visible,
+.optionSelected {
+  border-color: var(--ui-accent);
+  background: var(--highlight-hover);
+}
+
+.option:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

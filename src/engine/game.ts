@@ -18,6 +18,12 @@ import {
   PlayerType,
 } from './types';
 import { BOARD_SIZE, createInitialBoard, getBoardSquare } from './board';
+import type { ClassifiedGameId, StartOptions } from './classified/ClassifiedRuleSet';
+import type { ClassifiedGameState } from './classified/state';
+import {
+  getClassifiedGame,
+  isClassifiedRegistered,
+} from './classified/registry';
 import { computeZobristHash, isRepetition, updateZobristHash } from './zobrist';
 import { checkEventTrigger, createActiveEvent, EVENT_METADATA_FACTORIES, removeEventsByType, resolveConflicts, selectRandomEvent, tickAllEvents } from './events';
 import type { CompositeEventRuleSet } from './compositeRuleSet';
@@ -35,13 +41,32 @@ const FORTY_MOVE_THRESHOLD = 80;
  *
  * For Crazy mode, the provided ruleSet is wrapped in a CompositeEventRuleSet
  * internally. Callers continue to pass the base RuleSet (e.g., AmericanRules).
+ *
+ * Phase 4 (Task 27.4): when the first argument is a registered Classified
+ * `ClassifiedGameId` string, dispatch to `createNewClassifiedGame`. Phase 3
+ * call-sites (which always pass a `RuleSet` object) are unaffected.
  */
 export function createNewGame(
-  ruleSet: RuleSet,
+  ruleSet: RuleSet | ClassifiedGameId,
+  players: PlayerSetup,
+  mode?: GameMode,
+  eventRandomFn?: () => number,
+): GameState;
+export function createNewGame(
+  ruleSet: RuleSet | ClassifiedGameId,
   players: PlayerSetup,
   mode: GameMode = GameMode.Classic,
   eventRandomFn?: () => number,
 ): GameState {
+  if (typeof ruleSet === 'string') {
+    if (isClassifiedRegistered(ruleSet)) {
+      return createNewClassifiedGame(ruleSet, players);
+    }
+    throw new Error(
+      `createNewGame: "${ruleSet}" is not a registered Classified gameId. ` +
+        `Call registerClassifiedGame first, or pass a RuleSet object.`,
+    );
+  }
   const board = createInitialBoard();
   const activeColor = PieceColor.White;
   const initialHash = computeZobristHash(board, activeColor);
@@ -118,6 +143,70 @@ export function createNewChoiceGame(
   return {
     ...base,
     activeEvents,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Classified game creation (Task 27.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Phase-1 RuleSet wrapper used inside `GameState.ruleSet` for Classified
+ * games. The Classified rule set is generic and consumed via the registry;
+ * Phase 1 callers that invoke the wrapper's methods hit a descriptive
+ * runtime error instead of a silent miscomputation.
+ */
+function makeClassifiedRuleSetShim(gameId: string): RuleSet {
+  const fail = (method: string): never => {
+    throw new Error(
+      `RuleSet.${method}: this GameState belongs to Classified game "${gameId}". ` +
+        `Resolve the ClassifiedRuleSet via getClassifiedGame(gameId) and use its methods.`,
+    );
+  };
+  return {
+    getLegalMoves: () => fail('getLegalMoves'),
+    applyMove: () => fail('applyMove'),
+    checkGameOver: () => fail('checkGameOver'),
+    shouldPromote: () => fail('shouldPromote'),
+  };
+}
+
+/**
+ * Creates a new Classified game. The returned GameState carries the
+ * Classified initial position in `classifiedState`, an inert shim RuleSet
+ * in `ruleSet`, and an empty `board` (Phase 1 compatibility). Callers that
+ * need to advance play read `state.classifiedGameId` and dispatch through
+ * the Classified registry.
+ *
+ * @throws Error when `gameId` is not a registered Classified game.
+ */
+export function createNewClassifiedGame(
+  gameId: ClassifiedGameId,
+  players: PlayerSetup,
+  options?: StartOptions,
+): GameState {
+  const entry = getClassifiedGame(gameId);
+  if (!entry) {
+    throw new Error(
+      `createNewClassifiedGame: "${gameId}" is not a registered Classified game.`,
+    );
+  }
+  const classified: ClassifiedGameState = entry.ruleSet.startingPosition(options);
+  return {
+    board: [],
+    activeColor: PieceColor.White,
+    status: GameStatus.InProgress,
+    result: null,
+    ruleSet: makeClassifiedRuleSetShim(gameId),
+    players,
+    moveHistory: [],
+    positionHashes: [],
+    halfMoveClock: 0,
+    plyCount: classified.plyCount ?? 0,
+    mode: GameMode.Classic,
+    activeEvents: [],
+    classifiedGameId: gameId,
+    classifiedState: classified,
   };
 }
 

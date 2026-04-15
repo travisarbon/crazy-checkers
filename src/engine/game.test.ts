@@ -1404,3 +1404,43 @@ describe('createNewChoiceGame', () => {
     expect(event?.type).toBe(CrazyEvent.KingForADay);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 4 — Classified dispatch (Task 27.4)
+// ---------------------------------------------------------------------------
+
+import {
+  _clearClassifiedRegistry,
+} from './classified/registry';
+import {
+  _clearTierLoaderCache,
+  loadClassifiedTier,
+} from './classified/tierLoader';
+import { TEST_CHECKERS_CLONE_ID } from './classified/tier0/testCheckersClone';
+
+describe('createNewGame — Phase 4 Classified dispatch', () => {
+  const players: PlayerSetup = { white: PlayerType.Human, black: PlayerType.Human };
+
+  it('keeps the Phase 3 path intact for AmericanRules', () => {
+    const state = createNewGame(createAmericanRules(), players);
+    expect(state.classifiedGameId).toBeUndefined();
+    expect(state.mode).toBe(GameMode.Classic);
+  });
+
+  it('dispatches a registered Classified gameId to the Classified factory', async () => {
+    _clearClassifiedRegistry();
+    _clearTierLoaderCache();
+    await loadClassifiedTier(0);
+    const state = createNewGame(TEST_CHECKERS_CLONE_ID, players);
+    expect(state.classifiedGameId).toBe(TEST_CHECKERS_CLONE_ID);
+    expect(state.classifiedState?.pieces.size).toBe(24);
+    expect(state.activeColor).toBe(PieceColor.White);
+  });
+
+  it('throws a descriptive error when given an unregistered string gameId', () => {
+    _clearClassifiedRegistry();
+    expect(() => createNewGame('not-registered' as never, players)).toThrow(
+      /not a registered Classified gameId/,
+    );
+  });
+});

@@ -61,13 +61,40 @@ interface SerializableActiveEvent {
 }
 
 // ---------------------------------------------------------------------------
-// Rule set registry
+// Rule set registry (Task 27.4 — X-04 closure)
 // ---------------------------------------------------------------------------
 
-/** Maps ruleSetId strings to RuleSet instances. */
-const RULE_SET_REGISTRY: Record<string, RuleSet> = {
-  american: createAmericanRules(),
-};
+/**
+ * Mutable rule-set registry keyed by `ruleSetId` with a public
+ * `registerRuleSet` / `getRuleSet` API. Replaces the closed `const` object
+ * that Task 27.1 flagged as delta X-04. Lazy-factory entries ensure each
+ * `getRuleSet` call returns a fresh rule-set instance — important for
+ * CompositeEventRuleSet which is stateful.
+ *
+ * Classified games register their Phase-1-compatible rule-set factories
+ * here at import time (the ClassifiedRuleSet itself does not satisfy the
+ * Phase 1 `RuleSet` signature, so Task 27.4 registers a wrapper when one is
+ * supplied via `spec.workerRuleSetFactory`; otherwise Classified deserialize
+ * paths use the Task 27.6 state-serialiser surface).
+ */
+const ruleSetRegistry = new Map<string, () => RuleSet>();
+ruleSetRegistry.set('american', createAmericanRules);
+
+/** Install or replace a rule-set factory. Exported for Classified registration. */
+export function registerRuleSet(id: string, factory: () => RuleSet): void {
+  ruleSetRegistry.set(id, factory);
+}
+
+/** Resolve a rule-set id. Returns null when the id is unknown. */
+export function getRuleSet(id: string): RuleSet | null {
+  const factory = ruleSetRegistry.get(id);
+  return factory ? factory() : null;
+}
+
+/** Inspect which rule-set ids are currently registered (diagnostics). */
+export function listRegisteredRuleSetIds(): readonly string[] {
+  return [...ruleSetRegistry.keys()];
+}
 
 /**
  * Reconstructs a full GameState from the serialized form.
@@ -85,7 +112,7 @@ export function deserializeGameState(data: SerializableGameState): GameState {
     ...(e.metadata !== undefined ? { metadata: e.metadata } : {}),
   }));
 
-  const base = RULE_SET_REGISTRY[data.ruleSetId];
+  const base = getRuleSet(data.ruleSetId);
   if (!base) throw new Error(`Unknown ruleSetId: ${data.ruleSetId}`);
 
   let ruleSet: RuleSet;

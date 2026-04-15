@@ -267,6 +267,11 @@ export interface PlayerSetup {
  *
  * Immutable by convention: every function that advances the game returns
  * a new GameState rather than mutating the existing one.
+ *
+ * Phase 4 (Task 27.4) adds two optional additive fields — `classifiedGameId`
+ * and `classifiedState` — populated only by `createNewClassifiedGame`.
+ * Phase 3 code that reads `state.board` / `state.ruleSet` continues to
+ * operate against the Phase 1 shape unchanged.
  */
 export interface GameState {
   /** The current board position. */
@@ -324,6 +329,31 @@ export interface GameState {
    * When undefined, Math.random is used.
    */
   readonly eventRandomFn?: () => number;
+
+  /**
+   * Phase 4 (Task 27.4): when present, this game is a Classified mode game
+   * and the interpretive authority is the ClassifiedRuleSet registered
+   * under this id. The Phase 1 `board` / `ruleSet` fields are populated
+   * with inert defaults for compatibility with consumers that still type
+   * against `GameState`; real play flows through the Classified registry.
+   */
+  readonly classifiedGameId?: string;
+
+  /**
+   * Phase 4 (Task 27.4): the Classified-specific state snapshot. Populated
+   * only for Classified games. Tier task owners may extend this shape
+   * additively without breaking Phase 3 consumers.
+   */
+  readonly classifiedState?: {
+    readonly pieces: ReadonlyMap<number, unknown>;
+    readonly turn?: string;
+    readonly plyCount?: number;
+    readonly moveHistory?: readonly unknown[];
+    readonly hands?: unknown;
+    readonly placementPhase?: unknown;
+    readonly roles?: unknown;
+    readonly meta?: Readonly<Record<string, unknown>>;
+  };
 }
 
 /** Diagonal directions for adjacency lookups. */

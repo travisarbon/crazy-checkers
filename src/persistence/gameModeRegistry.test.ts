@@ -392,3 +392,52 @@ describe('Edge Cases', () => {
     expect(getMode('free-play')?.excludeFromCareer).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 4 — getClassifiedGames live + placeholder merge (Task 27.4)
+// ---------------------------------------------------------------------------
+
+import { getClassifiedGames } from './gameModeRegistry';
+import { _clearClassifiedRegistry } from '../engine/classified/registry';
+import {
+  _clearTierLoaderCache,
+  loadClassifiedTier,
+} from '../engine/classified/tierLoader';
+
+describe('getClassifiedGames — live registration + placeholder merge', () => {
+  it('returns the 64 placeholder entries when nothing is registered', () => {
+    _clearClassifiedRegistry();
+    _clearTierLoaderCache();
+    const games = getClassifiedGames();
+    expect(games.filter((g) => (g.classifiedIndex ?? 0) >= 1).length).toBeGreaterThanOrEqual(64);
+  });
+
+  it('includes live Tier 0 fixtures alongside placeholders after registration', async () => {
+    _clearClassifiedRegistry();
+    _clearTierLoaderCache();
+    await loadClassifiedTier(0);
+    const ids = getClassifiedGames().map((g) => g.id);
+    expect(ids).toContain('classified-classified-test-tier-0');
+    expect(ids).toContain('classified-classified-test-tier-shogi');
+  });
+
+  it('sorts by classifiedIndex ascending', async () => {
+    _clearClassifiedRegistry();
+    _clearTierLoaderCache();
+    await loadClassifiedTier(0);
+    const indices = getClassifiedGames().map((g) => g.classifiedIndex ?? 0);
+    for (let i = 1; i < indices.length; i++) {
+      const prev = indices[i - 1] ?? 0;
+      const cur = indices[i] ?? 0;
+      expect(cur).toBeGreaterThanOrEqual(prev);
+    }
+  });
+
+  it('marks Tier 0 fixture entries as implemented: true', async () => {
+    _clearClassifiedRegistry();
+    _clearTierLoaderCache();
+    await loadClassifiedTier(0);
+    const fixture = getClassifiedGames().find((g) => g.id === 'classified-classified-test-tier-0');
+    expect(fixture?.implemented).toBe(true);
+  });
+});
