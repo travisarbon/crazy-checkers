@@ -88,3 +88,52 @@ describe('SquareCoordinates — 10×10 PDN', () => {
     expect(numbers[numbers.length - 1]).toBe(50);
   });
 });
+
+describe('SquareCoordinates — 12×12 PDN (Task 28.4)', () => {
+  const labels = buildSquareCoordinates({
+    size: 12,
+    indexing: 'squares',
+    playableMask: darkSquaresOnly,
+    variant: 'pdn-12',
+  });
+  const graph = buildSquareAdjacency({ size: 12, playableMask: darkSquaresOnly });
+
+  it('numbers dark squares 1..72', () => {
+    expect(graph.nodeCount()).toBe(72);
+    const numbers = graph
+      .listAllNodes()
+      .map((n) => Number(labels.notationOf(n)))
+      .sort((a, b) => a - b);
+    expect(numbers[0]).toBe(1);
+    expect(numbers[numbers.length - 1]).toBe(72);
+    // Strictly contiguous — no PDN slot is skipped.
+    expect(numbers).toEqual(Array.from({ length: 72 }, (_, i) => i + 1));
+  });
+
+  it('parseNotation round-trips PDN numbers 1..72', () => {
+    for (let n = 1; n <= 72; n += 1) {
+      const node = labels.parseNotation(String(n));
+      if (node === null) throw new Error(`failed to parse PDN ${String(n)}`);
+      expect(labels.notationOf(node)).toBe(String(n));
+    }
+  });
+});
+
+describe('SquareCoordinates — displayOf stability across variants', () => {
+  it('displayOf is identical regardless of variant', () => {
+    const standard = buildSquareCoordinates({
+      size: 8,
+      indexing: 'squares',
+      playableMask: darkSquaresOnly,
+    });
+    const pdn = buildSquareCoordinates({
+      size: 8,
+      indexing: 'squares',
+      playableMask: darkSquaresOnly,
+      variant: 'pdn-8',
+    });
+    for (let i = 0; i < 64; i += 1) {
+      expect(standard.displayOf(asNodeId(i))).toBe(pdn.displayOf(asNodeId(i)));
+    }
+  });
+});

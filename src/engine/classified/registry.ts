@@ -30,6 +30,10 @@ import {
   _registerClassifiedMode,
   _unregisterClassifiedMode,
 } from '../../persistence/gameModeRegistry';
+import {
+  _unregisterSerializer,
+  registerSerializerForSpec,
+} from '../../persistence/serializers';
 
 // ---------------------------------------------------------------------------
 // Entry shape
@@ -122,12 +126,18 @@ export function registerClassifiedGame(
 
     const adapter: CogitateGameAdapter = spec.adapter ?? createDefaultClassifiedAdapter(entry);
     registerAdapter(adapter);
+
+    // Task 27.6 — auto-register the per-game serializer. Runs after the
+    // other downstream registrations so a serializer failure rolls back
+    // all of them; Task 36.4 assumes registry state is coherent.
+    registerSerializerForSpec(entry.gameId, spec.ruleSet.serializer);
   } catch (err) {
     // Roll back in-memory state.
     registryByGameId.delete(entry.gameId);
     registryByClassifiedNumber.delete(entry.classifiedNumber);
     registryByCodeUnlockKey.delete(entry.codeUnlockKey);
     _unregisterClassifiedMode(entry.modeId);
+    _unregisterSerializer(entry.gameId);
     throw new ClassifiedRegistrationError({
       kind: 'downstream-registration-failed',
       gameId: entry.gameId,
@@ -198,6 +208,7 @@ function _removeEntry(entry: ClassifiedRegistryEntry): void {
   registryByClassifiedNumber.delete(entry.classifiedNumber);
   registryByCodeUnlockKey.delete(entry.codeUnlockKey);
   _unregisterClassifiedMode(entry.modeId);
+  _unregisterSerializer(entry.gameId);
 }
 
 /**
@@ -208,6 +219,7 @@ function _removeEntry(entry: ClassifiedRegistryEntry): void {
 export function _clearClassifiedRegistry(): void {
   for (const entry of [...registryByGameId.values()]) {
     _unregisterClassifiedMode(entry.modeId);
+    _unregisterSerializer(entry.gameId);
   }
   registryByGameId.clear();
   registryByClassifiedNumber.clear();

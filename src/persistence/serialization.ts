@@ -3,7 +3,14 @@
  *
  * GameState contains non-JSON-safe values (RuleSet methods, bigint hashes),
  * so we convert to/from a plain JSON-safe representation.
+ *
+ * Task 27.6 added the Classified-mode serializer framework under
+ * `src/persistence/serializers/`. That framework is re-exported below for
+ * discoverability; Classic/Crazy/Choice/Chaos continue to use the Phase 1
+ * functions in this file unchanged.
  */
+
+export * as classifiedSerializers from './serializers';
 
 import type { ActiveEvent, BoardState, GameState, Move, Piece } from '../engine/types';
 import type {

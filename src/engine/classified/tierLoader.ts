@@ -27,17 +27,23 @@ export function loadClassifiedTier(tierNumber: number): Promise<void> {
         mod.registerTier0();
         return;
       }
-      case 1:
+      case 1: {
+        const mod = await import('./tier1/index');
+        mod.registerTier1();
+        return;
+      }
       case 2:
       case 3:
       case 4:
       case 5:
       case 6:
-      case 7:
+      case 7: {
+        const taskNumber = 27 + tierNumber; // 29, 30, 31, 32, 33, 34
         throw new Error(
           `loadClassifiedTier(${String(tierNumber)}): tier not yet authored ` +
-            `(Task 27.4 ships Tier 0 only; Tier ${String(tierNumber)} lands in Task 28–34).`,
+            `(Tier ${String(tierNumber)} lands in Task ${String(taskNumber)}).`,
         );
+      }
       default:
         throw new Error(
           `loadClassifiedTier(${String(tierNumber)}): invalid tier number (expected 0..7)`,

@@ -14,7 +14,7 @@ import type {
   GameStateSerializer,
 } from '../ClassifiedRuleSet';
 import { asClassifiedGameId } from '../ClassifiedRuleSet';
-import type { ClassifiedGameState, ClassifiedPiece } from '../state';
+import type { ClassifiedPiece } from '../state';
 import { DRAUGHTS_PIECE_VOCABULARY } from '../pieceVocabulary';
 
 export const TEST_CHECKERS_CLONE_ID: ClassifiedGameId =
@@ -35,7 +35,7 @@ function startingPieces(): ReadonlyMap<NodeId, ClassifiedPiece> {
   return m;
 }
 
-const serializer: GameStateSerializer<ClassifiedGameState> = {
+const serializer: GameStateSerializer = {
   version: 1,
   toJSON(state) {
     return {

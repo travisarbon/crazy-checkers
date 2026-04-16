@@ -14,6 +14,7 @@ export const contrastTheme: Theme = {
   highlightSelected: 'rgba(255, 255, 0, 0.7)',
   highlightLastMove: 'rgba(0, 150, 255, 0.6)',
   highlightHover: 'rgba(255, 255, 0, 0.2)',
+  coordText: 'rgba(255, 255, 255, 0.85)',
   uiBg: '#000000',
   uiText: '#FFFFFF',
   uiAccent: '#FFD700',

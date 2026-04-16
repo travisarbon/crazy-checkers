@@ -116,15 +116,16 @@ export interface EvaluationProvider<S, M> {
 }
 
 /**
- * Minimum GameStateSerializer shape. Task 27.6 extends the `version` union
- * and the migration hook; Task 27.4 freezes the identity + toJSON/fromJSON
- * contract so downstream serializers extend compatibly.
+ * GameStateSerializer shape. Task 27.4 froze `version`/`toJSON`/`fromJSON`;
+ * Task 27.6 extended the type with an identity `gameId` field and an
+ * optional per-game `migrate` hook. The authoritative type now lives in
+ * `src/persistence/serializers/types.ts`; this file re-exports it so Task
+ * 27.4 importers keep working. Every existing Task 27.4 registrant compiles
+ * unchanged because `gameId` and `migrate` are optional on the extended
+ * surface — the registry stamps `gameId` via `createSerializerFromLegacyShape`.
  */
-export interface GameStateSerializer<S> {
-  readonly version: 1;
-  readonly toJSON: (state: S) => unknown;
-  readonly fromJSON: (json: unknown) => S;
-}
+import type { GameStateSerializer } from '../../persistence/serializers/types';
+export type { GameStateSerializer };
 
 /**
  * The normative ClassifiedRuleSet contract. Generic over state (`S`) and

@@ -14,6 +14,7 @@ export const classicTheme: Theme = {
   highlightSelected: 'rgba(255, 235, 59, 0.55)',
   highlightLastMove: 'rgba(33, 150, 243, 0.35)',
   highlightHover: 'rgba(200, 230, 200, 0.15)',
+  coordText: 'rgba(40, 32, 20, 0.55)',
   uiBg: '#1B3A26',
   uiText: '#E8F5E9',
   uiAccent: '#66BB6A',

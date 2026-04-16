@@ -8,16 +8,17 @@
  * expose a `playableMask` that suppresses non-playable cells visually.
  */
 
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import styles from './SquareBoardRenderer.module.css';
 import type { BoardGeometry, NodeId } from './BoardGeometry';
 import { asNodeId } from './BoardGeometry';
-import type { BoardRendererProps } from './types';
+import type { BoardRendererProps, InteractionKind } from './types';
 import { usePreviewMode } from './usePreviewMode';
 import { InteractionLayer } from './InteractionLayer';
 import type { HitTarget } from './InteractionLayer';
 import { PieceLayer } from './PieceLayer';
 import type { NodePosition } from './PieceLayer';
+import { createPdnLabeler } from './coordinates/PdnLabeler';
 
 interface SquareDims {
   readonly width: number;
@@ -55,6 +56,24 @@ function SquareBoardRendererImpl(props: BoardRendererProps) {
 
   const indexing = geometry.indexing;
   const playable = geometry.playableMask;
+
+  const pdnLabeler = useMemo(() => createPdnLabeler(geometry), [geometry]);
+  const showCoordinateGlyphs = mode !== 'preview';
+  const coordFontSize = Math.max(8, cell * 0.18);
+
+  const [hoveredNode, setHoveredNode] = useState<NodeId | null>(null);
+
+  const handleNodeInteract = useCallback(
+    (node: NodeId, kind: InteractionKind) => {
+      if (kind === 'hover-enter' || kind === 'focus') {
+        setHoveredNode(node);
+      } else if (kind === 'hover-leave') {
+        setHoveredNode((prev) => (prev === node ? null : prev));
+      }
+      onNodeInteract?.(node, kind);
+    },
+    [onNodeInteract],
+  );
 
   const { targets, positions, cells } = useMemo(() => {
     const hitTargets: HitTarget[] = [];
@@ -104,6 +123,7 @@ function SquareBoardRendererImpl(props: BoardRendererProps) {
       data-testid="square-board-renderer"
       data-mode={mode}
       data-indexing={indexing}
+      data-board-size={`${String(cols)}x${String(rows)}`}
     >
       {indexing === 'intersections' ? (
         <rect
@@ -234,6 +254,31 @@ function SquareBoardRendererImpl(props: BoardRendererProps) {
         );
       })}
 
+      {showCoordinateGlyphs ? (
+        <g className={styles.coordGlyphs} aria-hidden="true">
+          {cells.map(({ node, row, col, isPlayable }) => {
+            if (!isPlayable) return null;
+            const view = pdnLabeler.viewOf(node);
+            const isHovered = hoveredNode === node;
+            const label = isHovered && view.secondary !== null ? view.secondary : view.primary;
+            return (
+              <text
+                key={String(node)}
+                x={col * cell + cell * 0.08}
+                y={row * cell + coordFontSize + cell * 0.04}
+                fontSize={coordFontSize}
+                fill={theme.coordText}
+                pointerEvents="none"
+                className={styles.coordGlyph}
+                data-coord-node={String(node)}
+              >
+                {label}
+              </text>
+            );
+          })}
+        </g>
+      ) : null}
+
       {overlays}
 
       <PieceLayer
@@ -249,7 +294,7 @@ function SquareBoardRendererImpl(props: BoardRendererProps) {
         adjacency={geometry.adjacency}
         interactive={preview.interactive}
         tabbable={preview.tabbable}
-        onNodeInteract={onNodeInteract}
+        onNodeInteract={handleNodeInteract}
       />
     </svg>
   );

@@ -40,6 +40,7 @@ import {
   dotGridGeometry,
   mancalaPitGeometry,
   withTerrainOverlay,
+  darkSquaresOnly,
 } from '../../engine/boardGeometry';
 
 function baseProps(
@@ -69,6 +70,35 @@ describe('Renderers smoke', () => {
       expect(getByTestId('square-board-renderer').getAttribute('data-mode')).toBe(mode);
       unmount();
     }
+  });
+
+  it('SquareBoardRenderer renders 10x10 dark (Tier 1, Task 28.4)', () => {
+    const geometry = squareGeometry({
+      size: 10,
+      indexing: 'squares',
+      playableMask: darkSquaresOnly,
+      variant: 'pdn-10',
+    });
+    const { getByTestId } = render(<SquareBoardRenderer {...baseProps({ geometry })} />);
+    expect(getByTestId('square-board-renderer').getAttribute('data-board-size')).toBe('10x10');
+  });
+
+  it('SquareBoardRenderer renders 12x12 dark (Tier 1, Task 28.4)', () => {
+    const geometry = squareGeometry({
+      size: 12,
+      indexing: 'squares',
+      playableMask: darkSquaresOnly,
+      variant: 'pdn-12',
+    });
+    const { getByTestId } = render(<SquareBoardRenderer {...baseProps({ geometry })} />);
+    expect(getByTestId('square-board-renderer').getAttribute('data-board-size')).toBe('12x12');
+  });
+
+  it('SquareBoardRenderer renders 8x8 full-board (Tier 1 Turkish/Armenian, Task 28.4)', () => {
+    const geometry = squareGeometry({ size: 8, indexing: 'squares' });
+    const { container } = render(<SquareBoardRenderer {...baseProps({ geometry })} />);
+    // Full-board variants render coordinate glyphs on every square (no playable mask).
+    expect(container.querySelectorAll('[data-coord-node]')).toHaveLength(64);
   });
 
   it('RectangleBoardRenderer renders 9x5', () => {

@@ -4,3 +4,11 @@
   height: auto;
   filter: saturate(var(--preview-saturation, 1));
 }
+
+.coordGlyph {
+  font-family: var(--font-coord, 'SF Mono', 'Consolas', monospace);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  opacity: 0.6;
+  user-select: none;
+}

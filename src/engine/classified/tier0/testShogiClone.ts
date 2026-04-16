@@ -12,7 +12,6 @@ import type {
   GameStateSerializer,
 } from '../ClassifiedRuleSet';
 import { asClassifiedGameId } from '../ClassifiedRuleSet';
-import type { ClassifiedGameState } from '../state';
 import {
   asPieceVocabularyId,
   createPieceVocabulary,
@@ -39,7 +38,7 @@ export const TEST_SHOGI_VOCABULARY: PieceVocabulary = createPieceVocabulary(
   ],
 );
 
-const serializer: GameStateSerializer<ClassifiedGameState> = {
+const serializer: GameStateSerializer = {
   version: 1,
   toJSON(state) {
     return {

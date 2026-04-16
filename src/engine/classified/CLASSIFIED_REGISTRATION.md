@@ -116,6 +116,27 @@ registerClassifiedGame({
 });
 ```
 
+## 8.a. Serializer auto-registration (Task 27.6)
+
+The `ruleSet.serializer` field is required. `registerClassifiedGame` auto-registers
+it under `spec.gameId` via `registerSerializerForSpec` (see
+`src/persistence/serializers`). The framework:
+
+- stamps `gameId` onto the serializer if it uses the Task 27.4-era
+  `{ version, toJSON, fromJSON }` shape (via `createSerializerFromLegacyShape`);
+- throws `SerializerIdentityError` if the serializer's `gameId` disagrees
+  with `spec.gameId`;
+- fails loud with `SerializerMissingError` on any later deserialize against
+  an unregistered `gameId` — there is no silent fallback.
+
+Games without bespoke encoding should register
+`createDefaultSerializer({ gameId, vocabularyPieceIds })` — it round-trips
+every field of `ClassifiedGameState` (pieces, turn, plyCount, moveHistory,
+hands, placementPhase, roles, meta) with canonical ordering so two equivalent
+states produce byte-identical JSON. Task 36.2 adds per-tier bespoke
+serializers (PDN for Tier 2, FEN for Tier 6, SFEN for Tier 7) on top of this
+framework.
+
 ## 9. Cross-references
 
 - Classified Integration Master Playbook §2 — the normative interface.

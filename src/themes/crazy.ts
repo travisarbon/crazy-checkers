@@ -14,6 +14,7 @@ export const crazyTheme: Theme = {
   highlightSelected: 'rgba(213, 0, 0, 0.6)',
   highlightLastMove: 'rgba(183, 28, 28, 0.35)',
   highlightHover: 'rgba(255, 255, 255, 0.12)',
+  coordText: 'rgba(180, 240, 255, 0.7)',
   uiBg: '#FFD600',
   uiText: '#1A1A1A',
   // Darkened from #D50000 to #A30000 so that accent text meets WCAG AA

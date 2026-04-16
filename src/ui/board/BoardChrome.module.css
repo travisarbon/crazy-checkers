@@ -29,7 +29,7 @@
   flex-direction: column;
   justify-content: space-around;
   align-items: center;
-  font-size: 0.75rem;
+  font-size: var(--ruler-font-size, 0.75rem);
   color: var(--ui-text-muted);
   min-width: 1rem;
 }
@@ -50,9 +50,26 @@
   flex-direction: row;
   justify-content: space-around;
   align-items: center;
-  font-size: 0.75rem;
+  font-size: var(--ruler-font-size, 0.75rem);
   color: var(--ui-text-muted);
   padding-left: 1rem;
+}
+
+/**
+ * Tier 1 mobile minimum board width — guarantees ≥44 CSS-px tap targets at
+ * 12×12 on small viewports by enforcing a minimum container width and
+ * scrolling horizontally when the viewport is narrower.
+ */
+.mobileMinBoardSize {
+  min-width: 528px;
+  overflow-x: auto;
+}
+
+@media (min-width: 601px) {
+  .mobileMinBoardSize {
+    min-width: 0;
+    overflow-x: visible;
+  }
 }
 
 .filesSpacer {
