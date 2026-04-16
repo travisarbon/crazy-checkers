@@ -27,7 +27,6 @@
     "check:piece-stubs": "tsx scripts/check-piece-stubs.ts"
   },
   "dependencies": {
-    "@rolldown/binding-linux-arm64-gnu": "^1.0.0-rc.15",
     "comlink": "^4.4.2",
     "idb": "^8.0.3",
     "react": "^19.2.4",
