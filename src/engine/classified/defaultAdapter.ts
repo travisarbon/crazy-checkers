@@ -28,6 +28,7 @@ import type { EvaluationProvider } from '../../cogitate/EvaluationProvider';
 import { getCheckersNotationAdapter } from '../../cogitate/NotationAdapter';
 import { ANALYSIS_SEARCH_CONFIG } from '../../cogitate/types';
 import type { ClassifiedRegistryEntry } from './registry';
+import { createDraughtsTier1Adapter } from '../../cogitate/adapters/classified/draughtsTier1Adapter';
 
 // ---------------------------------------------------------------------------
 // Cogitate-geometry synthesiser
@@ -114,6 +115,11 @@ function stubEvaluationProvider(): EvaluationProvider {
 export function createDefaultClassifiedAdapter(
   entry: ClassifiedRegistryEntry,
 ): CogitateGameAdapter {
+  // Task 28.6 §6: dispatch draughts-family games to the Tier 1 adapter.
+  if (entry.ruleSet.ruleSetFamily === 'draughts') {
+    return createDraughtsTier1Adapter(entry);
+  }
+
   const geometry = synthesiseCogitateGeometry(entry);
   const palette = mapToCogitatePalette(entry);
   const notation = getCheckersNotationAdapter();

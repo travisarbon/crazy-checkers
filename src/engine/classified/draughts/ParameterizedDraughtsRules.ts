@@ -121,6 +121,7 @@ function buildRuleSet(
     gameId,
     boardGeometry: config.boardGeometry,
     pieceVocabulary,
+    ruleSetFamily: 'draughts' as const,
     hasPlacementPhase: false,
     hasPiecesInHand: false,
     hasStacks: false,

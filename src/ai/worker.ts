@@ -324,12 +324,126 @@ export function cancelAnalysis(): void {
   cancellationRequested = true;
 }
 
+// ---------------------------------------------------------------------------
+// Classified Draughts AI (Task 28.5)
+// ---------------------------------------------------------------------------
+
+import type { ClassifiedGameState, ClassifiedPiece } from '../engine/classified/state';
+import type { NodeId } from '../engine/boardGeometry';
+import { asNodeId } from '../engine/boardGeometry';
+import type { DraughtsGameId } from '../engine/classified/draughts/DraughtsConfig';
+import { createDraughtsConfig, TIER_1_DRAUGHTS_GAME_IDS } from '../engine/classified/draughts/DraughtsConfig';
+import type { DraughtsMove } from '../engine/classified/draughts/moveGen';
+import { createDraughtsRuleSet } from '../engine/classified/draughts/ParameterizedDraughtsRules';
+import { getDraughtsWeights } from './evaluators/draughts/weights';
+import { getDraughtsDifficultyConfig } from './evaluators/draughts/difficultyPresets';
+import {
+  classifiedIterativeSearch,
+  selectClassifiedMove,
+} from './evaluators/draughts/classifiedSearch';
+import { evaluateDraughtsPosition } from './evaluators/draughts/DraughtsEvaluator';
+import { normalizeDraughtsScore } from './evaluators/draughts/DraughtsEvaluationProvider';
+
+/**
+ * Serializable form of a ClassifiedGameState.
+ * `pieces` is encoded as an array of `[nodeIdNumber, piece]` tuples
+ * because `Map` is not structured-clone-transferable.
+ */
+export interface SerializableClassifiedDraughtsState {
+  readonly gameId: DraughtsGameId;
+  readonly pieces: ReadonlyArray<readonly [number, { owner: string; kind: string }]>;
+  readonly turn: 'white' | 'black';
+  readonly plyCount: number;
+  readonly moveHistory: readonly DraughtsMove[];
+  readonly meta?: Readonly<Record<string, unknown>>;
+}
+
+const DRAUGHTS_ID_SET: ReadonlySet<string> = new Set<string>(TIER_1_DRAUGHTS_GAME_IDS);
+
+/** Check if a ruleSetId is a Tier 1 draughts variant. */
+export function isDraughtsGameId(ruleSetId: string): ruleSetId is DraughtsGameId {
+  return DRAUGHTS_ID_SET.has(ruleSetId);
+}
+
+/** Reconstruct a ClassifiedGameState from serializable form. */
+function deserializeClassifiedDraughtsState(
+  data: SerializableClassifiedDraughtsState,
+): ClassifiedGameState {
+  const pieces = new Map<NodeId, ClassifiedPiece>();
+  for (const [rawId, piece] of data.pieces) {
+    pieces.set(asNodeId(rawId), { owner: piece.owner, kind: piece.kind });
+  }
+  return {
+    pieces,
+    turn: data.turn,
+    plyCount: data.plyCount,
+    moveHistory: data.moveHistory,
+    meta: data.meta,
+  };
+}
+
+/**
+ * Computes the AI move for a Classified draughts game.
+ */
+export function getClassifiedDraughtsAIMove(
+  data: SerializableClassifiedDraughtsState,
+  difficulty: Difficulty,
+): DraughtsMove {
+  const state = deserializeClassifiedDraughtsState(data);
+  const config = createDraughtsConfig(data.gameId);
+  const weights = getDraughtsWeights(data.gameId);
+  const diffConfig = getDraughtsDifficultyConfig(config, difficulty);
+
+  const ruleSet = createDraughtsRuleSet(config);
+
+  const searchResult = classifiedIterativeSearch(
+    state,
+    ruleSet,
+    config,
+    weights,
+    diffConfig,
+  );
+
+  const legalMoves = ruleSet.getLegalMoves(state);
+  return selectClassifiedMove(searchResult, legalMoves, diffConfig);
+}
+
+/**
+ * Evaluates a Classified draughts position for Cogitate.
+ */
+export function evaluateClassifiedDraughtsPosition(
+  data: SerializableClassifiedDraughtsState,
+): NormalizedEvaluation {
+  const state = deserializeClassifiedDraughtsState(data);
+  const config = createDraughtsConfig(data.gameId);
+  const weights = getDraughtsWeights(data.gameId);
+  const ruleSet = createDraughtsRuleSet(config);
+
+  const moves = ruleSet.getLegalMoves(state);
+  const raw = evaluateDraughtsPosition(state, config, weights, moves.length);
+  const { score, isTerminal } = normalizeDraughtsScore(
+    raw,
+    data.turn,
+    weights.sigmoidK,
+  );
+
+  return {
+    score,
+    rawScore: raw,
+    isTerminal,
+    confidence: 1,
+  };
+}
+
 const workerApi = {
   getAIMove,
   analyzePosition,
   batchAnalyze,
   evaluatePosition,
   cancelAnalysis,
+  getClassifiedDraughtsAIMove,
+  evaluateClassifiedDraughtsPosition,
+  isDraughtsGameId,
 };
 export type WorkerApi = typeof workerApi;
 

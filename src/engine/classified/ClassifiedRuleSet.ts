@@ -30,6 +30,22 @@ export type ClassifiedGameId = string & { readonly __brand: 'ClassifiedGameId' }
 export const asClassifiedGameId = (id: string): ClassifiedGameId => id as ClassifiedGameId;
 
 /**
+ * Rule-set family tag — coarser than `ClassifiedFamily`, used by the
+ * Cogitate adapter dispatch in `createDefaultClassifiedAdapter` to route
+ * to the correct Tier-specific adapter factory (Task 28.6 §2.6).
+ *
+ * Optional on ClassifiedRuleSet; tiers opt in progressively.
+ */
+export type RuleSetFamilyTag =
+  | 'draughts'
+  | 'stacking'
+  | 'alquerque'
+  | 'custodian'
+  | 'shogi-family'
+  | 'chess-family'
+  | 'other';
+
+/**
  * Closed union of Classified family labels. Tier authors pick one value;
  * the gallery groups by family. Adding a new family is a plan-level
  * decision (requires a Library Playbook bump).
@@ -142,6 +158,8 @@ export interface ClassifiedRuleSet<
   readonly gameId: ClassifiedGameId;
   readonly boardGeometry: BoardGeometry;
   readonly pieceVocabulary: PieceVocabulary;
+  /** Rule-set family tag for Cogitate adapter dispatch (Task 28.6). */
+  readonly ruleSetFamily?: RuleSetFamilyTag;
 
   // Required lifecycle hooks
   readonly startingPosition: (options?: StartOptions) => S;
