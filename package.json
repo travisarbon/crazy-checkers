@@ -24,6 +24,8 @@
     "generate-puzzles:quick": "tsx scripts/generatePuzzles.ts --quick",
     "validate-puzzles": "vitest run src/data/puzzleData.test.ts",
     "check:bundle": "tsx scripts/check-bundle-split.ts",
+    "check:bundle:tier1": "tsx scripts/tier1/check-bundle-size.ts",
+    "gate:tier1": "vitest run src/test/classifiedChecklist/tier1 && tsx scripts/tier1/check-bundle-size.ts",
     "check:piece-stubs": "tsx scripts/check-piece-stubs.ts"
   },
   "dependencies": {
