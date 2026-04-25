@@ -1,8 +1,10 @@
 import type { Theme } from './theme';
 
 export const crazyTheme: Theme = {
-  name: 'Crazy',
-  id: 'crazy',
+  // The export name `crazyTheme` is intentionally retained while `id` rolls
+  // to 'crazy-original'. See Documentation/UI Overhaul/P1.2-Preserve-Crazy-Theme-as-Crazy-Original.md.
+  name: 'Crazy (Original)',
+  id: 'crazy-original',
   boardLight: '#FFFFFF',
   boardDark: '#1A1A1A',
   boardBorder: '#333333',

@@ -55,7 +55,7 @@ describe('saveSettings', () => {
     const raw = localStorage.getItem('crazy-checkers-settings');
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw as string) as { version: number; data: Settings };
-    expect(parsed.version).toBe(3);
+    expect(parsed.version).toBe(4);
     expect(parsed.data).toEqual(DEFAULT_SETTINGS);
   });
 
@@ -106,7 +106,7 @@ describe('loadSettings', () => {
   it('handles missing fields gracefully', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
-      JSON.stringify({ version: 1, data: { themeId: 'current' } }),
+      JSON.stringify({ version: 2, data: { themeId: 'current' } }),
     );
     const result = loadSettings();
     expect(result.themeId).toBe('current');
@@ -118,7 +118,7 @@ describe('loadSettings', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
       JSON.stringify({
-        version: 1,
+        version: 3,
         data: { themeId: 'neon', animationSpeed: 1.0, moveConfirmation: false },
       }),
     );
@@ -129,7 +129,7 @@ describe('loadSettings', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
       JSON.stringify({
-        version: 1,
+        version: 2,
         data: { themeId: 'modern', animationSpeed: 1.0, moveConfirmation: false },
       }),
     );
@@ -140,29 +140,82 @@ describe('loadSettings', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
       JSON.stringify({
-        version: 1,
+        version: 2,
         data: { themeId: 'high-contrast', animationSpeed: 1.0, moveConfirmation: false },
       }),
     );
     expect(loadSettings().themeId).toBe('contrast');
   });
 
+  it('accepts margin-notes themeId (P1.1)', () => {
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 3,
+        data: { ...DEFAULT_SETTINGS, themeId: 'margin-notes' },
+      }),
+    );
+    expect(loadSettings().themeId).toBe('margin-notes');
+  });
+
+  it('migrates legacy "crazy" themeId to "crazy-original" (P1.2)', () => {
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 3,
+        data: {
+          ...DEFAULT_SETTINGS,
+          themeId: 'crazy',
+        },
+      }),
+    );
+    expect(loadSettings().themeId).toBe('crazy-original');
+  });
+
+  it('round-trips a v4 envelope with crazy-original themeId (P1.2)', () => {
+    const settings: Settings = {
+      ...DEFAULT_SETTINGS,
+      themeId: 'crazy-original',
+    };
+    saveSettings(settings);
+    expect(loadSettings()).toEqual(settings);
+  });
+
+  it('rejects bare "crazy" themeId without legacy migration mapping (regression guard)', () => {
+    // After P1.2, isValidThemeId returns false for 'crazy'. The legacy map
+    // catches it for stored envelopes, but a value reaching isValidThemeId
+    // directly (e.g. via a future code path) must not slip through.
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 3,
+        data: { ...DEFAULT_SETTINGS, themeId: 'crazy' },
+      }),
+    );
+    // Stored 'crazy' is migrated by LEGACY_THEME_MAP, not by isValidThemeId.
+    expect(loadSettings().themeId).toBe('crazy-original');
+  });
+
   it('rejects out-of-range animationSpeed', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
       JSON.stringify({
-        version: 1,
-        data: { themeId: 'crazy', animationSpeed: 5.0, moveConfirmation: false },
+        version: 3,
+        data: { themeId: 'classic', animationSpeed: 5.0, moveConfirmation: false },
       }),
     );
     expect(loadSettings().animationSpeed).toBe(DEFAULT_SETTINGS.animationSpeed);
   });
 
-  it('migrates v1 settings to v2 (adds audio defaults)', () => {
+  it('migrates v2 settings to v3 (preserves audio fields)', () => {
+    // P1.2 slid the load window to [v2, v3, v4]; the original v1-to-v2
+    // case asserted that audio defaults get filled in for envelopes that
+    // pre-date them. The same code path still runs for any pre-current
+    // envelope; we now exercise it with a v2 fixture.
     localStorage.setItem(
       'crazy-checkers-settings',
       JSON.stringify({
-        version: 1,
+        version: 2,
         data: { themeId: 'current', animationSpeed: 1.5, moveConfirmation: true },
       }),
     );
@@ -185,7 +238,7 @@ describe('loadSettings', () => {
       JSON.stringify({
         version: 2,
         data: {
-          themeId: 'crazy',
+          themeId: 'classic',
           animationSpeed: 1.0,
           moveConfirmation: false,
           masterVolume: 1.5,
@@ -208,7 +261,7 @@ describe('loadSettings', () => {
       JSON.stringify({
         version: 2,
         data: {
-          themeId: 'crazy',
+          themeId: 'classic',
           animationSpeed: 1.0,
           moveConfirmation: false,
           masterVolume: 0.3,

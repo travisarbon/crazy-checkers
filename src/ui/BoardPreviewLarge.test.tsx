@@ -74,7 +74,7 @@ describe('BoardPreviewLarge', () => {
   });
 
   it('theme prop overrides CSS vars', () => {
-    const theme = THEMES['crazy'];
+    const theme = THEMES['crazy-original'];
     if (!theme) return;
     const { container } = render(
       <BoardPreviewLarge theme={theme} label="Themed board" />,

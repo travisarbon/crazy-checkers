@@ -69,11 +69,12 @@ describe('ConfigScreen', () => {
     expect(screen.getByRole('button', { name: 'Back to previous screen' })).toBeInTheDocument();
   });
 
-  it('renders five theme cards', () => {
+  it('renders one theme card per registered theme', () => {
     renderConfig();
     const themeGroup = screen.getByRole('radiogroup', { name: 'Theme selection' });
     const radios = Array.from(themeGroup.querySelectorAll('[role="radio"]'));
-    expect(radios).toHaveLength(5);
+    expect(radios.length).toBe(Object.keys(THEMES).length);
+    expect(radios.length).toBeGreaterThanOrEqual(5);
   });
 
   it('renders animation speed slider', () => {
@@ -100,9 +101,9 @@ describe('ConfigScreen', () => {
 
   // ── Theme switching tests ───────────────────────────────────────────
 
-  it('default theme (crazy) is selected', () => {
+  it('default theme (crazy-original) is selected', () => {
     renderConfig();
-    const crazyCard = screen.getByRole('radio', { name: 'Crazy' });
+    const crazyCard = screen.getByRole('radio', { name: 'Crazy (Original)' });
     expect(crazyCard).toHaveAttribute('aria-checked', 'true');
   });
 
@@ -130,7 +131,7 @@ describe('ConfigScreen', () => {
     renderConfig({ settings: { ...DEFAULT_SETTINGS, themeId: 'current' } });
     const currentCard = screen.getByRole('radio', { name: 'Current' });
     expect(currentCard).toHaveAttribute('aria-checked', 'true');
-    const crazyCard = screen.getByRole('radio', { name: 'Crazy' });
+    const crazyCard = screen.getByRole('radio', { name: 'Crazy (Original)' });
     expect(crazyCard).toHaveAttribute('aria-checked', 'false');
   });
 
@@ -314,13 +315,15 @@ describe('ConfigScreen', () => {
 // ---------------------------------------------------------------------------
 
 describe('BoardPreview', () => {
-  const crazyTheme = THEMES['crazy'];
+  const crazyOriginalTheme = THEMES['crazy-original'];
   const currentTheme = THEMES['current'];
 
   it('renders SVG with correct dimensions', () => {
-    expect(crazyTheme).toBeDefined();
-    if (!crazyTheme) return;
-    const { container } = render(<BoardPreview theme={crazyTheme} size={80} />);
+    expect(crazyOriginalTheme).toBeDefined();
+    if (!crazyOriginalTheme) return;
+    const { container } = render(
+      <BoardPreview theme={crazyOriginalTheme} size={80} />,
+    );
     const svg = container.querySelector('svg');
     expect(svg).not.toBeNull();
     expect(svg?.getAttribute('width')).toBe('80');

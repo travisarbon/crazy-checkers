@@ -8,7 +8,13 @@ import { DEFAULT_THEME_ID } from '../themes/theme';
 import type { TimeControlConfig } from '../engine/clock';
 
 export interface Settings {
-  readonly themeId: 'crazy' | 'cork' | 'current' | 'classic' | 'contrast';
+  readonly themeId:
+    | 'classic'
+    | 'contrast'
+    | 'cork'
+    | 'crazy-original'
+    | 'current'
+    | 'margin-notes';
   /**
    * Animation duration multiplier. 1.0 is default.
    * Lower = faster (0.5 = 2× speed), higher = slower (2.0 = half speed).

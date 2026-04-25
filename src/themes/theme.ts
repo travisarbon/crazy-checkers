@@ -91,13 +91,15 @@ import { corkTheme } from './cork';
 import { currentTheme } from './current';
 import { classicTheme } from './classic';
 import { contrastTheme } from './contrast';
+import { marginNotesTheme } from './marginnotes';
 
 export const THEMES: Record<string, Theme> = {
-  crazy: crazyTheme,
-  cork: corkTheme,
-  current: currentTheme,
   classic: classicTheme,
   contrast: contrastTheme,
+  cork: corkTheme,
+  'crazy-original': crazyTheme,
+  current: currentTheme,
+  'margin-notes': marginNotesTheme,
 };
 
-export const DEFAULT_THEME_ID = 'crazy';
+export const DEFAULT_THEME_ID = 'crazy-original';

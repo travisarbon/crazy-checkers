@@ -17,7 +17,7 @@ import { serializeGameState } from './serialization';
 // ---------------------------------------------------------------------------
 
 const SETTINGS_KEY = 'crazy-checkers-settings';
-const SETTINGS_VERSION = 3;
+const SETTINGS_VERSION = 4;
 
 interface PersistedSettingsEnvelope {
   version: number;
@@ -138,6 +138,7 @@ function mergeWithDefaults(data: unknown): Settings {
 const LEGACY_THEME_MAP: Record<string, Settings['themeId']> = {
   modern: 'current',
   'high-contrast': 'contrast',
+  crazy: 'crazy-original',
 };
 
 function migrateThemeId(value: unknown): Settings['themeId'] | null {
@@ -150,11 +151,12 @@ function migrateThemeId(value: unknown): Settings['themeId'] | null {
 
 function isValidThemeId(value: unknown): value is Settings['themeId'] {
   return (
-    value === 'crazy' ||
-    value === 'cork' ||
-    value === 'current' ||
     value === 'classic' ||
-    value === 'contrast'
+    value === 'contrast' ||
+    value === 'cork' ||
+    value === 'crazy-original' ||
+    value === 'current' ||
+    value === 'margin-notes'
   );
 }
 

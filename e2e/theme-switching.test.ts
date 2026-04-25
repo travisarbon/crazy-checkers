@@ -20,7 +20,7 @@ test.describe('Theme switching', () => {
     await page.getByRole('button', { name: 'Configure' }).click();
     await page.getByTestId('config-screen').waitFor();
 
-    // Read the current board-dark color (default theme is "crazy")
+    // Read the current board-dark color (default theme is "crazy-original")
     const initialBoardDark = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--board-dark').trim(),
     );
