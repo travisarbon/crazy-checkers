@@ -80,6 +80,7 @@ describe('loadSettings', () => {
       musicVolume: 0.6,
       muted: true,
       audioPackId: 'silent',
+      marginNotesEscalation: false,
       timeControl: null,
     };
     saveSettings(custom);
@@ -278,6 +279,40 @@ describe('loadSettings', () => {
     expect(result.musicVolume).toBe(0.4);
     expect(result.muted).toBe(true);
     expect(result.audioPackId).toBe('silent');
+  });
+
+  // ── P1.3 — marginNotesEscalation persistence ───────────────────────
+
+  it('round-trips marginNotesEscalation: true (P1.3)', () => {
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 4,
+        data: { ...DEFAULT_SETTINGS, marginNotesEscalation: true },
+      }),
+    );
+    expect(loadSettings().marginNotesEscalation).toBe(true);
+  });
+
+  it('defaults marginNotesEscalation to false when the field is missing (P1.3)', () => {
+    const partial: Record<string, unknown> = { ...DEFAULT_SETTINGS };
+    delete partial.marginNotesEscalation;
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({ version: 4, data: partial }),
+    );
+    expect(loadSettings().marginNotesEscalation).toBe(false);
+  });
+
+  it('rejects non-boolean marginNotesEscalation (P1.3)', () => {
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 4,
+        data: { ...DEFAULT_SETTINGS, marginNotesEscalation: 'yes' },
+      }),
+    );
+    expect(loadSettings().marginNotesEscalation).toBe(false);
   });
 });
 

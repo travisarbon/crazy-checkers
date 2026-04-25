@@ -504,7 +504,9 @@ export function createFryskConfig(): DraughtsConfig {
     startingLayout: 'dark-squares-back-row-only',
     menMoveDirections: ['nw', 'ne'],
     kingType: 'flying',
-    kingMoveDirections: [...DIAGONAL_DIRECTIONS, ...ORTHOGONAL_DIRECTIONS],
+    // Per frisiandraughts.com Article 9: kings move diagonally only on
+    // non-capture moves; captures may be in any of 8 directions.
+    kingMoveDirections: [...DIAGONAL_DIRECTIONS],
     menCaptureDirections: [...DIAGONAL_DIRECTIONS, ...ORTHOGONAL_DIRECTIONS],
     kingCaptureDirections: [...DIAGONAL_DIRECTIONS, ...ORTHOGONAL_DIRECTIONS],
     capturedPieceRemovalTiming: 'end-of-sequence',
@@ -512,7 +514,7 @@ export function createFryskConfig(): DraughtsConfig {
     kingOrthogonalCaptureIsLimited: false,
     captureObligatory: true,
     maximumCaptureMandatory: true,
-    capturePriorityRules: ['most-pieces', 'kings-weight-1-5'],
+    capturePriorityRules: ['most-pieces', 'kings-weight-1-5', 'capturing-with-king'],
     promotionBehavior: 'end-of-turn',
     huffingMechanism: 'none',
     kingConsecutiveMoveLimit: 3,
@@ -528,7 +530,9 @@ export function createFrisianDraughtsConfig(): DraughtsConfig {
     startingLayout: 'dark-squares-4-rows',
     menMoveDirections: ['nw', 'ne'],
     kingType: 'flying',
-    kingMoveDirections: [...DIAGONAL_DIRECTIONS, ...ORTHOGONAL_DIRECTIONS],
+    // Per frisiandraughts.com Article 9: kings move diagonally only on
+    // non-capture moves; captures may be in any of 8 directions.
+    kingMoveDirections: [...DIAGONAL_DIRECTIONS],
     menCaptureDirections: [...DIAGONAL_DIRECTIONS, ...ORTHOGONAL_DIRECTIONS],
     kingCaptureDirections: [...DIAGONAL_DIRECTIONS, ...ORTHOGONAL_DIRECTIONS],
     capturedPieceRemovalTiming: 'end-of-sequence',
@@ -536,7 +540,7 @@ export function createFrisianDraughtsConfig(): DraughtsConfig {
     kingOrthogonalCaptureIsLimited: false,
     captureObligatory: true,
     maximumCaptureMandatory: true,
-    capturePriorityRules: ['most-pieces', 'kings-weight-1-5'],
+    capturePriorityRules: ['most-pieces', 'kings-weight-1-5', 'capturing-with-king'],
     promotionBehavior: 'end-of-turn',
     huffingMechanism: 'none',
     kingConsecutiveMoveLimit: 3,

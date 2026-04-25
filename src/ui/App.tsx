@@ -41,6 +41,7 @@ import CogitateScreen, { type CogitateInitialView } from './CogitateScreen';
 import CareerScreen from './CareerScreen';
 import CodeScreen from './CodeScreen';
 import { useUnlockState } from './hooks/useUnlockState';
+import { resolveModeAttribute } from './screenMode';
 
 // ---------------------------------------------------------------------------
 // Navigation state
@@ -194,6 +195,22 @@ export default function App() {
     const theme = THEMES[settings.themeId];
     if (theme) applyTheme(theme);
   }, [settings.themeId]);
+
+  // P1.3 — Margin Notes substrate. Write body[data-mode] when the opt-in
+  // flag is on; clear it when off. Nothing reads the attribute visually
+  // until P4.2 ships escalation CSS.
+  useEffect(() => {
+    if (!settings.marginNotesEscalation) {
+      delete document.body.dataset.mode;
+      return;
+    }
+    const modeArg = screen.kind === 'game' ? screen.mode : undefined;
+    document.body.dataset.mode = resolveModeAttribute(screen, modeArg);
+
+    return () => {
+      delete document.body.dataset.mode;
+    };
+  }, [screen, settings.marginNotesEscalation]);
 
   // Task 27.8: load the Tier 1 Classified registrations so their gallery
   // cards render the live Play affordance and their detail screens open the

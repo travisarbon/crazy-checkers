@@ -15,15 +15,15 @@ reviewers should be aware of.
 | Variant | Obligation | Max-capture | Priority list | Promotion | King range | Removal | Huffing | King 3-move cap |
 |---|---|---|---|---|---|---|---|---|
 | Russian | yes | no | — | mid-capture | flying | end-of-sequence | no | — |
-| Brazilian | yes | yes | most-pieces | standard | flying | end-of-sequence | no | — |
-| Italian | yes | yes | most-pieces, most-kings-captured, capturing-with-king, first-king-earliest | end-of-turn | short | end-of-sequence | no | — |
-| International | yes | yes | most-pieces | standard | flying | end-of-sequence | no | — |
-| Frysk! | yes | yes | most-pieces, kings-weight-1-5 | standard | flying | end-of-sequence | no | 3 |
-| Frisian | yes | yes | most-pieces, kings-weight-1-5 | standard | flying | end-of-sequence | no | 3 |
-| Malaysian | no | no | — | standard | flying | end-of-sequence | yes | — |
-| Canadian | yes | yes | most-pieces | standard | flying | end-of-sequence | no | — |
-| Armenian | yes | yes | most-pieces | standard | flying | end-of-sequence | no | — |
-| Turkish | yes | yes | most-pieces | standard | flying | immediate | no | — |
+| Brazilian | yes | yes | most-pieces | end-of-turn | flying | end-of-sequence | no | — |
+| Italian | yes | yes | most-pieces, most-kings-captured, capturing-with-king, first-king-earliest | standard | short | end-of-sequence | no | — |
+| International | yes | yes | most-pieces | end-of-turn | flying | end-of-sequence | no | — |
+| Frysk! | yes | yes | most-pieces, kings-weight-1-5, capturing-with-king | end-of-turn | flying | end-of-sequence | no | 3 |
+| Frisian | yes | yes | most-pieces, kings-weight-1-5, capturing-with-king | end-of-turn | flying | end-of-sequence | no | 3 |
+| Malaysian | no | yes | most-pieces | end-of-turn | flying | end-of-sequence | yes (self-piece-forfeit) | — |
+| Canadian | yes | yes | most-pieces | end-of-turn | flying | end-of-sequence | no | — |
+| Armenian | yes | yes | most-pieces | mid-capture | flying | immediate | no | — |
+| Turkish | yes | yes | most-pieces | mid-capture | flying | immediate | no | — |
 
 ---
 

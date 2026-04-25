@@ -22,6 +22,10 @@ test-results/
 # Claude Code
 CLAUDE.md
 
+# Local-only design + planning canon (lives inside the repo for Claude's use,
+# but not part of the published source tree)
+Documentation/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

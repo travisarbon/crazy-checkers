@@ -64,6 +64,19 @@
   font-weight: var(--font-medium);
 }
 
+/* Advanced disclosure inside the Theme section (P1.3) */
+
+.advancedDetails {
+  margin-top: var(--space-md, 0.75rem);
+}
+
+.advancedDetails summary {
+  cursor: pointer;
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--ui-text-muted, var(--ui-text));
+  padding: var(--space-xs, 0.25rem) 0;
+}
+
 /* Slider styling */
 
 .sliderRow {

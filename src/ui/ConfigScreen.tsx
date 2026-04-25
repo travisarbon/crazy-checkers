@@ -40,9 +40,13 @@ interface ConfigScreenProps {
 function ThemeSection({
   selectedThemeId,
   onSelect,
+  marginNotesEscalation,
+  onMarginNotesEscalationChange,
 }: {
   selectedThemeId: string;
   onSelect: (id: Settings['themeId']) => void;
+  marginNotesEscalation: boolean;
+  onMarginNotesEscalationChange: (enabled: boolean) => void;
 }) {
   const themeEntries = Object.entries(THEMES);
 
@@ -108,6 +112,34 @@ function ThemeSection({
           );
         })}
       </div>
+
+      <details className={styles.advancedDetails}>
+        <summary>Advanced</summary>
+        <div className={styles.toggleRow}>
+          <label htmlFor="margin-notes-escalation-toggle" className={styles.toggleLabel}>
+            Use Margin Notes mode-tiered chrome (preview)
+          </label>
+          <button
+            id="margin-notes-escalation-toggle"
+            role="switch"
+            aria-checked={marginNotesEscalation}
+            className={[styles.toggleSwitch, marginNotesEscalation ? styles.toggleOn : '']
+              .filter(Boolean)
+              .join(' ')}
+            onClick={() => {
+              onMarginNotesEscalationChange(!marginNotesEscalation);
+            }}
+            data-testid="margin-notes-escalation-toggle"
+          >
+            <span className={styles.toggleKnob} />
+          </button>
+        </div>
+        <p className={styles.settingHint}>
+          Enables the upcoming mode-tiered escalation chrome. The chrome itself is not
+          implemented yet — toggling this only updates the body&apos;s data-mode
+          attribute, which P4 will style. Default off.
+        </p>
+      </details>
     </section>
   );
 }
@@ -598,7 +630,14 @@ export default function ConfigScreen({ settings, onSettingsChange, onBack }: Con
 
   return (
     <ModeScreenShell title="Configure" onBack={onBack} testId="config-screen">
-      <ThemeSection selectedThemeId={settings.themeId} onSelect={setTheme} />
+      <ThemeSection
+        selectedThemeId={settings.themeId}
+        onSelect={setTheme}
+        marginNotesEscalation={settings.marginNotesEscalation}
+        onMarginNotesEscalationChange={(enabled) => {
+          onSettingsChange({ ...settings, marginNotesEscalation: enabled });
+        }}
+      />
 
       <AnimationSpeedSection speed={settings.animationSpeed} onChange={setAnimationSpeed} />
 

@@ -116,6 +116,13 @@ function mergeWithDefaults(data: unknown): Settings {
       ? obj.audioPackId
       : DEFAULT_SETTINGS.audioPackId;
 
+  // Margin Notes substrate flag (P1.3) — purely additive, no SETTINGS_VERSION
+  // bump. Old envelopes without the field merge to the default `false`.
+  const marginNotesEscalation =
+    typeof obj.marginNotesEscalation === 'boolean'
+      ? obj.marginNotesEscalation
+      : DEFAULT_SETTINGS.marginNotesEscalation;
+
   // Time control field (new in v3, defaults to null = untimed for v1/v2 upgrades)
   const timeControl = isValidTimeControl(obj.timeControl)
     ? obj.timeControl
@@ -130,6 +137,7 @@ function mergeWithDefaults(data: unknown): Settings {
     musicVolume,
     muted,
     audioPackId,
+    marginNotesEscalation,
     timeControl,
   };
 }
