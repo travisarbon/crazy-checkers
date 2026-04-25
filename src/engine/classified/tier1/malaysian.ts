@@ -45,6 +45,8 @@ export function registerMalaysianCheckers(
         family: TIER_1_FAMILY_LABEL,
         connection: TIER_1_CONNECTIONS['malaysian-checkers'],
       },
+      mvpRuleSummary:
+        'Flying kings on an 8×8 board; men capture forward only and the longest capture is mandatory.',
     },
     options,
   );

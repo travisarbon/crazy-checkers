@@ -18,6 +18,8 @@ import type { ModeRegistryEntry } from '../persistence/gameModeRegistry';
 import { getClassifiedByWave } from '../persistence/gameModeRegistry';
 import type { UnlockEvaluation } from '../persistence/unlockEvaluator';
 import { evaluateFullUnlocks } from '../persistence/unlockEvaluator';
+import { isClassifiedRegistered } from '../engine/classified/registry';
+import { asClassifiedGameId } from '../engine/classified/ClassifiedRuleSet';
 import styles from './ClassifiedGalleryScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -94,7 +96,20 @@ const WAVE_COLOR_CLASSES: ReadonlyMap<number, string> = new Map([
 // Card state helpers
 // ---------------------------------------------------------------------------
 
-type CardState = 'locked' | 'coming-soon' | 'playable';
+type CardState = 'locked' | 'coming-soon' | 'playable' | 'playable-registered';
+
+/**
+ * Extract the Classified registry game id from a `ModeRegistryEntry.id`.
+ * Live-registered entries use `classified-<kebab-game-id>`; placeholders use
+ * `classified-<number>`. Returns null for placeholder ids.
+ */
+function extractRegistryGameId(entry: ModeRegistryEntry): string | null {
+  const PREFIX = 'classified-';
+  if (!entry.id.startsWith(PREFIX)) return null;
+  const suffix = entry.id.slice(PREFIX.length);
+  if (/^\d+$/.test(suffix)) return null;
+  return suffix;
+}
 
 /**
  * Determine the display state of a Classified game card.
@@ -102,24 +117,33 @@ type CardState = 'locked' | 'coming-soon' | 'playable';
  * @param entry — The registry entry for the game.
  * @param classifiedUnlocked — Whether Classified mode is unlocked (100 challenges).
  * @param gamesUnlockedCount — Number of Classified games unlocked (Hard CPU wins).
+ * @param masterUnlockActive — Whether the master UNLOCKALL code is active.
  * @returns The visual state to render.
  */
 function getCardState(
   entry: ModeRegistryEntry,
   classifiedUnlocked: boolean,
   gamesUnlockedCount: number,
+  masterUnlockActive: boolean,
 ): CardState {
   // Classified mode not unlocked: everything is locked
   if (!classifiedUnlocked) return 'locked';
 
-  // Game not yet unlocked (sequential unlock based on Hard CPU wins)
-  const gameIndex = entry.classifiedIndex ?? 0;
-  if (gameIndex > gamesUnlockedCount) return 'locked';
+  // Game not yet unlocked (sequential unlock based on Hard CPU wins).
+  // Master unlock bypasses the sequential gate.
+  if (!masterUnlockActive) {
+    const gameIndex = entry.classifiedIndex ?? 0;
+    if (gameIndex > gamesUnlockedCount) return 'locked';
+  }
 
   // Game unlocked but not implemented: Coming Soon
   if (!entry.implemented) return 'coming-soon';
 
-  // Game unlocked and implemented: Playable
+  // Game unlocked, implemented — check for live Classified registry entry
+  const gameId = extractRegistryGameId(entry);
+  if (gameId !== null && isClassifiedRegistered(asClassifiedGameId(gameId))) {
+    return 'playable-registered';
+  }
   return 'playable';
 }
 
@@ -136,6 +160,7 @@ function findNextInWave(
   waveGames: readonly ModeRegistryEntry[],
   classifiedUnlocked: boolean,
   gamesUnlockedCount: number,
+  masterUnlockActive: boolean,
 ): number | undefined {
   const currentPos = waveGames.findIndex(
     (g) => g.classifiedIndex === currentIndex,
@@ -144,7 +169,14 @@ function findNextInWave(
 
   for (let i = currentPos + 1; i < waveGames.length; i++) {
     const entry = waveGames[i];
-    if (entry && getCardState(entry, classifiedUnlocked, gamesUnlockedCount) === 'playable') {
+    if (!entry) continue;
+    const state = getCardState(
+      entry,
+      classifiedUnlocked,
+      gamesUnlockedCount,
+      masterUnlockActive,
+    );
+    if (state === 'playable' || state === 'playable-registered') {
       return entry.classifiedIndex ?? undefined;
     }
   }
@@ -160,6 +192,7 @@ function findPreviousInWave(
   waveGames: readonly ModeRegistryEntry[],
   classifiedUnlocked: boolean,
   gamesUnlockedCount: number,
+  masterUnlockActive: boolean,
 ): number | undefined {
   const currentPos = waveGames.findIndex(
     (g) => g.classifiedIndex === currentIndex,
@@ -168,7 +201,14 @@ function findPreviousInWave(
 
   for (let i = currentPos - 1; i >= 0; i--) {
     const entry = waveGames[i];
-    if (entry && getCardState(entry, classifiedUnlocked, gamesUnlockedCount) === 'playable') {
+    if (!entry) continue;
+    const state = getCardState(
+      entry,
+      classifiedUnlocked,
+      gamesUnlockedCount,
+      masterUnlockActive,
+    );
+    if (state === 'playable' || state === 'playable-registered') {
       return entry.classifiedIndex ?? undefined;
     }
   }
@@ -191,24 +231,34 @@ function GalleryCard({
   readonly onClick: () => void;
 }) {
   const waveColorClass = WAVE_COLOR_CLASSES.get(waveNumber) ?? '';
-  const isInteractive = cardState === 'playable';
+  const isInteractive =
+    cardState === 'playable' || cardState === 'playable-registered';
+  const isPlayableRegistered = cardState === 'playable-registered';
 
   const cardClasses = [styles.card];
   if (cardState === 'locked') cardClasses.push(styles.cardLocked);
   if (cardState === 'coming-soon') cardClasses.push(styles.cardComingSoon);
+  if (isPlayableRegistered && styles.cardPlayableRegistered) {
+    cardClasses.push(styles.cardPlayableRegistered);
+  }
 
   return (
     <button
       className={cardClasses.join(' ')}
       onClick={isInteractive ? onClick : undefined}
       disabled={!isInteractive}
-      aria-label={
-        cardState === 'locked'
-          ? `${entry.displayName} \u2014 locked`
-          : cardState === 'coming-soon'
-            ? `${entry.displayName} \u2014 coming soon`
-            : `${entry.displayName} \u2014 ${entry.boardGeometry ?? ''} ${entry.family ?? ''}`
-      }
+      aria-label={(() => {
+        switch (cardState) {
+          case 'locked':
+            return `${entry.displayName} \u2014 locked`;
+          case 'coming-soon':
+            return `${entry.displayName} \u2014 coming soon`;
+          case 'playable-registered':
+            return `${entry.displayName} \u2014 playable now`;
+          default:
+            return `${entry.displayName} \u2014 ${entry.boardGeometry ?? ''} ${entry.family ?? ''}`;
+        }
+      })()}
       data-testid={`classified-card-${String(entry.classifiedIndex ?? 0)}`}
     >
       <div className={styles.cardPreview}>
@@ -224,6 +274,14 @@ function GalleryCard({
       )}
       {cardState === 'coming-soon' && (
         <span className={styles.comingSoon}>Coming Soon</span>
+      )}
+      {isPlayableRegistered && (
+        <span
+          className={styles.playBadge}
+          data-testid={`classified-play-badge-${String(entry.classifiedIndex ?? 0)}`}
+        >
+          Play
+        </span>
       )}
     </button>
   );
@@ -273,6 +331,7 @@ export default function ClassifiedGalleryScreen({
     unlockEvaluation?.snapshot.classifiedUnlocked ?? false;
   const gamesUnlockedCount =
     unlockEvaluation?.chaosGate.gates.classifiedHardWins.current ?? 0;
+  const masterUnlockActive = unlockEvaluation?.masterUnlockActive ?? false;
 
   // Dialog handlers
   const handleCardClick = useCallback((gameIndex: number) => {
@@ -306,30 +365,30 @@ export default function ClassifiedGalleryScreen({
   );
 
   const hasNext = selectedGame !== null
-    ? findNextInWave(selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount) !== undefined
+    ? findNextInWave(selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount, masterUnlockActive) !== undefined
     : false;
 
   const hasPrevious = selectedGame !== null
-    ? findPreviousInWave(selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount) !== undefined
+    ? findPreviousInWave(selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount, masterUnlockActive) !== undefined
     : false;
 
   const handleDialogNext = useCallback(() => {
     if (selectedGame !== null) {
       const next = findNextInWave(
-        selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount,
+        selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount, masterUnlockActive,
       );
       if (next !== undefined) setSelectedGame(next);
     }
-  }, [selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount]);
+  }, [selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount, masterUnlockActive]);
 
   const handleDialogPrevious = useCallback(() => {
     if (selectedGame !== null) {
       const prev = findPreviousInWave(
-        selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount,
+        selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount, masterUnlockActive,
       );
       if (prev !== undefined) setSelectedGame(prev);
     }
-  }, [selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount]);
+  }, [selectedGame, selectedWaveGames, classifiedUnlocked, gamesUnlockedCount, masterUnlockActive]);
 
   // Total games count (for unlock summary)
   const totalGames = allClassified.length;
@@ -420,11 +479,30 @@ export default function ClassifiedGalleryScreen({
         </>
       )}
 
-      {/* Wave sections — locked games and empty waves are hidden entirely */}
+      {/* Wave sections — locked games and empty waves are hidden entirely.
+          Live registrations and Phase-3 placeholders that share the same
+          classifiedIndex are deduped here, preferring the live-registered
+          entry so the gallery never renders two cards for the same game. */}
       {WAVE_META.map((waveMeta) => {
-        const waveGames = getClassifiedByWave(waveMeta.wave);
+        const rawWaveGames = getClassifiedByWave(waveMeta.wave);
+        const dedupedByIndex = new Map<number, ModeRegistryEntry>();
+        for (const entry of rawWaveGames) {
+          const idx = entry.classifiedIndex ?? -1;
+          const existing = dedupedByIndex.get(idx);
+          if (!existing || (entry.implemented && !existing.implemented)) {
+            dedupedByIndex.set(idx, entry);
+          }
+        }
+        const waveGames = [...dedupedByIndex.values()].sort(
+          (a, b) => (a.classifiedIndex ?? 0) - (b.classifiedIndex ?? 0),
+        );
         const visibleGames = waveGames.filter((entry) =>
-          getCardState(entry, classifiedUnlocked, gamesUnlockedCount) !== 'locked',
+          getCardState(
+            entry,
+            classifiedUnlocked,
+            gamesUnlockedCount,
+            masterUnlockActive,
+          ) !== 'locked',
         );
         if (visibleGames.length === 0) return null;
 
@@ -454,7 +532,10 @@ export default function ClassifiedGalleryScreen({
             >
               {visibleGames.map((entry) => {
                 const state = getCardState(
-                  entry, classifiedUnlocked, gamesUnlockedCount,
+                  entry,
+                  classifiedUnlocked,
+                  gamesUnlockedCount,
+                  masterUnlockActive,
                 );
                 return (
                   <GalleryCard

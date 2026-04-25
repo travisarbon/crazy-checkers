@@ -33,6 +33,8 @@ export function registerTier0(): void {
         family: 'Test',
         connection: 'Task 27.4 registration fixture for the checkers-clone path.',
       },
+      mvpRuleSummary:
+        'Integration-test fixture. Starting layout mirrors American Checkers on an 8×8 board.',
     },
     { allowTierZero: true, replace: true },
   );
@@ -55,6 +57,8 @@ export function registerTier0(): void {
         family: 'Test',
         connection: 'Task 27.4 registration fixture for the hand / drops pathway.',
       },
+      mvpRuleSummary:
+        'Integration-test fixture exercising the hand / drops registration pathway.',
     },
     { allowTierZero: true, replace: true },
   );

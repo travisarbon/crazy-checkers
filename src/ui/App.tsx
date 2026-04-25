@@ -34,6 +34,9 @@ import { createNewChoiceGame } from '../engine/game';
 import type { CrazyEvent } from '../engine/types';
 import ClassifiedGalleryScreen from './ClassifiedGalleryScreen';
 import ClassifiedDetailScreen from './ClassifiedDetailScreen';
+import ClassifiedGameScreen from './ClassifiedGameScreen';
+import type { ClassifiedGameId } from '../engine/classified/ClassifiedRuleSet';
+import { loadClassifiedTier } from '../engine/classified/tierLoader';
 import CogitateScreen, { type CogitateInitialView } from './CogitateScreen';
 import CareerScreen from './CareerScreen';
 import CodeScreen from './CodeScreen';
@@ -67,6 +70,13 @@ type Screen =
   | { readonly kind: 'classified' }
   | { readonly kind: 'classified-detail'; readonly gameId: number }
   | {
+      readonly kind: 'classified-game';
+      readonly gameId: ClassifiedGameId;
+      readonly players: PlayerSetup;
+      readonly flipped: boolean;
+      readonly timeControl: TimeControlConfig | null;
+    }
+  | {
       readonly kind: 'cogitate';
       readonly initialView?: CogitateInitialView;
       readonly initialGameId?: string;
@@ -91,6 +101,8 @@ function buildScreenFromKind(kind: ScreenKind): Screen {
     case 'challenge-game': return { kind: 'challenge' };
     case 'choice': return { kind: 'choice' };
     case 'classified': return { kind: 'classified' };
+    case 'classified-detail': return { kind: 'classified' };
+    case 'classified-game': return { kind: 'classified' };
     case 'cogitate': return { kind: 'cogitate' };
     case 'career': return { kind: 'career' };
     case 'code': return { kind: 'code' };
@@ -183,6 +195,15 @@ export default function App() {
     if (theme) applyTheme(theme);
   }, [settings.themeId]);
 
+  // Task 27.8: load the Tier 1 Classified registrations so their gallery
+  // cards render the live Play affordance and their detail screens open the
+  // MVP game-launch path. Tiers 2–7 follow the same pattern as they land.
+  useEffect(() => {
+    void loadClassifiedTier(1).catch((err: unknown) => {
+      console.warn('[App] failed to load Classified Tier 1:', err);
+    });
+  }, []);
+
   // Browser back-button support — push a base entry on mount so there is
   // always a history entry to return to, then push on non-menu transitions.
   const hasInitializedHistory = useRef(false);
@@ -207,9 +228,19 @@ export default function App() {
 
     // Determine parent based on navigation level
     let parentKind: ScreenKind | undefined;
-    if (screen.kind === 'choice-detail' || screen.kind === 'classified-detail' || screen.kind === 'challenge-game') {
+    if (
+      screen.kind === 'choice-detail' ||
+      screen.kind === 'classified-detail' ||
+      screen.kind === 'challenge-game' ||
+      screen.kind === 'classified-game'
+    ) {
       // Level 3: parent is the gallery/sub-menu
-      parentKind = screen.kind === 'choice-detail' ? 'choice' : screen.kind === 'classified-detail' ? 'classified' : 'challenge';
+      parentKind =
+        screen.kind === 'choice-detail'
+          ? 'choice'
+          : screen.kind === 'classified-detail' || screen.kind === 'classified-game'
+            ? 'classified'
+            : 'challenge';
     } else if (screen.kind === 'game') {
       // Game: parent is the mode that launched it
       parentKind = prev.kind !== 'menu' ? prev.kind : 'menu';
@@ -265,6 +296,24 @@ export default function App() {
   const navigateToConfig = useCallback(() => {
     navigateToScreen({ kind: 'config' });
   }, [navigateToScreen]);
+
+  const navigateToClassifiedGame = useCallback(
+    (
+      gameId: ClassifiedGameId,
+      players: PlayerSetup,
+      flipped: boolean,
+      timeControl: TimeControlConfig | null,
+    ) => {
+      navigateToScreen({
+        kind: 'classified-game',
+        gameId,
+        players,
+        flipped,
+        timeControl,
+      });
+    },
+    [navigateToScreen],
+  );
 
   // Resume/discard handlers
   const handleResume = useCallback(() => {
@@ -492,6 +541,28 @@ export default function App() {
         <ClassifiedDetailScreen
           gameIndex={screen.gameId}
           onBack={() => { navigateToScreen({ kind: 'classified' }); }}
+          onStartGame={navigateToClassifiedGame}
+        />
+      );
+      break;
+
+    case 'classified-game':
+      content = (
+        <ClassifiedGameScreen
+          key={gameKey}
+          gameId={screen.gameId}
+          players={screen.players}
+          flipped={screen.flipped}
+          themeId={settings.themeId}
+          onNewGame={() => {
+            navigateToClassifiedGame(
+              screen.gameId,
+              screen.players,
+              screen.flipped,
+              screen.timeControl,
+            );
+          }}
+          onMainMenu={() => { navigateToScreen({ kind: 'classified' }); }}
         />
       );
       break;

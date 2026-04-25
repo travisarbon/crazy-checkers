@@ -45,6 +45,8 @@ export function registerBrazilianDraughts(
         family: TIER_1_FAMILY_LABEL,
         connection: TIER_1_CONNECTIONS['brazilian-draughts'],
       },
+      mvpRuleSummary:
+        'International-style rules on an 8×8 board with flying kings and maximum-capture.',
     },
     options,
   );

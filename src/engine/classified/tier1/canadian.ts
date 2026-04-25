@@ -45,6 +45,8 @@ export function registerCanadianDraughts(
         family: TIER_1_FAMILY_LABEL,
         connection: TIER_1_CONNECTIONS['canadian-draughts'],
       },
+      mvpRuleSummary:
+        'International-style rules on a 12×12 board — thirty men per side with flying kings.',
     },
     options,
   );

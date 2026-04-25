@@ -48,6 +48,8 @@ export function registerRussianDraughts(
         family: TIER_1_FAMILY_LABEL,
         connection: TIER_1_CONNECTIONS['russian-draughts'],
       },
+      mvpRuleSummary:
+        'Men and flying kings on an 8×8 board. Men may capture backwards; captures are mandatory.',
     },
     options,
   );

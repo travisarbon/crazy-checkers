@@ -45,6 +45,8 @@ export function registerFrysk(
         family: TIER_1_FAMILY_LABEL,
         connection: TIER_1_CONNECTIONS['frysk'],
       },
+      mvpRuleSummary:
+        'Five-men-a-side opening on a 10×10 board with Frisian diagonal-and-orthogonal captures.',
     },
     options,
   );

@@ -45,6 +45,8 @@ export function registerArmenianDraughts(
         family: TIER_1_FAMILY_LABEL,
         connection: TIER_1_CONNECTIONS['armenian-draughts'],
       },
+      mvpRuleSummary:
+        'Men move orthogonally forward and capture orthogonally; kings fly along files and ranks.',
     },
     options,
   );

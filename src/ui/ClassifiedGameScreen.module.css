@@ -1,0 +1,123 @@
+/* ClassifiedGameScreen — MVP layout (Task 27.8). */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: var(--font-semibold);
+  flex: 1 1 auto;
+}
+
+.turnIndicator {
+  font-size: 0.95rem;
+  opacity: 0.85;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--ui-accent) 12%, transparent);
+  color: var(--ui-text);
+}
+
+.backButton {
+  background: transparent;
+  color: var(--ui-text);
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 35%, transparent);
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.backButton:hover,
+.backButton:focus-visible {
+  border-color: var(--ui-accent);
+  outline: none;
+}
+
+.boardArea {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+.liveStatus {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  text-align: center;
+}
+
+.terminalBanner {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 35%, transparent);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+  background: color-mix(in srgb, var(--ui-accent) 8%, transparent);
+}
+
+.terminalTitle {
+  font-size: 1.1rem;
+  font-weight: var(--font-semibold);
+  margin: 0 0 0.5rem 0;
+  color: var(--ui-accent);
+}
+
+.terminalReason {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.terminalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.primaryButton {
+  background: var(--ui-accent);
+  color: var(--ui-accent-contrast);
+  border: none;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-weight: var(--font-semibold);
+  font-size: 0.9rem;
+}
+
+.secondaryButton {
+  background: transparent;
+  color: var(--ui-text);
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 35%, transparent);
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.errorState {
+  text-align: center;
+  padding: 2rem 1rem;
+  opacity: 0.75;
+}
+
+.errorState h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.75rem 0;
+}

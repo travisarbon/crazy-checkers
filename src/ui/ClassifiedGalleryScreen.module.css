@@ -294,3 +294,24 @@
     transition: none;
   }
 }
+
+/* Task 27.8 — Play affordance on live-registered cards */
+.cardPlayableRegistered {
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-accent) 30%, transparent);
+}
+
+.playBadge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--ui-accent);
+  color: var(--ui-accent-contrast);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-lg);
+  font-size: 0.7rem;
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  pointer-events: none;
+}

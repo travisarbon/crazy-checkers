@@ -45,6 +45,8 @@ export function registerFrisianDraughts(
         family: TIER_1_FAMILY_LABEL,
         connection: TIER_1_CONNECTIONS['frisian-draughts'],
       },
+      mvpRuleSummary:
+        'International rules on a 10×10 board with additional orthogonal king captures and the longest-capture rule.',
     },
     options,
   );

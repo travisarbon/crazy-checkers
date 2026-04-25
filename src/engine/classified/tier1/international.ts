@@ -45,6 +45,8 @@ export function registerInternationalCheckers(
         family: TIER_1_FAMILY_LABEL,
         connection: TIER_1_CONNECTIONS['international-checkers'],
       },
+      mvpRuleSummary:
+        'Flying kings on a 10×10 board; men may capture backwards and the longest capture is mandatory.',
     },
     options,
   );

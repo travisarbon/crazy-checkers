@@ -45,6 +45,8 @@ export function registerTurkishDraughts(
         family: TIER_1_FAMILY_LABEL,
         connection: TIER_1_CONNECTIONS['turkish-draughts'],
       },
+      mvpRuleSummary:
+        'Men on all 64 squares move and capture orthogonally; flying kings on ranks and files.',
     },
     options,
   );

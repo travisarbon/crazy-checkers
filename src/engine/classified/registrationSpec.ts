@@ -45,6 +45,14 @@ export interface ClassifiedRegistrationSpec {
     readonly family: string;
     readonly connection: string;
   };
+  /**
+   * Short one-line rule summary (≤120 chars) rendered on the MVP Classified
+   * detail screen (Task 27.8). Task 35.2 replaces this with a full rule
+   * panel. Optional on the spec to preserve backward compatibility with
+   * existing Tier 1 registrations; `ClassifiedDetailScreen` falls back to a
+   * generic placeholder when absent.
+   */
+  readonly mvpRuleSummary?: string;
 }
 
 export interface RegistrationOptions {

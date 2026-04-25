@@ -45,6 +45,8 @@ export function registerItalianDraughts(
         family: TIER_1_FAMILY_LABEL,
         connection: TIER_1_CONNECTIONS['italian-draughts'],
       },
+      mvpRuleSummary:
+        'Non-flying kings on an 8×8 board; men cannot capture kings and must take the longest capture.',
     },
     options,
   );
