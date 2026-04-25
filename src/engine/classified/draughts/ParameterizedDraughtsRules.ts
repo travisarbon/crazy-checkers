@@ -37,6 +37,8 @@ import {
 } from './moveGen';
 import { filterByCapturePriority } from './capturePriority';
 import { configToNotation } from './configToNotation';
+import { applyHuff, findHuffingCandidates } from './huffing';
+import { hasHuffing } from './DraughtsConfig';
 import {
   hasThreefoldRepetition,
   hasQuietGameDraw,
@@ -185,11 +187,18 @@ function computeLegalMoves(
 }
 
 /**
- * Task 28.2.1 §4 per-king 3-move filter.
+ * Task 28.2.1 §4 per-king 3-move filter (corrected by Task 28.2.2 §3.2).
  *
- * Removes moves originating at a king whose consecutive-move counter has
- * reached the config limit, unless the owner has only kings remaining
- * (the rule is waived in that case so the game doesn't stall).
+ * Removes *non-capturing* moves originating at a king whose consecutive-move
+ * counter has reached the config limit, unless the owner has only kings
+ * remaining (the rule is waived in that case so the game doesn't stall).
+ *
+ * Capturing moves of an ineligible king are ALWAYS retained: per the
+ * canonical Frisian rule (Wikipedia / mindsports.nl / lidraughts.org), a
+ * king at the streak limit "must either proceed with a capture or not move
+ * at all" — i.e., captures are explicitly allowed and reset the streak.
+ * Earlier engine versions filtered captures here as well, which was
+ * rule-incorrect.
  */
 function filterKingIneligibility(
   moves: readonly DraughtsMove[],
@@ -199,6 +208,7 @@ function filterKingIneligibility(
   if (config.kingConsecutiveMoveLimit === null) return moves;
   const filtered = moves.filter((move) => {
     if (move.piece !== 'king') return true;
+    if (move.kind === 'jump') return true;
     const fromNode = config.boardGeometry.coordinateLabels.parseNotation(move.from);
     if (fromNode === null) return true;
     return !isKingIneligible(state, config, fromNode);
@@ -256,7 +266,78 @@ function applyMoveImpl(
     moveHistory: [...(state.moveHistory ?? []), move],
     ...(state.meta !== undefined ? { meta: state.meta } : {}),
   };
-  return updateTracker(state, nextState, move, { fromNodeId: fromNode, toNodeId: toNode });
+  const tracked = updateTracker(state, nextState, move, {
+    fromNodeId: fromNode,
+    toNodeId: toNode,
+  });
+  return maybeApplyHuff(state, tracked, move, fromNode, toNode, config);
+}
+
+/**
+ * Task 28.2.2 §3.1 — Malaysian-style huffing wiring.
+ *
+ * When a config has a non-`'none'` huffing mechanism and the player just
+ * played a simple (non-capturing) move while at least one of their pieces
+ * had a legal jump in the pre-move state, the engine deterministically
+ * applies the huffing penalty before the turn is handed back. For
+ * `'self-piece-forfeit'` the rule is "the capturing piece that was
+ * required to jump" (Wikipedia, Malaysian/Singaporean checkers). The
+ * forfeit target is:
+ *
+ *   1. the just-moved piece, if it was itself in the candidate set
+ *      (it had a jump available but was simple-moved — it IS the offender);
+ *   2. otherwise the candidate with the smallest NodeId, for replay-stable
+ *      determinism. (The player simple-moved a non-capturer while leaving a
+ *      capturer alone — the canonical text leaves which piece to forfeit
+ *      open; the smallest-id pick is conservative.)
+ *
+ * Jump moves never trigger huffing. Configs with `huffingMechanism: 'none'`
+ * short-circuit with no allocation.
+ */
+function maybeApplyHuff(
+  prevState: ClassifiedGameState,
+  nextState: ClassifiedGameState,
+  move: DraughtsMove,
+  movedFromNode: NodeId,
+  movedToNode: NodeId,
+  config: DraughtsConfig,
+): ClassifiedGameState {
+  if (!hasHuffing(config)) return nextState;
+  if (move.kind !== 'simple') return nextState;
+  if (config.huffingMechanism === 'immediate-loss') {
+    // Loss is surfaced via the next checkGameOver pass; no piece removal.
+    return nextState;
+  }
+  if (config.huffingMechanism === 'opponent-chooses') {
+    // Tier 1 has no variant using this; surfacing the candidate set as a
+    // pending-huff state is a future engine extension. Throw until used.
+    throw new Error(
+      `[${config.gameId}] huffingMechanism 'opponent-chooses' requires a controller-mediated huff selection; no Tier 1 variant uses this path yet.`,
+    );
+  }
+
+  const candidates = findHuffingCandidates(prevState, config);
+  if (candidates.length === 0) return nextState;
+
+  // If the moved piece was itself a candidate, it is now sitting on
+  // `movedToNode` in `nextState`. That piece is the "capturing piece that
+  // was required to jump" and is forfeit.
+  const movedWasCandidate = candidates.some((id) => id === movedFromNode);
+  let target: NodeId;
+  if (movedWasCandidate) {
+    target = movedToNode;
+  } else {
+    let chosen = candidates[0];
+    if (chosen === undefined) {
+      // Unreachable — `candidates.length === 0` short-circuits above.
+      return nextState;
+    }
+    for (const id of candidates) {
+      if ((id as unknown as number) < (chosen as unknown as number)) chosen = id;
+    }
+    target = chosen;
+  }
+  return applyHuff(nextState, target, config);
 }
 
 function parseLabel(config: DraughtsConfig, label: string): NodeId {

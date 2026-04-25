@@ -308,6 +308,29 @@ describe('ConfigScreen', () => {
     expect(screen.getByRole('slider', { name: 'Music Volume' })).toHaveAttribute('aria-valuetext', '20%');
   });
 
+  // ── P1.3 — Margin Notes escalation toggle ───────────────────────────
+
+  it('renders the Margin Notes escalation toggle as a switch with default off', () => {
+    renderConfig();
+    fireEvent.click(screen.getByText('Advanced'));
+    const toggle = screen.getByRole('switch', {
+      name: /margin notes mode-tiered chrome/i,
+    });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('toggling the Margin Notes escalation switch updates settings', () => {
+    const { onSettingsChange } = renderConfig();
+    fireEvent.click(screen.getByText('Advanced'));
+    fireEvent.click(
+      screen.getByRole('switch', { name: /margin notes mode-tiered chrome/i }),
+    );
+    expect(onSettingsChange).toHaveBeenCalledWith({
+      ...DEFAULT_SETTINGS,
+      marginNotesEscalation: true,
+    });
+  });
+
 });
 
 // ---------------------------------------------------------------------------

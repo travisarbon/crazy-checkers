@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import App from './App';
+import { DEFAULT_SETTINGS } from './settings';
 
 // Mock the AI worker to prevent real worker initialization
 vi.mock('../ai/workerClient', () => ({
@@ -125,5 +126,69 @@ describe('App', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Crazy' }));
     expect(screen.getByTestId('start-game-button')).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P1.3 — Margin Notes data-mode substrate
+// ---------------------------------------------------------------------------
+
+describe('marginNotesEscalation substrate (P1.3)', () => {
+  beforeEach(() => {
+    delete document.body.dataset.mode;
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    delete document.body.dataset.mode;
+  });
+
+  it('does not write data-mode when the flag is off (default)', () => {
+    render(<App />);
+    expect(document.body.dataset.mode).toBeUndefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Crazy' }));
+    expect(document.body.dataset.mode).toBeUndefined();
+  });
+
+  it('writes data-mode when the flag is on (via persisted settings)', () => {
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 4,
+        data: { ...DEFAULT_SETTINGS, marginNotesEscalation: true },
+      }),
+    );
+    render(<App />);
+    expect(document.body.dataset.mode).toBe('menu');
+    fireEvent.click(screen.getByRole('button', { name: 'Crazy' }));
+    expect(document.body.dataset.mode).toBe('crazy');
+  });
+
+  it('clears data-mode when remounted with the flag off', () => {
+    // First mount: flag on, attribute is written.
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 4,
+        data: { ...DEFAULT_SETTINGS, marginNotesEscalation: true },
+      }),
+    );
+    const { unmount } = render(<App />);
+    expect(document.body.dataset.mode).toBe('menu');
+
+    // Unmount fires the cleanup; attribute should be gone.
+    unmount();
+    expect(document.body.dataset.mode).toBeUndefined();
+
+    // Re-mount with the flag off: attribute stays absent.
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 4,
+        data: { ...DEFAULT_SETTINGS, marginNotesEscalation: false },
+      }),
+    );
+    render(<App />);
+    expect(document.body.dataset.mode).toBeUndefined();
   });
 });

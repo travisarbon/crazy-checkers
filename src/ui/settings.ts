@@ -29,6 +29,14 @@ export interface Settings {
   readonly muted: boolean;
   readonly audioPackId: string; // 'default' | 'silent'
 
+  /**
+   * Margin Notes UI redesign — P1.3 substrate flag.
+   * When true, App.tsx writes body[data-mode]. When false (the Phase 1–3
+   * default), the attribute is not written and the upcoming Margin Notes
+   * escalation CSS in P4.2 has no effect. P6.3 retires this flag.
+   */
+  readonly marginNotesEscalation: boolean;
+
   /** Default time control for new games. null = untimed. */
   readonly timeControl: TimeControlConfig | null;
 }
@@ -44,6 +52,9 @@ export const DEFAULT_SETTINGS: Settings = {
   musicVolume: 0.5,
   muted: false,
   audioPackId: 'default',
+
+  // Margin Notes substrate flag — opt-in only (P1.3)
+  marginNotesEscalation: false,
 
   // Time control default
   timeControl: null,

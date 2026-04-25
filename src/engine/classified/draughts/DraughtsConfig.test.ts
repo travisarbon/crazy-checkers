@@ -227,14 +227,25 @@ describe('DraughtsConfig — Italian idiosyncrasies', () => {
 });
 
 describe('DraughtsConfig — Frisian/Frysk! dual-axis', () => {
-  it('both games track kings-weight-1-5 and a 3-move consecutive limit', () => {
+  it('both games track kings-weight-1-5 + capturing-with-king and a 3-move consecutive limit', () => {
     for (const c of [createFrisianDraughtsConfig(), createFryskConfig()]) {
-      expect(c.capturePriorityRules).toEqual(['most-pieces', 'kings-weight-1-5']);
+      // Task 28.2.2 added 'capturing-with-king' as a tertiary tiebreaker
+      // (mindsports/lidraughts: "If a king and a man can capture an
+      // equal value, then the king must capture and the man may not.").
+      expect(c.capturePriorityRules).toEqual([
+        'most-pieces',
+        'kings-weight-1-5',
+        'capturing-with-king',
+      ]);
       expect(c.kingConsecutiveMoveLimit).toBe(3);
       // Task 28.2.1: Frisian kings fly on all six lines with no
       // range-limited landing — the `kingOrthogonalCaptureIsLimited`
       // flag is false post-correction.
       expect(c.kingOrthogonalCaptureIsLimited).toBe(false);
+      // Task 28.2.2 (frisiandraughts.com Article 9): kings move
+      // diagonally only on non-capture moves, but capture in 8 directions.
+      expect(c.kingMoveDirections).toEqual(['nw', 'ne', 'sw', 'se']);
+      expect(c.kingCaptureDirections.length).toBe(8);
     }
   });
 });

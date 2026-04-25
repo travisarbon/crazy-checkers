@@ -81,11 +81,20 @@ export function runSelfPlayGame(
       break;
     }
     if (result !== null && moves.length > 0) {
-      // Expected coexistences with legal moves (draw conditions only post
-      // Task 28.2.1; the per-king streak no longer flags losses directly).
+      // Expected coexistences with legal moves:
+      //   - REPETITION / FORTY_MOVE_RULE: draws can fire while the
+      //     side-to-move still has legal moves.
+      //   - NO_PIECES_LEFT (Task 28.2.2): Malaysian huffing can drop the
+      //     opponent of the side-to-move to zero pieces in a single
+      //     half-move. checkGameOver correctly declares the side-to-move
+      //     the winner; getLegalMoves still returns the winner's moves
+      //     because the harness queries both before reacting to the
+      //     game-over result.
       const reason = result.reason;
       const isExpectedCoexistence =
-        reason === 'REPETITION' || reason === 'FORTY_MOVE_RULE';
+        reason === 'REPETITION' ||
+        reason === 'FORTY_MOVE_RULE' ||
+        reason === 'NO_PIECES_LEFT';
       if (!isExpectedCoexistence) {
         failures.push(
           `I-02 @ ply ${String(ply)}: checkGameOver=${result.type} with ${String(moves.length)} legal moves`,
