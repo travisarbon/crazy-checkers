@@ -96,8 +96,8 @@
 }
 
 .startButton {
-  background: var(--ui-accent, var(--quality-good, #4caf50));
-  color: var(--ui-accent-contrast, #000);
+  background: var(--ui-accent, var(--quality-good));
+  color: var(--ui-accent-contrast);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-md, 6px);
@@ -154,7 +154,7 @@
 .loadModal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--ui-overlay-scrim);
   display: flex;
   align-items: center;
   justify-content: center;

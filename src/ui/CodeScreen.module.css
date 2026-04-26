@@ -99,19 +99,19 @@
 }
 
 .success {
-  color: var(--ui-success, #22c55e);
-  background: color-mix(in srgb, var(--ui-success, #22c55e) 12%, transparent);
+  color: var(--ui-success);
+  background: color-mix(in srgb, var(--ui-success) 12%, transparent);
   animation: successGlow 0.6s ease-out;
 }
 
 .already {
-  color: var(--ui-warning, #f59e0b);
-  background: color-mix(in srgb, var(--ui-warning, #f59e0b) 12%, transparent);
+  color: var(--ui-warning);
+  background: color-mix(in srgb, var(--ui-warning) 12%, transparent);
 }
 
 .invalid {
-  color: var(--ui-error, #ef4444);
-  background: color-mix(in srgb, var(--ui-error, #ef4444) 12%, transparent);
+  color: var(--ui-error);
+  background: color-mix(in srgb, var(--ui-error) 12%, transparent);
   animation: shake 0.4s ease-out;
 }
 

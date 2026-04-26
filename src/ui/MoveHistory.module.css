@@ -16,7 +16,7 @@
   font-family: 'Courier New', Courier, monospace;
   font-size: var(--text-sm);
   color: var(--ui-text);
-  background: rgba(0, 0, 0, 0.15);
+  background: color-mix(in srgb, var(--ui-text) 15%, transparent);
   border-radius: var(--radius-md);
   padding: 0.5rem;
 }
@@ -86,7 +86,7 @@
 
 @media (max-width: 767px) {
   .summary {
-    background: rgba(0, 0, 0, 0.08);
+    background: color-mix(in srgb, var(--ui-text) 8%, transparent);
     border-radius: var(--radius-md);
     padding: 0.5rem 0.75rem;
     min-height: 44px;

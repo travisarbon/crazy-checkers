@@ -4,23 +4,23 @@
   gap: 0.75rem;
   border-radius: 0.5rem;
   padding: 1rem;
-  border: 2px solid var(--ui-border, #444);
-  background-color: var(--ui-surface, #222);
+  border: 2px solid var(--ui-border);
+  background-color: var(--ui-surface);
 }
 
 .correct {
-  border-color: var(--quality-good, #4caf50);
-  background-color: color-mix(in srgb, var(--quality-good, #4caf50) 12%, transparent);
+  border-color: var(--quality-good);
+  background-color: color-mix(in srgb, var(--quality-good) 12%, transparent);
 }
 
 .acceptable {
-  border-color: var(--quality-inaccuracy, #ffc107);
-  background-color: color-mix(in srgb, var(--quality-inaccuracy, #ffc107) 12%, transparent);
+  border-color: var(--quality-inaccuracy);
+  background-color: color-mix(in srgb, var(--quality-inaccuracy) 12%, transparent);
 }
 
 .incorrect {
-  border-color: var(--quality-blunder, #f44336);
-  background-color: color-mix(in srgb, var(--quality-blunder, #f44336) 12%, transparent);
+  border-color: var(--quality-blunder);
+  background-color: color-mix(in srgb, var(--quality-blunder) 12%, transparent);
 }
 
 .verdict {
@@ -46,7 +46,7 @@
 }
 
 .label {
-  color: var(--ui-text, #111);
+  color: var(--ui-text);
   font-weight: var(--font-semibold);
 }
 
@@ -56,18 +56,18 @@
 
 .score {
   font-variant-numeric: tabular-nums;
-  color: var(--ui-text, #111);
+  color: var(--ui-text);
 }
 
 .diffRow {
   font-size: 0.9rem;
-  color: var(--ui-text, #111);
+  color: var(--ui-text);
 }
 
 .context {
   font-size: 0.85rem;
-  color: var(--ui-text, #111);
-  border-top: 1px solid var(--ui-border, #444);
+  color: var(--ui-text);
+  border-top: 1px solid var(--ui-border);
   padding-top: 0.5rem;
 }
 
@@ -80,7 +80,7 @@
 
 .alternativesHeading {
   font-weight: var(--font-semibold);
-  color: var(--ui-text, #111);
+  color: var(--ui-text);
   margin: 0;
 }
 
@@ -96,10 +96,10 @@
 
 .altScore {
   font-variant-numeric: tabular-nums;
-  color: var(--ui-text, #111);
+  color: var(--ui-text);
 }
 
 .highlightPlayerAlt {
   font-weight: var(--font-semibold);
-  color: var(--ui-text, #fff);
+  color: var(--ui-accent-contrast);
 }

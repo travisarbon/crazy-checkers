@@ -182,7 +182,7 @@
   height: 28px;
   border-radius: var(--radius-full);
   background: var(--ui-text);
-  box-shadow: 0 1px 3px color-mix(in srgb, #000 var(--tint-medium), transparent);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--ui-text) var(--tint-medium), transparent);
   transition:
     transform var(--duration-fast) ease,
     background-color var(--duration-fast) ease;

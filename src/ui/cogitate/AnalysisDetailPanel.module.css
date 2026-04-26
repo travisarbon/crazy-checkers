@@ -3,9 +3,9 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.75rem;
-  border: 1px solid var(--ui-border, #ccc);
+  border: 1px solid var(--ui-border);
   border-radius: var(--radius-lg);
-  background: var(--ui-surface, #fff);
+  background: var(--ui-surface);
   min-width: 0;
 }
 
@@ -20,7 +20,7 @@
 .title {
   font-size: var(--text-base);
   margin: 0;
-  color: var(--ui-heading, #222);
+  color: var(--ui-heading);
 }
 
 .notation {
@@ -35,15 +35,21 @@
   border-radius: var(--radius-full);
   font-size: 0.85rem;
   font-weight: var(--font-semibold);
-  color: #fff;
+  color: var(--ui-accent-contrast);
   white-space: nowrap;
 }
 
-.badgeBrilliant { background: var(--quality-brilliant, #00CED1); color: #00333a; }
-.badgeGood { background: var(--quality-good, #4CAF50); }
-.badgeInaccuracy { background: var(--quality-inaccuracy, #FFC107); color: #5c3d00; }
-.badgeMistake { background: var(--quality-mistake, #FF9800); }
-.badgeBlunder { background: var(--quality-blunder, #F44336); }
+.badgeBrilliant {
+  background: var(--quality-brilliant);
+  color: color-mix(in srgb, var(--quality-brilliant) 50%, var(--ui-text));
+}
+.badgeGood { background: var(--quality-good); }
+.badgeInaccuracy {
+  background: var(--quality-inaccuracy);
+  color: color-mix(in srgb, var(--quality-inaccuracy) 50%, var(--ui-text));
+}
+.badgeMistake { background: var(--quality-mistake); }
+.badgeBlunder { background: var(--quality-blunder); }
 
 .stats {
   display: grid;
@@ -59,7 +65,7 @@
 
 .stats dt {
   font-size: 0.8rem;
-  color: var(--ui-text-muted, #666);
+  color: var(--ui-text-muted);
 }
 
 .stats dd {
@@ -69,13 +75,13 @@
 }
 
 .evalDropBlunder {
-  color: var(--quality-blunder, #F44336);
+  color: var(--quality-blunder);
 }
 
 .sectionHeading {
   font-size: 0.85rem;
   margin: 0.25rem 0;
-  color: var(--ui-text-muted, #666);
+  color: var(--ui-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -94,7 +100,7 @@
   justify-content: space-between;
   padding: 0.25rem 0.4rem;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--ui-surface, #fff) 85%, var(--ui-border, #ccc) 15%);
+  background: color-mix(in srgb, var(--ui-surface) 85%, var(--ui-border) 15%);
   font-family: var(--font-mono, 'SF Mono', Menlo, monospace);
   font-size: 0.9rem;
 }
@@ -104,7 +110,7 @@
 }
 
 .altScore {
-  color: var(--ui-text-muted, #666);
+  color: var(--ui-text-muted);
 }
 
 .deepAnalyzeButton {
@@ -135,7 +141,7 @@
 }
 
 .status {
-  color: var(--ui-text-muted, #666);
+  color: var(--ui-text-muted);
   margin: 0;
   font-style: italic;
 }

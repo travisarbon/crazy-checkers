@@ -103,11 +103,11 @@
   text-transform: uppercase;
 }
 
-.trackPM { background: color-mix(in srgb, #4a90d9 25%, transparent); color: #4a90d9; }
-.trackCV { background: color-mix(in srgb, #d94a4a 25%, transparent); color: #d94a4a; }
-.trackRB { background: color-mix(in srgb, #4ad94a 25%, transparent); color: #4ad94a; }
-.trackL  { background: color-mix(in srgb, #d9b44a 25%, transparent); color: #d9b44a; }
-.trackWP { background: color-mix(in srgb, #9b4ad9 25%, transparent); color: #9b4ad9; }
+.trackPM { background: color-mix(in srgb, var(--gallery-track-pm) 25%, transparent); color: var(--gallery-track-pm); }
+.trackCV { background: color-mix(in srgb, var(--gallery-track-cv) 25%, transparent); color: var(--gallery-track-cv); }
+.trackRB { background: color-mix(in srgb, var(--gallery-track-rb) 25%, transparent); color: var(--gallery-track-rb); }
+.trackL  { background: color-mix(in srgb, var(--gallery-track-l) 25%, transparent); color: var(--gallery-track-l); }
+.trackWP { background: color-mix(in srgb, var(--gallery-track-wp) 25%, transparent); color: var(--gallery-track-wp); }
 
 /* Board preview container within card */
 .cardPreview {

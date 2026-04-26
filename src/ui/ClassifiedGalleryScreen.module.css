@@ -154,14 +154,14 @@
   letter-spacing: 0.05em;
 }
 
-.waveColor1 { background: color-mix(in srgb, #4a90d9 25%, transparent); color: #4a90d9; }
-.waveColor2 { background: color-mix(in srgb, #d94a4a 25%, transparent); color: #d94a4a; }
-.waveColor3 { background: color-mix(in srgb, #4ad94a 25%, transparent); color: #4ad94a; }
-.waveColor4 { background: color-mix(in srgb, #d9b44a 25%, transparent); color: #d9b44a; }
-.waveColor5 { background: color-mix(in srgb, #9b4ad9 25%, transparent); color: #9b4ad9; }
-.waveColor6 { background: color-mix(in srgb, #4ad9c9 25%, transparent); color: #4ad9c9; }
-.waveColor7 { background: color-mix(in srgb, #d94a8a 25%, transparent); color: #d94a8a; }
-.waveColor8 { background: color-mix(in srgb, #8a8a8a 25%, transparent); color: #8a8a8a; }
+.waveColor1 { background: color-mix(in srgb, var(--gallery-wave-1) 25%, transparent); color: var(--gallery-wave-1); }
+.waveColor2 { background: color-mix(in srgb, var(--gallery-wave-2) 25%, transparent); color: var(--gallery-wave-2); }
+.waveColor3 { background: color-mix(in srgb, var(--gallery-wave-3) 25%, transparent); color: var(--gallery-wave-3); }
+.waveColor4 { background: color-mix(in srgb, var(--gallery-wave-4) 25%, transparent); color: var(--gallery-wave-4); }
+.waveColor5 { background: color-mix(in srgb, var(--gallery-wave-5) 25%, transparent); color: var(--gallery-wave-5); }
+.waveColor6 { background: color-mix(in srgb, var(--gallery-wave-6) 25%, transparent); color: var(--gallery-wave-6); }
+.waveColor7 { background: color-mix(in srgb, var(--gallery-wave-7) 25%, transparent); color: var(--gallery-wave-7); }
+.waveColor8 { background: color-mix(in srgb, var(--gallery-wave-8) 25%, transparent); color: var(--gallery-wave-8); }
 
 /* Board preview container within card */
 .cardPreview {

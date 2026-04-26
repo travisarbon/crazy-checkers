@@ -35,13 +35,13 @@
 }
 
 .colorDot.white {
-  background: var(--piece-white, #fff);
-  border: 1px solid var(--piece-white-stroke, #ccc);
+  background: var(--piece-white);
+  border: 1px solid var(--piece-white-stroke);
 }
 
 .colorDot.black {
-  background: var(--piece-black, #333);
-  border: 1px solid var(--piece-black-stroke, #000);
+  background: var(--piece-black);
+  border: 1px solid var(--piece-black-stroke);
 }
 
 .eventName {

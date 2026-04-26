@@ -26,7 +26,8 @@
     "check:bundle": "tsx scripts/check-bundle-split.ts",
     "check:bundle:tier1": "tsx scripts/tier1/check-bundle-size.ts",
     "gate:tier1": "vitest run src/test/classifiedChecklist/tier1 && tsx scripts/tier1/check-bundle-size.ts",
-    "check:piece-stubs": "tsx scripts/check-piece-stubs.ts"
+    "check:piece-stubs": "tsx scripts/check-piece-stubs.ts",
+    "audit:css-colors": "tsx scripts/audit-css-colors.ts"
   },
   "dependencies": {
     "comlink": "^4.4.2",

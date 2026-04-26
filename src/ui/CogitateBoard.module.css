@@ -35,7 +35,7 @@
 }
 
 .dropTarget {
-  outline: 2px dashed #2ecc71;
+  outline: 2px dashed var(--ui-success);
   outline-offset: -4px;
 }
 

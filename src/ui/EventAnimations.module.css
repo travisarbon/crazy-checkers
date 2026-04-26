@@ -99,13 +99,13 @@
 }
 
 .textOverlayBackdrop {
-  fill: rgba(0, 0, 0, 0.5);
+  fill: color-mix(in srgb, var(--ui-text) 50%, transparent);
   rx: 12;
   ry: 12;
 }
 
 .textOverlayText {
-  fill: white;
+  fill: var(--piece-white);
   font-size: 36px;
   font-weight: 700;
   text-anchor: middle;
