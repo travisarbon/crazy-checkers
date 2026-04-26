@@ -67,9 +67,9 @@
   border-color: var(--ui-text);
 }
 
-.colorGreen { background: #2ecc71; }
-.colorRed { background: #e74c3c; }
-.colorBlue { background: #3498db; }
+.colorGreen { background: var(--pencil-green); }
+.colorRed { background: var(--india-red); }
+.colorBlue { background: var(--ballpoint-blue); }
 
 .actionButton {
   background: none;

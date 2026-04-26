@@ -9,7 +9,7 @@
 
 .label {
   font-weight: var(--font-semibold);
-  color: var(--ui-text-muted, #666);
+  color: var(--ui-text-muted);
 }
 
 .moves {
@@ -36,9 +36,9 @@
 }
 
 .ellipsis {
-  color: var(--ui-text-muted, #666);
+  color: var(--ui-text-muted);
 }
 
 .empty {
-  color: var(--ui-text-muted, #666);
+  color: var(--ui-text-muted);
 }

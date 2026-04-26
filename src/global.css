@@ -137,8 +137,88 @@ h1, h2, h3,
   --annotation-rotation-sm: -2deg;
   --annotation-rotation-md: -4deg;
   --annotation-rotation-lg: 8deg;
+
+  /* Hand-drawn margin-note underline — used by .annotation-underlined.
+     The SVG data URI bakes in var(--india-red) (#B83A2A) for the stroke
+     because data URIs cannot reference CSS variables. If a future
+     restyle changes the canonical underline color, regenerate this
+     value with the new hex (URL-encoded as %23XXXXXX).
+     (Phase 2 Margin Notes UI Redesign — P2.3) */
+  --annotation-underline: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 6'><path d='M2 4 Q 25 1, 50 3 T 98 4' stroke='%23B83A2A' stroke-width='1.5' fill='none' stroke-linecap='round' /></svg>");
 }
-/* === End annotation tokens (P2.1) === */
+/* === End annotation tokens (P2.1, P2.3) === */
+
+/* ─────────────────────────────────────────────────────────────
+   Overlay scrim — single canonical token for full-viewport
+   modal backdrops. Theme-driven via color-mix against the
+   active theme's text color, so the scrim follows light/dark
+   themes automatically (warm-graphite on Margin Notes, near-
+   black on Cork/Current/Classic/Contrast).
+   (Phase 2 Margin Notes UI Redesign — P2.2)
+   See: Documentation/UI Overhaul/P2.2-Audit-Hardcoded-Colors.md
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --ui-overlay-scrim: color-mix(in srgb, var(--ui-text) 55%, transparent);
+}
+/* === End overlay scrim (P2.2) === */
+
+
+/* ─────────────────────────────────────────────────────────────
+   Move-quality palette — Cogitate analysis indicators for
+   Brilliant / Good / Inaccuracy / Mistake / Blunder, plus a
+   neutral Pending state for moves that have not yet been
+   evaluated. Brand-level constants; do NOT change with the
+   active theme. Canonicalised from AnalysisDetailPanel's
+   existing values.
+   (Phase 2 Margin Notes UI Redesign — P2.2)
+   See: Documentation/UI Overhaul/P2.2-Audit-Hardcoded-Colors.md
+   See also: Documentation/Playbooks/Crazy_Checkers_Cogitate_Mode_Playbook.md §Quality Levels
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --quality-brilliant: #00CED1; /* turquoise */
+  --quality-good: #4CAF50; /* Material green 500 */
+  --quality-inaccuracy: #FFC107; /* Material amber 500 */
+  --quality-mistake: #FF9800; /* Material orange 500 */
+  --quality-blunder: #F44336; /* Material red 500 */
+  --quality-pending: #666666; /* neutral grey for un-evaluated moves */
+}
+/* === End move-quality palette (P2.2) === */
+
+
+/* ─────────────────────────────────────────────────────────────
+   Gallery palette — Choice Mode tracks (5) and Classified
+   Library waves (8). Brand-level decorative palettes; do NOT
+   change with the active theme. Each color signals a category,
+   not a state.
+   (Phase 2 Margin Notes UI Redesign — P2.2)
+   See: Documentation/UI Overhaul/P2.2-Audit-Hardcoded-Colors.md
+   See also: Documentation/Playbooks/Crazy_Checkers_Events_and_Choice_Mode_Playbook.md §Track Categories
+   See also: Documentation/Playbooks/Crazy_Checkers_Classified_Library_Playbook.md §Wave Color Coding
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Choice mode tracks: PM=Promotion, CV=Capture/Variation,
+     RB=Rule-Bender, L=Layout, WP=Wildcard-Permanent. */
+  --gallery-track-pm: #4A90D9;
+  --gallery-track-cv: #D94A4A;
+  --gallery-track-rb: #4AD94A;
+  --gallery-track-l: #D9B44A;
+  --gallery-track-wp: #9B4AD9;
+
+  /* Classified Library waves 1–8 (international/regional draughts
+     family is wave 1; subsequent waves expand outward). */
+  --gallery-wave-1: #4A90D9;
+  --gallery-wave-2: #D94A4A;
+  --gallery-wave-3: #4AD94A;
+  --gallery-wave-4: #D9B44A;
+  --gallery-wave-5: #9B4AD9;
+  --gallery-wave-6: #4AD9C9;
+  --gallery-wave-7: #D94A8A;
+  --gallery-wave-8: #8A8A8A;
+}
+/* === End gallery palette (P2.2) === */
 
 /* ─────────────────────────────────────────────────────────────
    Global button utility classes
@@ -260,3 +340,101 @@ h1, h2, h3,
     transform: none;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Annotation utility classes — semantic chrome for handwritten
+   margin notes. Apply `.annotation` to any text element to
+   render it in the Caveat handwriting face at the AA-Large
+   minimum size. Combine with rotation and color modifiers
+   for the full margin-note vocabulary.
+   (Phase 2 Margin Notes UI Redesign — P2.3)
+   See: Documentation/UI Overhaul/P2.3-Annotation-Utility-Classes.md
+   ───────────────────────────────────────────────────────────── */
+
+.annotation {
+  font-family: var(--annotation-font);
+  font-weight: 500;
+  font-size: 1.6rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: var(--india-red);
+}
+
+/* Rotation modifiers — pair with .annotation. Each variant binds
+   to a P2.1 rotation token. The reduced-motion guard at the
+   bottom of this block resets transform to none. */
+.annotation-rotated-sm {
+  transform: rotate(var(--annotation-rotation-sm));
+}
+
+.annotation-rotated-md {
+  transform: rotate(var(--annotation-rotation-md));
+}
+
+.annotation-rotated-lg {
+  transform: rotate(var(--annotation-rotation-lg));
+}
+
+/* Foreground color modifiers — pair with .annotation. Each
+   binds the foreground to a pencil-set token. The pencil-green
+   and crayon-orange variants meet AA Large (≥3.0:1) against
+   Margin Notes paper at the .annotation 1.6rem floor; india-red
+   and ballpoint-blue meet AA Normal. Highlighter-yellow is
+   reserved for .annotation--highlight (background only — its
+   contrast as a foreground fails AA). When two color modifiers
+   are stacked on the same element, the cascade order in this
+   file wins (ballpoint > pencil > crayon > india). */
+.annotation--india {
+  color: var(--india-red);
+}
+
+.annotation--ballpoint {
+  color: var(--ballpoint-blue);
+}
+
+.annotation--pencil {
+  color: var(--pencil-green);
+}
+
+.annotation--crayon {
+  color: var(--crayon-orange);
+}
+
+/* Background highlight modifier — pair with .annotation. Applies
+   a highlighter-yellow swatch behind the text. Foreground color
+   stays at the .annotation default; the swatch is decorative. */
+.annotation--highlight {
+  background-color: color-mix(in srgb, var(--highlighter-yellow) 70%, transparent);
+  padding: 0 0.15em;
+  border-radius: 2px;
+}
+
+/* Hand-drawn underline modifier — pair with .annotation. Adds
+   a decorative SVG underline beneath the text via ::after.
+   The pseudo-element has empty content; screen readers ignore
+   it (CSS-generated content is not exposed to assistive tech
+   per WAI-ARIA). */
+.annotation-underlined {
+  position: relative;
+}
+
+.annotation-underlined::after {
+  content: '';
+  display: block;
+  height: 6px;
+  margin-top: 0.15em;
+  background: var(--annotation-underline) center/100% 100% no-repeat;
+  width: min(72%, 18ch);
+}
+
+/* Reduced-motion guard — every rotation variant is reset to
+   none when the user has opted out of motion. The base
+   .annotation has no transform, so it is unaffected. */
+@media (prefers-reduced-motion: reduce) {
+  .annotation-rotated-sm,
+  .annotation-rotated-md,
+  .annotation-rotated-lg {
+    transform: none;
+  }
+}
+/* === End annotation utility classes (P2.3) === */

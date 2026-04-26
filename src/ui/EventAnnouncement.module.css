@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--overlay-bg, rgba(0, 0, 0, 0.65));
+  background: var(--ui-overlay-scrim);
   z-index: var(--z-overlay);
   cursor: pointer;
   animation: fadeIn 200ms ease-out;
@@ -23,10 +23,10 @@
   gap: 0.5rem;
   padding: 2rem 3rem;
   max-width: 90vw;
-  background: color-mix(in srgb, var(--ui-surface, #111) 92%, transparent);
-  color: var(--ui-text, #fff);
-  border-radius: var(--radius-lg, 12px);
-  border: 2px solid var(--ui-accent, #c0392b);
+  background: color-mix(in srgb, var(--ui-surface) 92%, transparent);
+  color: var(--ui-text);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--ui-accent);
 }
 
 .eventBlock {
@@ -38,16 +38,16 @@
   font-weight: var(--font-bold);
   color: var(--ui-accent);
   margin: 0;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 4px color-mix(in srgb, var(--ui-text) 60%, transparent);
 }
 
 .eventFlavor {
   font-size: var(--text-lg);
   font-style: italic;
-  color: var(--ui-text, #fff);
+  color: var(--ui-text);
   opacity: 1;
   margin: 0.25rem 0 0;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 4px color-mix(in srgb, var(--ui-text) 60%, transparent);
 }
 
 .doubleTroubleTitle {
@@ -57,7 +57,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin: 0 0 0.5rem;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 2px 6px color-mix(in srgb, var(--ui-text) 70%, transparent);
 }
 
 /* ── Animations ──────────────────────────────────────────────── */

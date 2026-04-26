@@ -62,11 +62,11 @@
   flex-shrink: 0;
 }
 
-.indicatorBrilliant { background: #00c2c7; }
-.indicatorGood { background: #2ecc71; }
-.indicatorInaccuracy { background: #f1c40f; }
-.indicatorMistake { background: #e67e22; }
-.indicatorBlunder { background: #e74c3c; }
+.indicatorBrilliant { background: var(--quality-brilliant); }
+.indicatorGood { background: var(--quality-good); }
+.indicatorInaccuracy { background: var(--quality-inaccuracy); }
+.indicatorMistake { background: var(--quality-mistake); }
+.indicatorBlunder { background: var(--quality-blunder); }
 
 .empty {
   opacity: 0.5;

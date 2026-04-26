@@ -14,13 +14,13 @@
 
 .segment {
   flex: 1;
-  background-color: var(--quality-pending, #666);
+  background-color: var(--quality-pending);
   border-radius: var(--radius-sm);
   transition: background-color var(--duration-fast) ease;
 }
 
 .current {
-  outline: 2px solid var(--ui-text, #fff);
+  outline: 2px solid var(--ui-text);
   outline-offset: -2px;
   animation: pulse 1.2s ease-in-out infinite;
 }
@@ -32,15 +32,15 @@
 }
 
 .correct {
-  background-color: var(--quality-good, #4caf50);
+  background-color: var(--quality-good);
 }
 
 .acceptable {
-  background-color: var(--quality-inaccuracy, #ffc107);
+  background-color: var(--quality-inaccuracy);
 }
 
 .incorrect {
-  background-color: var(--quality-blunder, #f44336);
+  background-color: var(--quality-blunder);
 }
 
 .skipped {
@@ -52,12 +52,12 @@
   justify-content: space-between;
   align-items: center;
   font-size: 0.85rem;
-  color: var(--ui-text, #111);
+  color: var(--ui-text);
   font-weight: var(--font-semibold);
 }
 
 .streak {
-  color: var(--quality-good, #4caf50);
+  color: var(--quality-good);
   font-weight: var(--font-semibold);
 }
 

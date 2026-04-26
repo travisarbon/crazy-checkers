@@ -11,8 +11,8 @@
   height: 16px;
   border-radius: var(--radius-sm);
   overflow: hidden;
-  border: 1px solid var(--ui-border, #ccc);
-  background: var(--ui-surface, #fff);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
   min-width: 0;
 }
 
@@ -22,7 +22,7 @@
   height: 100%;
   padding: 0;
   border: none;
-  background: var(--quality-pending, #666);
+  background: var(--quality-pending);
   cursor: pointer;
   transition: filter 120ms ease;
 }
@@ -36,15 +36,15 @@ button.segment:focus-visible {
   outline-offset: 2px;
 }
 
-.segmentPending { background: var(--quality-pending, #777); }
-.segmentBrilliant { background: var(--quality-brilliant, #00CED1); }
-.segmentGood { background: var(--quality-good, #4CAF50); }
-.segmentInaccuracy { background: var(--quality-inaccuracy, #FFC107); }
-.segmentMistake { background: var(--quality-mistake, #FF9800); }
-.segmentBlunder { background: var(--quality-blunder, #F44336); }
+.segmentPending { background: var(--quality-pending); }
+.segmentBrilliant { background: var(--quality-brilliant); }
+.segmentGood { background: var(--quality-good); }
+.segmentInaccuracy { background: var(--quality-inaccuracy); }
+.segmentMistake { background: var(--quality-mistake); }
+.segmentBlunder { background: var(--quality-blunder); }
 
 .segmentSelected {
-  outline: 2px solid var(--ui-heading, #222);
+  outline: 2px solid var(--ui-heading);
   outline-offset: -2px;
   z-index: 1;
 }
@@ -52,7 +52,7 @@ button.segment:focus-visible {
 .score {
   font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
-  color: var(--ui-heading, #222);
+  color: var(--ui-heading);
   white-space: nowrap;
 }
 
