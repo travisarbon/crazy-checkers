@@ -108,6 +108,39 @@ h1, h2, h3,
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Annotation tokens — Margin Notes "pencil set" palette,
+   handwritten-annotation font-family, and margin-note rotation
+   vocabulary. These are brand-level constants; they do NOT
+   change when the active theme switches.
+   (Phase 2 Margin Notes UI Redesign — P2.1)
+   See: Documentation/UI Overhaul/P2.1-Annotation-Tokens.md
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Pencil-set palette — solid hex. Apply alpha downstream via
+     color-mix(in srgb, var(--pencil-green) 45%, transparent). */
+  --pencil-green: #6E8E3A;
+  --ballpoint-blue: #3E5BAA;
+  --highlighter-yellow: #F5D547;
+  --crayon-orange: #E8743C;
+  --india-red: #B83A2A;
+
+  /* Handwritten annotation typeface. Caveat 500 and 700 are
+     loaded by index.html (see P1.4). The fallback chain keeps
+     the look on devices that haven't fetched Caveat yet. */
+  --annotation-font: 'Caveat', 'Comic Sans MS', cursive;
+
+  /* Margin-note rotation vocabulary. Negative = leans left
+     ("just clipped on"); positive = leans right ("circled in
+     pencil"). The lg value matches the wordmark "(sort of)"
+     tilt used in the P1.5 OG image composition. */
+  --annotation-rotation-sm: -2deg;
+  --annotation-rotation-md: -4deg;
+  --annotation-rotation-lg: 8deg;
+}
+/* === End annotation tokens (P2.1) === */
+
+/* ─────────────────────────────────────────────────────────────
    Global button utility classes
    Apply these on any <button> to get consistent sizing, radius,
    hover, focus, and disabled behavior without re-authoring the
