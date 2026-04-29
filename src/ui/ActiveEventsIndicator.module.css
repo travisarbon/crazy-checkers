@@ -58,3 +58,110 @@
   opacity: 0.8;
   white-space: nowrap;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   P3.3 — Margin Notes paper-card chrome + tape + sway. Each
+   rule is gated on body[data-theme='margin-notes'] so the
+   indicator under non-Margin-Notes themes is unchanged. The
+   .active-events-card class is global (CSS Modules :global())
+   so the escalation layer (P4.2/P4.3) can bind to it in
+   src/themes/marginnotes.escalation.css without name-hashing.
+   See: Documentation/UI Overhaul/P3.3-Active-Events-Indicator.md
+   ───────────────────────────────────────────────────────────── */
+
+/* Paper-card override. Under Margin Notes, the container's
+   background/border/radius are rebound to the paper palette,
+   and a -1° base tilt is applied. transform-origin: top
+   center makes the card pivot from where the tape "attaches",
+   so the sway feels like the card is hanging on a string from
+   the tape rather than rotating around its midpoint. */
+body[data-theme='margin-notes'] :global(.active-events-card) {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-sm);
+  transform: rotate(-1deg);
+  transform-origin: top center;
+  position: relative;
+  /* margin-top reserves vertical space for the tape's 8px
+     overhang so the tape doesn't clip against the sidebar
+     element above. */
+  margin-top: 0.5rem;
+}
+
+/* Tape pseudo-element. Pinned 8px above the card's top center,
+   rotated -2deg via the P2.1 --annotation-rotation-sm token.
+   The 64×14 dimensions match the design-proposal mockup. The
+   subtle ink-translucent box-shadow suggests the tape sits
+   above the paper rather than being painted on it. */
+body[data-theme='margin-notes'] :global(.active-events-card)::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%) rotate(var(--annotation-rotation-sm));
+  width: 64px;
+  height: 14px;
+  background: color-mix(in srgb, var(--highlighter-yellow) 75%, transparent);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ui-text) 8%, transparent);
+  pointer-events: none;
+}
+
+/* Sway animation. 1° peak-to-base amplitude (from -0.5° to
+   -1.5° around the -1° base tilt), 4s period, infinite. The
+   ease-in-out timing makes the sway feel pendulum-like.
+   Per WCAG 2.3.3 (AAA), motion ≤ 5° is not flagged as
+   disorienting; 1° amplitude is well under that threshold. */
+@keyframes activeEventsSway {
+  0% { transform: rotate(-0.5deg); }
+  25% { transform: rotate(-1deg); }
+  50% { transform: rotate(-1.5deg); }
+  75% { transform: rotate(-1deg); }
+  100% { transform: rotate(-0.5deg); }
+}
+
+body[data-theme='margin-notes'] :global(.active-events-card) {
+  animation: activeEventsSway 4s ease-in-out infinite;
+}
+
+/* Reduced-motion guard. The animation is removed; the base
+   -1° transform is restored explicitly so the cascade order
+   between the (now-removed) animation and the static base
+   transform is well-defined. The tape's positioning transform
+   is unchanged (it's not an animation, just a static rotate). */
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme='margin-notes'] :global(.active-events-card) {
+    animation: none;
+    transform: rotate(-1deg);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   P5.6 — Per-event sticker sway. Each event row gets its own
+   gentle keyframe rotation, staggered by --event-index so the
+   stickers don't oscillate in lockstep. Composes with the
+   container sway (P3.3) — the parent rotates, each child
+   rotates within it. Margin Notes only.
+
+   Amplitude: ±0.5° around 0° → 1° peak-to-base. Period: 5s.
+   Per WCAG 2.3.3 (AAA), motion ≤ 5° is non-disorienting.
+   ───────────────────────────────────────────────────────────── */
+
+@keyframes eventStickerSway {
+  0% { transform: rotate(-0.5deg); }
+  50% { transform: rotate(0.5deg); }
+  100% { transform: rotate(-0.5deg); }
+}
+
+body[data-theme='margin-notes'] :global(.event-row) {
+  animation: eventStickerSway 5s ease-in-out infinite;
+  animation-delay: calc(var(--event-index, 0) * 0.7s);
+  transform-origin: top left;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme='margin-notes'] :global(.event-row) {
+    animation: none;
+    transform: none;
+  }
+}

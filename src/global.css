@@ -138,6 +138,14 @@ h1, h2, h3,
   --annotation-rotation-md: -4deg;
   --annotation-rotation-lg: 8deg;
 
+  /* Crazy-tier amplification of the lg rotation. The base lg
+     value (+8°) reads as "annotated and slightly playful"; the
+     crazy variant (+12°) reads as "the annotation got more
+     enthusiastic". Used by the escalation CSS rule
+     body[data-theme='margin-notes'][data-mode='crazy']
+       .wordmark-annotation. (Phase 4 Margin Notes UI Redesign — P4.3-A2) */
+  --annotation-rotation-lg-crazy: 12deg;
+
   /* Hand-drawn margin-note underline — used by .annotation-underlined.
      The SVG data URI bakes in var(--india-red) (#B83A2A) for the stroke
      because data URIs cannot reference CSS variables. If a future

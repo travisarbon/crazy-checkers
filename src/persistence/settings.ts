@@ -116,17 +116,42 @@ function mergeWithDefaults(data: unknown): Settings {
       ? obj.audioPackId
       : DEFAULT_SETTINGS.audioPackId;
 
-  // Margin Notes substrate flag (P1.3) — purely additive, no SETTINGS_VERSION
-  // bump. Old envelopes without the field merge to the default `false`.
+  // Margin Notes substrate flag (P1.3, P4.1, P6.3) — purely additive,
+  // no SETTINGS_VERSION bump.
+  //
+  // P4.1 changed the default-derivation rule: when the field is absent
+  // from a stored envelope, we derive the default from the stored
+  // themeId. A stored `themeId === 'margin-notes'` defaults to `true`
+  // (the dogfood cohort, and post-P6.1 the global default); every other
+  // theme defaults to a literal `false`. An explicit boolean in the
+  // envelope ALWAYS wins over the derivation — the user's choice is
+  // sticky.
+  //
+  // The derivation uses a literal `false` (not DEFAULT_SETTINGS) for the
+  // non-margin-notes case so that DEFAULT_SETTINGS.marginNotesEscalation
+  // can flip to `true` (per P6.1) without retroactively turning
+  // escalation on for users on Cork/Current/Classic/Contrast/crazy-original.
   const marginNotesEscalation =
     typeof obj.marginNotesEscalation === 'boolean'
       ? obj.marginNotesEscalation
-      : DEFAULT_SETTINGS.marginNotesEscalation;
+      : themeId === 'margin-notes';
 
   // Time control field (new in v3, defaults to null = untimed for v1/v2 upgrades)
   const timeControl = isValidTimeControl(obj.timeControl)
     ? obj.timeControl
     : null;
+
+  // P6.4 — toast state. Both fields are purely additive on the v4
+  // envelope; old envelopes without the fields default to "never dismissed,
+  // never seen" so the toast is eligible to show.
+  const marginNotesToastDismissed =
+    typeof obj.marginNotesToastDismissed === 'boolean'
+      ? obj.marginNotesToastDismissed
+      : DEFAULT_SETTINGS.marginNotesToastDismissed;
+  const marginNotesToastFirstSeenAt =
+    typeof obj.marginNotesToastFirstSeenAt === 'number'
+      ? obj.marginNotesToastFirstSeenAt
+      : DEFAULT_SETTINGS.marginNotesToastFirstSeenAt;
 
   return {
     themeId,
@@ -139,6 +164,8 @@ function mergeWithDefaults(data: unknown): Settings {
     audioPackId,
     marginNotesEscalation,
     timeControl,
+    marginNotesToastDismissed,
+    marginNotesToastFirstSeenAt,
   };
 }
 
@@ -201,6 +228,38 @@ function isValidTimeControl(value: unknown): value is TimeControlConfig {
     default:
       return false;
   }
+}
+
+// ---------------------------------------------------------------------------
+// P4.1 — Theme-change → escalation-flag coupling
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns a new Settings object that flips on `marginNotesEscalation` when
+ * the user is moving TO `margin-notes` for the first time. Once the user
+ * has explicitly toggled the flag (in either direction), the explicit
+ * choice is sticky and is preserved across all subsequent theme changes.
+ *
+ * Callers — typically ConfigScreen's theme-radio onClick — should use this
+ * helper instead of a bare `{ ...prev, themeId: next }` spread when
+ * updating the active theme. The helper is a no-op for any non-margin-notes
+ * target.
+ *
+ * The "explicitly toggled" signal is the literal stored value of
+ * `marginNotesEscalation`. If the field was present in the stored envelope
+ * and its value disagrees with the theme-derived default, we treat the
+ * field as user-set and never override it. The merge logic in
+ * `mergeWithDefaults` handles the converse case (deriving the default at
+ * load time when the field is absent from the envelope).
+ */
+export function coerceEscalationOnThemeChange(
+  prev: Settings,
+  nextThemeId: Settings['themeId'],
+): Settings {
+  if (nextThemeId === 'margin-notes' && prev.themeId !== 'margin-notes' && !prev.marginNotesEscalation) {
+    return { ...prev, themeId: nextThemeId, marginNotesEscalation: true };
+  }
+  return { ...prev, themeId: nextThemeId };
 }
 
 // ---------------------------------------------------------------------------

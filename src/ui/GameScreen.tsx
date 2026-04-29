@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { BREAKPOINT } from './breakpoints';
 import type { ActiveEvent, GameState, PlayerSetup, RuleSet } from '../engine/types';
 import { GameMode, GameStatus, GameResultType, GameEndReason, PieceColor, PieceType, PlayerType } from '../engine/types';
@@ -67,6 +68,15 @@ interface GameScreenProps {
   onMainMenu?: () => void;
   /** Called with the persisted game history id when the user taps Review. */
   onReview?: (gameId: string) => void;
+  /**
+   * Optional Margin-Notes-only decoration anchored above the board.
+   * P3.4 will populate this with the sticky-note "rule" rendering the
+   * active event's flavor text. Undefined → slot renders nothing.
+   * Mirrors `BoardChrome.frameDecoration` (P3.2) so the same content
+   * can drop into either path with the same className.
+   * See Documentation/UI Overhaul/P3.2-Board-Chrome.md.
+   */
+  frameDecoration?: ReactNode;
 }
 
 // ---------------------------------------------------------------------------
@@ -191,6 +201,7 @@ export default function GameScreen({
   onNewGame,
   onMainMenu,
   onReview,
+  frameDecoration,
 }: GameScreenProps) {
   // --- State ---
   const [gameState, setGameState] = useState<GameState>(
@@ -783,6 +794,11 @@ export default function GameScreen({
             Multi-jump in progress — click next destination
           </div>
         )}
+        {frameDecoration ? (
+          <div className={styles.frameDecoration} aria-hidden="true">
+            {frameDecoration}
+          </div>
+        ) : null}
         <Board
           board={displayBoard}
           flipped={flipped}
@@ -840,7 +856,7 @@ export default function GameScreen({
             isThinking={isAIThinking}
           />
         </div>
-        <div className={styles.sidebarSection}>
+        <div className={`${styles.sidebarSection ?? ''} captured-pieces-card`}>
           <CapturedPieces moveHistory={gameState.moveHistory} pendingCaptures={pendingCaptures} />
         </div>
         {(gameState.mode === GameMode.Crazy ||
@@ -853,7 +869,7 @@ export default function GameScreen({
             />
           </div>
         )}
-        <div className={styles.sidebarSection}>
+        <div className={`${styles.sidebarSection ?? ''} move-history-card`}>
           <MoveHistory
             moveHistory={gameState.moveHistory}
             currentMoveIndex={currentMoveIndex}

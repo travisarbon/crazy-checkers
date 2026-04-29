@@ -116,7 +116,7 @@ export default function ChoiceDetailScreen({
       {/* Hero row: board left, setup right on desktop */}
       <div className={shellStyles.heroRow}>
         <div className={shellStyles.heroBoard}>
-          <div className={styles.boardSection}>
+          <div className={`${styles.boardSection ?? ''} choice-detail-card`}>
             <BoardPreviewLarge
               size={260}
               position={eventModifiedPosition}

@@ -1,34 +1,29 @@
 import { test, expect } from '@playwright/test';
-import { clearAppStorage } from './helpers';
+import { clearAppStorage, enableMarginNotesEscalation } from './helpers';
 
 /**
- * P1.3 — Margin Notes data-mode substrate.
+ * P1.3 / P6.3 — Margin Notes data-mode substrate.
  *
- * The escalation chrome (P4.2) keys off body[data-mode]. P1.3 only writes the
- * attribute; nothing reads it visually yet. With the opt-in flag enabled,
- * navigating across the gameplay-chaos ladder must keep body[data-mode] in
- * sync with the screen tier.
+ * Originally added in P1.3 with an opt-in toggle (Configure → Themes →
+ * Advanced) gating the body[data-mode] write. After the P6.3 (Phase A)
+ * cutover, the toggle is retired: data-mode is written for any user
+ * whose active theme is `margin-notes`, and absent for any other theme.
+ *
+ * The escalation chrome (CSS in src/themes/marginnotes.escalation.css)
+ * keys off the substrate.
  */
-test.describe('Margin Notes data-mode substrate', () => {
+test.describe('Margin Notes data-mode substrate (post-P6.3)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await clearAppStorage(page);
-    await page.goto('/');
   });
 
-  test('writes body[data-mode] across Menu → Crazy sub-menu → game', async ({
+  test('writes body[data-mode] when active theme is margin-notes', async ({
     page,
   }) => {
-    // With the flag off (default), the attribute is absent.
-    await expect(page.locator('body')).not.toHaveAttribute('data-mode', /.*/);
-
-    // Enable the flag via Configure → Themes → Advanced.
-    await page.getByRole('button', { name: 'Configure' }).click();
-    await page.getByText('Advanced').click();
-    await page
-      .getByRole('switch', { name: /margin notes mode-tiered chrome/i })
-      .click();
-    await page.getByRole('button', { name: 'Back to previous screen' }).click();
+    await enableMarginNotesEscalation(page);
+    await page.goto('/');
+    await page.getByTestId('menu-screen').waitFor();
 
     // Menu tier — quiet baseline.
     await expect(page.locator('body')).toHaveAttribute('data-mode', 'menu');
@@ -42,7 +37,30 @@ test.describe('Margin Notes data-mode substrate', () => {
     await expect(page.locator('body')).toHaveAttribute('data-mode', 'crazy');
   });
 
-  test('attribute is absent when the flag is off', async ({ page }) => {
+  test('attribute is absent when active theme is non-margin-notes', async ({
+    page,
+  }) => {
+    // Seed cork as the stored theme.
+    await page.evaluate(() => {
+      const data = {
+        themeId: 'cork',
+        animationSpeed: 1.0,
+        moveConfirmation: false,
+        masterVolume: 0.7,
+        sfxVolume: 1.0,
+        musicVolume: 0.5,
+        muted: true,
+        audioPackId: 'silent',
+        marginNotesEscalation: false,
+        timeControl: null,
+      };
+      localStorage.setItem(
+        'crazy-checkers-settings',
+        JSON.stringify({ version: 4, data }),
+      );
+    });
+    await page.goto('/');
+    await page.getByTestId('menu-screen').waitFor();
     await expect(page.locator('body')).not.toHaveAttribute('data-mode', /.*/);
     await page.getByRole('button', { name: 'Crazy' }).click();
     await expect(page.locator('body')).not.toHaveAttribute('data-mode', /.*/);

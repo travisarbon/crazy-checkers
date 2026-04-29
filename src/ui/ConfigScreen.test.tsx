@@ -101,10 +101,10 @@ describe('ConfigScreen', () => {
 
   // ── Theme switching tests ───────────────────────────────────────────
 
-  it('default theme (crazy-original) is selected', () => {
+  it('default theme (margin-notes) is selected after the P6.1 cutover', () => {
     renderConfig();
-    const crazyCard = screen.getByRole('radio', { name: 'Crazy (Original)' });
-    expect(crazyCard).toHaveAttribute('aria-checked', 'true');
+    const marginNotesCard = screen.getByRole('radio', { name: 'Margin Notes' });
+    expect(marginNotesCard).toHaveAttribute('aria-checked', 'true');
   });
 
   it('clicking Cork theme calls onSettingsChange', () => {
@@ -308,27 +308,16 @@ describe('ConfigScreen', () => {
     expect(screen.getByRole('slider', { name: 'Music Volume' })).toHaveAttribute('aria-valuetext', '20%');
   });
 
-  // ── P1.3 — Margin Notes escalation toggle ───────────────────────────
+  // ── P6.3 (Phase A) — Margin Notes escalation toggle is retired ─────
 
-  it('renders the Margin Notes escalation toggle as a switch with default off', () => {
+  it('does NOT render the Margin Notes escalation toggle (P6.3 retirement)', () => {
     renderConfig();
-    fireEvent.click(screen.getByText('Advanced'));
-    const toggle = screen.getByRole('switch', {
-      name: /margin notes mode-tiered chrome/i,
-    });
-    expect(toggle).toHaveAttribute('aria-checked', 'false');
-  });
-
-  it('toggling the Margin Notes escalation switch updates settings', () => {
-    const { onSettingsChange } = renderConfig();
-    fireEvent.click(screen.getByText('Advanced'));
-    fireEvent.click(
-      screen.getByRole('switch', { name: /margin notes mode-tiered chrome/i }),
-    );
-    expect(onSettingsChange).toHaveBeenCalledWith({
-      ...DEFAULT_SETTINGS,
-      marginNotesEscalation: true,
-    });
+    // The "Advanced" disclosure used to host the toggle; with the
+    // toggle gone, the disclosure no longer renders either.
+    expect(screen.queryByText('Advanced')).toBeNull();
+    expect(
+      screen.queryByRole('switch', { name: /margin notes mode-tiered chrome/i }),
+    ).toBeNull();
   });
 
 });

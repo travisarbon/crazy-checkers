@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ActiveEvent } from '../engine/types';
 import { EVENT_DISPLAY_NAMES, EVENT_FLAVOR_TEXT } from '../engine/events';
+import EventIcon from './EventIcon';
 import styles from './EventAnnouncement.module.css';
 
 // ---------------------------------------------------------------------------
@@ -95,7 +96,7 @@ export default function EventAnnouncement({
 
   return (
     <div
-      className={styles.overlay}
+      className={`${styles.overlay ?? ''} event-announcement`}
       role="alert"
       aria-live="assertive"
       onClick={handleDismiss}
@@ -110,7 +111,10 @@ export default function EventAnnouncement({
         {events.map((event, index) => (
           <div key={`${event.type}-${String(event.triggeredAtPly)}`} className={styles.eventBlock}>
             {index > 0 && <hr />}
-            <p className={styles.eventName} data-testid="event-announcement-name">
+            {/* P5.5 — illustrated icon above the event name. Margin Notes only;
+                the EventIcon CSS hides the thumbnail under other themes. */}
+            <EventIcon eventType={event.type} size={80} />
+            <p className={`${styles.eventName ?? ''} event-announcement-name`} data-testid="event-announcement-name">
               {EVENT_DISPLAY_NAMES[event.type]}
             </p>
             <p className={styles.eventFlavor} data-testid="event-announcement-flavor">

@@ -132,3 +132,44 @@ describe('BoardChrome rulers', () => {
     expect(c12.firstElementChild?.getAttribute('style')).toContain('--ruler-font-size: 0.625rem');
   });
 });
+
+describe('BoardChrome — frameDecoration slot (P3.2)', () => {
+  it('renders the frameDecoration node inside .boardWrap when supplied', () => {
+    const { getByTestId } = render(
+      <BoardChrome
+        geometry={GEOM_8_DARK}
+        frameDecoration={<div data-testid="sentinel">sticky note placeholder</div>}
+      >
+        <div data-testid="board-content" />
+      </BoardChrome>,
+    );
+    const sentinel = getByTestId('sentinel');
+    expect(sentinel).toBeInTheDocument();
+    // Sentinel must live inside .frameDecoration which lives inside .boardWrap.
+    const decorationDiv = sentinel.parentElement;
+    expect(decorationDiv?.className).toContain('frameDecoration');
+    expect(decorationDiv?.parentElement?.className).toContain('boardWrap');
+  });
+
+  it('omits the .frameDecoration div when frameDecoration prop is undefined', () => {
+    const { container } = render(
+      <BoardChrome geometry={GEOM_8_DARK}>
+        <div data-testid="board-content" />
+      </BoardChrome>,
+    );
+    expect(container.querySelector('[class*="frameDecoration"]')).toBeNull();
+  });
+
+  it('marks the frame decoration container aria-hidden so AT does not double-announce', () => {
+    const { container } = render(
+      <BoardChrome
+        geometry={GEOM_8_DARK}
+        frameDecoration={<div>placeholder</div>}
+      >
+        <div />
+      </BoardChrome>,
+    );
+    const decorationDiv = container.querySelector('[class*="frameDecoration"]');
+    expect(decorationDiv?.getAttribute('aria-hidden')).toBe('true');
+  });
+});

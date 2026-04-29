@@ -6,7 +6,7 @@
  * fails CI instead of shipping a broken re-skin.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { THEMES, applyTheme, DEFAULT_THEME_ID, type Theme } from './theme';
 import { marginNotesTheme } from './marginnotes';
 
@@ -106,7 +106,40 @@ describe('DEFAULT_THEME_ID', () => {
     expect(THEMES[DEFAULT_THEME_ID]).toBeDefined();
   });
 
-  it('is the renamed crazy-original after P1.2', () => {
-    expect(DEFAULT_THEME_ID).toBe('crazy-original');
+  it('is margin-notes after the P6.1 cutover', () => {
+    expect(DEFAULT_THEME_ID).toBe('margin-notes');
+  });
+});
+
+describe('applyTheme — body[data-theme] substrate (P3.1)', () => {
+  beforeEach(() => {
+    delete document.body.dataset.theme;
+  });
+
+  afterEach(() => {
+    delete document.body.dataset.theme;
+  });
+
+  it('sets body.dataset.theme to "margin-notes" when applying marginNotesTheme', () => {
+    applyTheme(marginNotesTheme);
+    expect(document.body.dataset.theme).toBe('margin-notes');
+  });
+
+  it('overwrites body.dataset.theme on subsequent applyTheme calls', () => {
+    const cork = THEMES.cork;
+    expect(cork).toBeDefined();
+    applyTheme(marginNotesTheme);
+    expect(document.body.dataset.theme).toBe('margin-notes');
+    if (cork) applyTheme(cork);
+    expect(document.body.dataset.theme).toBe('cork');
+  });
+
+  it('binds body.dataset.theme to theme.id verbatim — no transformation', () => {
+    for (const id of Object.keys(THEMES)) {
+      const theme = THEMES[id];
+      if (!theme) continue;
+      applyTheme(theme);
+      expect(document.body.dataset.theme).toBe(theme.id);
+    }
   });
 });

@@ -21,6 +21,7 @@ import { SILENT_PACK } from '../audio/silentPack';
 import { resolveMusicTrack } from '../audio/musicMapping';
 import GameScreen from './GameScreen';
 import MenuScreen from './MenuScreen';
+import MarginNotesToast from './MarginNotesToast';
 import ConfigScreen from './ConfigScreen';
 import ClassicScreen from './ClassicScreen';
 import CrazyScreen from './CrazyScreen';
@@ -196,11 +197,14 @@ export default function App() {
     if (theme) applyTheme(theme);
   }, [settings.themeId]);
 
-  // P1.3 — Margin Notes substrate. Write body[data-mode] when the opt-in
-  // flag is on; clear it when off. Nothing reads the attribute visually
-  // until P4.2 ships escalation CSS.
+  // P1.3 / P6.3 — Margin Notes substrate. Write body[data-mode] when the
+  // active theme is Margin Notes; clear it otherwise. After P6.3 retires
+  // the marginNotesEscalation toggle (Phase A), the gate keys off themeId
+  // directly. The escalation CSS only paints when both data-theme and
+  // data-mode are set (per the dual-substrate scoping in P4.2), so other
+  // themes are unaffected.
   useEffect(() => {
-    if (!settings.marginNotesEscalation) {
+    if (settings.themeId !== 'margin-notes') {
       delete document.body.dataset.mode;
       return;
     }
@@ -210,7 +214,7 @@ export default function App() {
     return () => {
       delete document.body.dataset.mode;
     };
-  }, [screen, settings.marginNotesEscalation]);
+  }, [screen, settings.themeId]);
 
   // Task 27.8: load the Tier 1 Classified registrations so their gallery
   // cards render the live Play affordance and their detail screens open the
@@ -606,6 +610,10 @@ export default function App() {
   return (
     <AudioManagerContext.Provider value={audioManager}>
       {content}
+      {/* P6.4 — One-time toast inviting returning users to try the new
+          Margin Notes default. Hidden when the user is already on
+          margin-notes, dismissed permanently, or older than 30 days. */}
+      <MarginNotesToast settings={settings} onSettingsChange={setSettings} />
     </AudioManagerContext.Provider>
   );
 }

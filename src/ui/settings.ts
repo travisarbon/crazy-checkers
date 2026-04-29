@@ -39,6 +39,19 @@ export interface Settings {
 
   /** Default time control for new games. null = untimed. */
   readonly timeControl: TimeControlConfig | null;
+
+  /**
+   * P6.4 — Tracks whether the one-time "we refreshed the look" toast
+   * has been dismissed. Once true, the toast never shows again.
+   */
+  readonly marginNotesToastDismissed: boolean;
+
+  /**
+   * P6.4 — Timestamp (epoch ms) the toast was first shown to this user.
+   * Used to expire the toast after 30 days even if never explicitly
+   * dismissed. `null` until the toast is first rendered.
+   */
+  readonly marginNotesToastFirstSeenAt: number | null;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -53,9 +66,17 @@ export const DEFAULT_SETTINGS: Settings = {
   muted: false,
   audioPackId: 'default',
 
-  // Margin Notes substrate flag — opt-in only (P1.3)
-  marginNotesEscalation: false,
+  // Margin Notes substrate flag — default-on for fresh installs since
+  // the new default theme is `margin-notes` (P6.1). The merge logic in
+  // src/persistence/settings.ts derives this default from the stored
+  // themeId for users without the field; existing users with the field
+  // explicitly set keep their choice.
+  marginNotesEscalation: true,
 
   // Time control default
   timeControl: null,
+
+  // P6.4 — toast state defaults (no toast seen yet)
+  marginNotesToastDismissed: false,
+  marginNotesToastFirstSeenAt: null,
 };

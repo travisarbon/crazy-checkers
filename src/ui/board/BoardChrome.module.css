@@ -76,3 +76,27 @@
   display: inline-block;
   min-width: 1rem;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   P3.2 — Frame decoration slot. Anchored above the board's top
+   edge for Margin-Notes-only chrome. P3.4 fills the slot with
+   the sticky-note "rule" content (the active event's flavor
+   text rendered in Caveat). Slot is hidden by default; revealed
+   only under `body[data-theme='margin-notes']`. pointer-events
+   stays at none so a click/tap on a future sticker passes
+   through to the board underneath; per-child re-enabling is
+   the consumer's call.
+   See: Documentation/UI Overhaul/P3.2-Board-Chrome.md
+   ───────────────────────────────────────────────────────────── */
+.frameDecoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  display: none;
+}
+
+body[data-theme='margin-notes'] .frameDecoration {
+  display: block;
+}

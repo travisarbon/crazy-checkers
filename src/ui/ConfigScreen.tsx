@@ -21,6 +21,7 @@ import {
   importAll,
   resetAll,
 } from '../persistence/dataManagement';
+import { coerceEscalationOnThemeChange } from '../persistence/settings';
 import styles from './ConfigScreen.module.css';
 
 // ---------------------------------------------------------------------------
@@ -40,13 +41,9 @@ interface ConfigScreenProps {
 function ThemeSection({
   selectedThemeId,
   onSelect,
-  marginNotesEscalation,
-  onMarginNotesEscalationChange,
 }: {
   selectedThemeId: string;
   onSelect: (id: Settings['themeId']) => void;
-  marginNotesEscalation: boolean;
-  onMarginNotesEscalationChange: (enabled: boolean) => void;
 }) {
   const themeEntries = Object.entries(THEMES);
 
@@ -113,33 +110,13 @@ function ThemeSection({
         })}
       </div>
 
-      <details className={styles.advancedDetails}>
-        <summary>Advanced</summary>
-        <div className={styles.toggleRow}>
-          <label htmlFor="margin-notes-escalation-toggle" className={styles.toggleLabel}>
-            Use Margin Notes mode-tiered chrome (preview)
-          </label>
-          <button
-            id="margin-notes-escalation-toggle"
-            role="switch"
-            aria-checked={marginNotesEscalation}
-            className={[styles.toggleSwitch, marginNotesEscalation ? styles.toggleOn : '']
-              .filter(Boolean)
-              .join(' ')}
-            onClick={() => {
-              onMarginNotesEscalationChange(!marginNotesEscalation);
-            }}
-            data-testid="margin-notes-escalation-toggle"
-          >
-            <span className={styles.toggleKnob} />
-          </button>
-        </div>
-        <p className={styles.settingHint}>
-          Enables the upcoming mode-tiered escalation chrome. The chrome itself is not
-          implemented yet — toggling this only updates the body&apos;s data-mode
-          attribute, which P4 will style. Default off.
-        </p>
-      </details>
+      {/*
+        P6.3 (Phase A) — the Margin Notes escalation toggle is retired.
+        Escalation is permanent for Margin Notes after the P6.1 default
+        flip; no user-visible toggle remains. The settings field is kept
+        for ~30 days post-release per the parent plan §10 rollback plan;
+        it can be removed entirely in a follow-on P6.3-cleanup task.
+      */}
     </section>
   );
 }
@@ -617,7 +594,10 @@ export default function ConfigScreen({ settings, onSettingsChange, onBack }: Con
   const audioManager = useAudioManager();
 
   const setTheme = (themeId: Settings['themeId']) => {
-    onSettingsChange({ ...settings, themeId });
+    // P4.1 — When moving TO margin-notes for the first time and the user
+    // hasn't explicitly toggled escalation off, auto-derive the flag to
+    // true. Switching AWAY from margin-notes preserves the existing flag.
+    onSettingsChange(coerceEscalationOnThemeChange(settings, themeId));
   };
 
   const setAnimationSpeed = (speed: number) => {
@@ -633,10 +613,6 @@ export default function ConfigScreen({ settings, onSettingsChange, onBack }: Con
       <ThemeSection
         selectedThemeId={settings.themeId}
         onSelect={setTheme}
-        marginNotesEscalation={settings.marginNotesEscalation}
-        onMarginNotesEscalationChange={(enabled) => {
-          onSettingsChange({ ...settings, marginNotesEscalation: enabled });
-        }}
       />
 
       <AnimationSpeedSection speed={settings.animationSpeed} onChange={setAnimationSpeed} />

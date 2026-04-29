@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { UnlockSnapshot } from '../persistence/unlockState';
 import MenuScreen from './MenuScreen';
 
@@ -71,6 +71,17 @@ function renderMenu(
 // ---------------------------------------------------------------------------
 
 describe('MenuScreen', () => {
+  // P3.1: every existing test runs against a deterministic
+  // crazy-original substrate so the Margin-Notes-only visibility
+  // override for the Classified tile does not perturb button counts.
+  beforeEach(() => {
+    document.body.dataset.theme = 'crazy-original';
+  });
+
+  afterEach(() => {
+    delete document.body.dataset.theme;
+  });
+
   it('renders game title', () => {
     renderMenu();
     expect(screen.getByText('Crazy Checkers')).toBeInTheDocument();
@@ -297,5 +308,78 @@ describe('MenuScreen', () => {
     buttons.forEach((btn) => {
       expect(btn).not.toBeDisabled();
     });
+  });
+
+  // ---------------------------------------------------------------------
+  // P3.1 — wordmark, brand mark, data-mode-tile, Classified visibility
+  // ---------------------------------------------------------------------
+
+  it('P3.1: wordmark renders the "(sort of)" annotation in the DOM', () => {
+    renderMenu();
+    expect(screen.getByText('(sort of)')).toBeInTheDocument();
+  });
+
+  it('P3.1: wordmark annotation has the global .annotation and .annotation-rotated-lg classes', () => {
+    renderMenu();
+    const annotation = screen.getByText('(sort of)');
+    expect(annotation.className).toContain('annotation');
+    expect(annotation.className).toContain('annotation-rotated-lg');
+  });
+
+  it('P3.1: wordmark annotation reads "(help)" when chaosUnlocked is true', () => {
+    renderMenu({ unlockSnapshot: ALL_UNLOCKED, chaosUnlocked: true });
+    expect(screen.getByText('(help)')).toBeInTheDocument();
+    expect(screen.queryByText('(sort of)')).not.toBeInTheDocument();
+  });
+
+  it('P3.1: BrandMark SVG renders with aria-hidden="true" and viewBox 0 0 96 96', () => {
+    const { container } = renderMenu();
+    const svg = container.querySelector('svg[aria-hidden="true"]');
+    expect(svg).toBeInTheDocument();
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 96 96');
+  });
+
+  it('P3.1: every mode button has a data-mode-tile attribute matching its mode id', () => {
+    renderMenu({ unlockSnapshot: ALL_UNLOCKED });
+    const nav = screen.getByRole('navigation', { name: /game modes/i });
+    const buttons = nav.querySelectorAll('button');
+    buttons.forEach((btn) => {
+      const modeTile = btn.getAttribute('data-mode-tile');
+      expect(modeTile).toBeTruthy();
+      // The aria-label is either `<Label>`, `<Label> — newly unlocked`,
+      // or `<Label> — Coming Soon`. The first word of the lowercase
+      // label always matches the data-mode-tile attribute.
+      const aria = btn.getAttribute('aria-label') ?? '';
+      expect(aria.toLowerCase()).toContain(modeTile ?? '');
+    });
+  });
+
+  it('P3.1: under Margin Notes, locked Classified tile renders with data-classified-locked', () => {
+    document.body.dataset.theme = 'margin-notes';
+    renderMenu({
+      unlockSnapshot: { choiceUnlocked: false, classifiedUnlocked: false, chaosUnlocked: false },
+    });
+    const classified = screen.getByRole('button', { name: 'Classified' });
+    expect(classified).toBeInTheDocument();
+    expect(classified.hasAttribute('data-classified-locked')).toBe(true);
+    expect(classified).toBeDisabled();
+  });
+
+  it('P3.1: under Margin Notes, unlocked Classified tile drops data-classified-locked and is enabled', () => {
+    document.body.dataset.theme = 'margin-notes';
+    renderMenu({
+      unlockSnapshot: { choiceUnlocked: false, classifiedUnlocked: true, chaosUnlocked: false },
+    });
+    const classified = screen.getByRole('button', { name: 'Classified' });
+    expect(classified.hasAttribute('data-classified-locked')).toBe(false);
+    expect(classified).not.toBeDisabled();
+  });
+
+  it('P3.1: under non-Margin-Notes themes, locked Classified tile is not rendered', () => {
+    // beforeEach already sets the substrate to 'crazy-original'.
+    renderMenu({
+      unlockSnapshot: { choiceUnlocked: false, classifiedUnlocked: false, chaosUnlocked: false },
+    });
+    expect(screen.queryByRole('button', { name: /classified/i })).not.toBeInTheDocument();
   });
 });
