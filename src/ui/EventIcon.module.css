@@ -1,0 +1,71 @@
+/* P5.1, P5.5 — EventIcon layered SVG component.
+   The icon is a 64×64 ink-on-paper SVG; the annotation is an
+   80×80 pencil-set SVG sized to overflow the icon's bounding box.
+   Both layers are absolutely positioned inside an inline-flex
+   wrapper sized by the consumer's `size` prop (defaults to 48px). */
+
+.wrapper {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.iconLayer,
+.annotationLayer {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.iconLayer svg,
+.annotationLayer svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Annotation overflows the icon's box by ~12% to read as an
+   "around the edges" margin note rather than a tight overlay. */
+.annotationLayer {
+  inset: -12%;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* Placeholder shown while the lazy asset is in flight. A subtle
+   pulsing rectangle in the paper color so the layout doesn't
+   shift when the SVG resolves. */
+.placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--ui-text) 8%, transparent);
+  animation: eventIconPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes eventIconPulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.4; }
+}
+
+/* Reduced-motion: kill the pulse. */
+@media (prefers-reduced-motion: reduce) {
+  .placeholder {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* Theme-conditional visibility. Only paint the icon thumbnail
+   under Margin Notes; under other themes, consumers fall back
+   to the legacy color-dot indicator. */
+body:not([data-theme='margin-notes']) :global(.event-icon-thumbnail) {
+  display: none;
+}
+
+body[data-theme='margin-notes'] :global(.event-color-dot) {
+  display: none;
+}

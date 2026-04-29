@@ -1,11 +1,32 @@
-# Crazy Checkers
+# Crazy Checkers — *(sort of)*
 
-A browser-based American Rules Checkers game with AI opponents, five visual themes,
-full keyboard accessibility, a 40-event "Crazy Mode", puzzle challenges, post-game
-analysis & training, a career-progression layer, and a modular architecture designed
-for expansion to 30+ board games across four development phases.
+A browser-based American Rules Checkers game with AI opponents, six visual themes
+including the new pencil-and-paper *Margin Notes* default that escalates with the
+gameplay chaos, full keyboard accessibility, a 40-event "Crazy Mode" with
+illustrated event icons, puzzle challenges, post-game analysis & training, a
+career-progression layer, and a modular architecture designed for expansion to
+30+ board games across four development phases.
 
 **Play now:** [https://travisarbon.github.io/crazy-checkers/](https://travisarbon.github.io/crazy-checkers/)
+
+## Look & Feel — Margin Notes (default)
+
+Crazy Checkers ships with **Margin Notes**, a two-layer visual identity that turns
+the chrome itself into the storytelling surface:
+
+- **Base** — bone-paper background, India-ink type, India-red accent. The
+  pencil-set palette (highlighter yellow, ballpoint blue, pencil green,
+  wax-crayon orange) is reserved for *annotations*: events, highlights,
+  active-event indicators, Cogitate analysis comments.
+- **Mode-tiered escalation** — the chrome visibly intensifies as the player
+  descends the gameplay-chaos ladder: Classic stays quiet paper; Crazy bleeds
+  marginalia and pencil tints into the corners; Choice tapes a sticky-note bookmark
+  on the active-events card; Chaos drops a graph-paper substrate, rotates
+  headings -1°, and unlocks the wax-crayon orange.
+
+Five other themes ship alongside the new default — **Cork**, **Current**, **Classic**,
+**Contrast**, and **Crazy (Original)** (the bright-yellow original aesthetic preserved
+for nostalgic users). Switch any time via Configure → Themes.
 
 ## Game Modes
 

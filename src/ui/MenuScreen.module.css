@@ -145,3 +145,285 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   P3.1 — Margin Notes wordmark, brand mark, and tagline. Each
+   rule is gated on body[data-theme='margin-notes'] so the menu
+   under Cork/Current/Classic/Contrast/crazy-original is
+   visually unchanged.
+   See: Documentation/UI Overhaul/P3.1-MenuScreen-Reskin.md
+   ───────────────────────────────────────────────────────────── */
+
+/* Wordmark "(sort of)" tag — hidden by default; revealed only on
+   Margin Notes. The rotation and color flow through the global
+   .annotation .annotation-rotated-lg utility (P2.3); this rule
+   only owns the visibility, the weight bump, and the size taper. */
+.wordmarkAnnotation {
+  display: none;
+}
+
+body[data-theme='margin-notes'] .wordmarkAnnotation {
+  display: inline-block;
+  margin-left: 0.2em;
+  /* Override the .annotation 1.6rem floor for the wordmark
+     specifically: 0.6em of clamp(2rem, 6vw, 3.5rem) yields a
+     1.2rem minimum. Caveat 700 pushes this into the bold-AA-Large
+     bracket (14px floor for bold), and india-red on cream is
+     7.0:1 — pass. See P3.1 plan §6.12. */
+  font-size: 0.6em;
+  font-weight: 700;
+  vertical-align: 0.3em;
+}
+
+/* Brand mark — hidden by default; revealed only on Margin Notes.
+   Centered above the mode grid as a "stamp" beneath the wordmark. */
+.brandMark {
+  display: none;
+}
+
+body[data-theme='margin-notes'] .brandMark {
+  display: block;
+  margin: 0 auto 1.5rem;
+}
+
+/* Tagline — adopts the Caveat hand under Margin Notes. The
+   .gameSubtitle base rule retains its size and opacity for
+   non-Margin-Notes themes. */
+body[data-theme='margin-notes'] .tagline {
+  font-family: var(--annotation-font);
+  font-weight: 500;
+  font-size: 1.15rem;
+  color: var(--india-red);
+  transform: rotate(-1deg);
+  transform-origin: left;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme='margin-notes'] .tagline {
+    transform: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   P3.1 — Per-mode tile paper-treatment scoping. Every mode tile
+   on Margin Notes gets a paper background, an ink hairline
+   border, and a hover-tilt. `overflow` is intentionally left at
+   the user-agent default (visible) so overhanging decorations
+   (Choice's bookmark, Configure's paperclip) read correctly.
+   ───────────────────────────────────────────────────────────── */
+
+body[data-theme='margin-notes'] [data-mode-tile] {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  position: relative;
+  transition:
+    transform var(--duration-normal) ease,
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
+}
+
+body[data-theme='margin-notes'] [data-mode-tile]:hover:not(:disabled) {
+  transform: translateY(-2px) rotate(-0.5deg);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  border-color: var(--ui-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme='margin-notes'] [data-mode-tile],
+  body[data-theme='margin-notes'] [data-mode-tile]:hover:not(:disabled) {
+    transform: none;
+    transition:
+      background-color var(--duration-fast) ease,
+      border-color var(--duration-fast) ease;
+  }
+}
+
+/* Classic — ruled paper (1px ballpoint-blue rule every 18px). */
+body[data-theme='margin-notes'] [data-mode-tile='classic'] {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 17px,
+    color-mix(in srgb, var(--ballpoint-blue) 18%, transparent) 17px,
+    color-mix(in srgb, var(--ballpoint-blue) 18%, transparent) 18px
+  );
+}
+
+/* Crazy — highlighter corner-bleed + pencil-set scribble dots. */
+body[data-theme='margin-notes'] [data-mode-tile='crazy'] {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--highlighter-yellow) 45%, transparent) 0%,
+    transparent 30%
+  );
+}
+
+body[data-theme='margin-notes'] [data-mode-tile='crazy']::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  bottom: 6px;
+  width: 18px;
+  background:
+    radial-gradient(circle at 50% 30%, var(--india-red) 0 2px, transparent 3px),
+    radial-gradient(circle at 30% 70%, var(--ballpoint-blue) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 60%, var(--pencil-green) 0 2px, transparent 3px);
+  pointer-events: none;
+}
+
+/* Choice — bookmark sticking out the top edge. */
+body[data-theme='margin-notes'] [data-mode-tile='choice']::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 14px;
+  width: 22px;
+  height: 30px;
+  background: var(--india-red);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+  pointer-events: none;
+}
+
+/* Chaos — graph-paper grid + ink-blot in bottom-right. */
+body[data-theme='margin-notes'] [data-mode-tile='chaos'] {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--ui-text) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--ui-text) 8%, transparent) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+body[data-theme='margin-notes'] [data-mode-tile='chaos']::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--ui-text) 30%,
+    transparent 60%
+  );
+  border-radius: 50%;
+  filter: blur(0.5px);
+  pointer-events: none;
+}
+
+/* Cogitate — engineer's-rule tick strip along the bottom edge. */
+body[data-theme='margin-notes'] [data-mode-tile='cogitate']::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  left: 12px;
+  right: 12px;
+  height: 4px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--ui-text) 0 1px,
+    transparent 1px 6px
+  );
+  pointer-events: none;
+}
+
+/* Code — Courier in all-caps on punched-paper (three holes left). */
+body[data-theme='margin-notes'] [data-mode-tile='code'] {
+  background-image:
+    radial-gradient(circle at 6px 25%, var(--ui-bg) 0 3px, transparent 4px),
+    radial-gradient(circle at 6px 50%, var(--ui-bg) 0 3px, transparent 4px),
+    radial-gradient(circle at 6px 75%, var(--ui-bg) 0 3px, transparent 4px);
+}
+
+body[data-theme='margin-notes'] [data-mode-tile='code'] > span:first-of-type {
+  font-family: 'Courier New', Courier, ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Career — "A+" stamp in bottom-right. */
+body[data-theme='margin-notes'] [data-mode-tile='career']::after {
+  content: 'A+';
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  color: var(--india-red);
+  font-family: var(--annotation-font);
+  font-size: 1.4rem;
+  font-weight: 700;
+  transform: rotate(-12deg);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme='margin-notes'] [data-mode-tile='career']::after {
+    transform: none;
+  }
+}
+
+/* Classified — redacted black bars covering the label until unlocked. */
+body[data-theme='margin-notes'] [data-mode-tile='classified'] > span:first-of-type {
+  position: relative;
+}
+
+body[data-theme='margin-notes']
+  [data-mode-tile='classified']
+  > span:first-of-type::before {
+  content: '';
+  position: absolute;
+  inset: -2px -4px;
+  background: var(--ui-text);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity var(--duration-emphasis) ease;
+  pointer-events: none;
+}
+
+body[data-theme='margin-notes']
+  [data-mode-tile='classified'][data-classified-locked]
+  > span:first-of-type::before {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme='margin-notes']
+    [data-mode-tile='classified']
+    > span:first-of-type::before {
+    transition: none;
+  }
+}
+
+/* Challenge — puzzle-piece interlocking notch on the right edge. */
+body[data-theme='margin-notes'] [data-mode-tile='challenge'] {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 38%,
+    88% 38%,
+    88% 62%,
+    100% 62%,
+    100% 100%,
+    0 100%
+  );
+}
+
+/* Configure — paperclip glyph pinned to the top-right. */
+body[data-theme='margin-notes'] [data-mode-tile='configure']::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: 8px;
+  width: 14px;
+  height: 28px;
+  border: 2.5px solid var(--ui-text);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  transform: rotate(20deg);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme='margin-notes'] [data-mode-tile='configure']::before {
+    transform: none;
+  }
+}

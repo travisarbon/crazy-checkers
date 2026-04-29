@@ -5,6 +5,7 @@
 
 import { EVENT_DATA } from '../data/eventData';
 import ExpandableDetailPanel from './ExpandableDetailPanel';
+import EventIcon from './EventIcon';
 import styles from './EventReferencePanel.module.css';
 
 interface EventReferencePanelProps {
@@ -48,6 +49,10 @@ export default function EventReferencePanel({ introContent }: EventReferencePane
             title={`#${String(event.eventNumber)} \u2014 ${event.name}`}
             summary={event.flavorText}
           >
+            {/* P5.5 \u2014 Margin Notes per-event illustrated icon. CSS hides
+                this thumbnail under non-Margin-Notes themes via the
+                body[data-theme] toggle in EventIcon.module.css. */}
+            <EventIcon eventType={event.eventType} size={64} className={styles.eventIcon} />
             <p className={styles.mechanicalEffect}>{event.mechanicalEffect}</p>
             <p className={styles.duration}>Duration: {event.durationText}</p>
             {event.stackingNotes.length > 0 && (

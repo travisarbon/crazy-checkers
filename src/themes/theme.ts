@@ -84,6 +84,20 @@ export function applyTheme(theme: Theme): void {
   // Apply page background
   document.body.style.background = theme.uiBg;
   document.body.style.margin = '0';
+
+  // P3.1 — body[data-theme] substrate. Allows CSS modules to gate
+  // Margin-Notes-only chrome via `body[data-theme='margin-notes']`
+  // selectors without component-side conditional rendering. Mirrors
+  // the body[data-mode] substrate established in P1.3 and acts as the
+  // canonical brand-conditional carrier for every Phase 3 surface.
+  document.body.dataset.theme = theme.id;
+
+  // P4.2 — Lazily inject the escalation stylesheet for users moving
+  // TO Margin Notes mid-session. The loader is idempotent and a
+  // no-op for any non-margin-notes theme; voiding the promise is
+  // intentional (the chrome arrives on the next paint and the
+  // unescalated Margin Notes look holds during the gap).
+  void ensureEscalationLoaded(theme.id);
 }
 
 import { crazyTheme } from './crazy';
@@ -92,6 +106,7 @@ import { currentTheme } from './current';
 import { classicTheme } from './classic';
 import { contrastTheme } from './contrast';
 import { marginNotesTheme } from './marginnotes';
+import { ensureEscalationLoaded } from './escalationLoader';
 
 export const THEMES: Record<string, Theme> = {
   classic: classicTheme,
@@ -102,4 +117,9 @@ export const THEMES: Record<string, Theme> = {
   'margin-notes': marginNotesTheme,
 };
 
-export const DEFAULT_THEME_ID = 'crazy-original';
+// P6.1 — Margin Notes is the default for fresh installs. Returning
+// users keep their saved selection (the persistence layer never
+// auto-migrates an existing themeId — see src/persistence/settings.ts
+// `mergeWithDefaults`). The original Crazy theme remains available as
+// `crazy-original` per the parent plan §3 "no removal of existing themes".
+export const DEFAULT_THEME_ID = 'margin-notes';

@@ -31,6 +31,17 @@ export default function ChaosScreen({
 }: ChaosScreenProps) {
   return (
     <ModeScreenShell title="Chaos" onBack={onBack} testId="chaos-screen">
+      {/*
+        P4.3-C1 — chaos-tier ink-blot decoration. Painted only when
+        body[data-theme='margin-notes'][data-mode='chaos'] is set
+        (see src/themes/marginnotes.escalation.css). Decorative,
+        aria-hidden so screen readers skip it.
+      */}
+      <span
+        className="chaos-ink-blot"
+        aria-hidden="true"
+        style={{ top: '-40px', right: '-40px' }}
+      />
       {/* Hero row: board left, setup right on desktop */}
       <div className={shellStyles.heroRow}>
         <div className={shellStyles.heroBoard}>

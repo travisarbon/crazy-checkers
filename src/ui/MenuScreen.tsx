@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 import { useAudioManager } from '../audio/useAudioManager';
 import { SoundEvent } from '../audio/types';
 import type { UnlockSnapshot } from '../persistence/unlockState';
+import BrandMark from './BrandMark';
 import Icon, { type IconName } from './Icon';
 import styles from './MenuScreen.module.css';
 
@@ -60,6 +61,20 @@ const MODES: readonly ModeEntry[] = [
 function isModeVisible(mode: ModeEntry, snapshot: UnlockSnapshot): boolean {
   if (mode.visibilityGate === null) return true;
   return snapshot[mode.visibilityGate];
+}
+
+/**
+ * P3.1 — Margin-Notes-only override of the visibility gate for the
+ * Classified tile. Under Margin Notes, the tile must always render so
+ * the redaction-bar reveal animation has a label to redact. Under any
+ * other theme, the legacy hide-when-locked behaviour is preserved.
+ *
+ * Reads `document.body.dataset.theme`, the substrate written by
+ * `applyTheme` (P3.1 §3.3.1). The gate is structural (does the tile
+ * render at all?), not visual; CSS still owns every chrome decision.
+ */
+function isMarginNotesActive(): boolean {
+  return typeof document !== 'undefined' && document.body.dataset.theme === 'margin-notes';
 }
 
 function getNewlyUnlockedFlag(
@@ -114,18 +129,34 @@ export default function MenuScreen({
     }
   }
 
+  const marginNotes = isMarginNotesActive();
+
   return (
     <div className={styles.menuScreen} data-testid="menu-screen" role="main">
       <header>
         <h1 className={styles.gameTitle}>
           {chaosUnlocked ? 'Chaos Checkers' : 'Crazy Checkers'}
+          <span
+            className={`${styles.wordmarkAnnotation ?? ''} annotation annotation-rotated-lg`}
+          >
+            {chaosUnlocked ? '(help)' : '(sort of)'}
+          </span>
         </h1>
-        <p className={styles.gameSubtitle}>A chaotic twist on a timeless classic</p>
+        <p className={`${styles.gameSubtitle ?? ''} ${styles.tagline ?? ''}`}>
+          A chaotic twist on a timeless classic
+        </p>
       </header>
+      <BrandMark className={styles.brandMark ?? ''} />
 
       <nav className={styles.modeGrid} aria-label="Game modes">
         {(() => {
-          const visible = MODES.filter((m) => isModeVisible(m, unlockSnapshot));
+          const visible = MODES.filter((m) => {
+            // P3.1: under Margin Notes, the Classified tile renders even
+            // when locked so the redaction-bar reveal has something to
+            // redact. The disabled-state below keeps it non-interactive.
+            if (m.id === 'classified' && marginNotes) return true;
+            return isModeVisible(m, unlockSnapshot);
+          });
           const unlockOrder = new Map<string, number>();
           let staggerIndex = 0;
           for (const m of visible) {
@@ -140,11 +171,19 @@ export default function MenuScreen({
           const revealStyle = isNewlyUnlocked
             ? { animationDelay: String(staggerIdx * 400) + 'ms' }
             : undefined;
+          // P3.1: under Margin Notes, a locked Classified tile renders
+          // but is non-interactive. The redaction-bar fade is the
+          // visual affordance for "this is locked".
+          const classifiedLocked =
+            mode.id === 'classified' && marginNotes && !unlockSnapshot.classifiedUnlocked;
+          const tileDisabled = !mode.enabled || classifiedLocked;
           return (
             <button
               key={mode.id}
-              className={`${styles.modeButton ?? ''} ${!mode.enabled ? (styles.disabled ?? '') : ''} ${isNewlyUnlocked ? (styles.unlockReveal ?? '') : ''}`}
-              disabled={!mode.enabled}
+              className={`${styles.modeButton ?? ''} ${tileDisabled ? (styles.disabled ?? '') : ''} ${isNewlyUnlocked ? (styles.unlockReveal ?? '') : ''}`}
+              data-mode-tile={mode.id}
+              data-classified-locked={classifiedLocked ? '' : undefined}
+              disabled={tileDisabled}
               aria-label={
                 mode.enabled
                   ? isNewlyUnlocked

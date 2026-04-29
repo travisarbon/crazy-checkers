@@ -153,3 +153,24 @@
     gap: 2rem;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   P3.2 — Frame decoration slot. Mirrors the slot defined in
+   BoardChrome.module.css; the legacy 8×8 game path mounts
+   <Board /> directly inside .boardArea without <BoardChrome>,
+   so the same selector lives in both modules. P3.4 owns the
+   slot's content. See Documentation/UI Overhaul/P3.2-Board-Chrome.md
+   §6.2 for why P3.2 doesn't unify the two surfaces.
+   ───────────────────────────────────────────────────────────── */
+.frameDecoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  display: none;
+}
+
+body[data-theme='margin-notes'] .frameDecoration {
+  display: block;
+}

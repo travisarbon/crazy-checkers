@@ -1,0 +1,241 @@
+/* ─────────────────────────────────────────────────────────────────
+   Margin Notes — Mode Escalation Layer
+
+   Promoted from design-proposal/tokens/marginnotes.escalation.css
+   by P4.2 of the Margin Notes UI Redesign. Do not edit in-place
+   without amending the corresponding sub-task plan in
+   Documentation/UI Overhaul/. The :root annotation tokens
+   (--pencil-green, --ballpoint-blue, --highlighter-yellow,
+   --crayon-orange, --india-red, --annotation-font,
+   --annotation-underline) are owned by P2.1 in src/global.css and
+   are NOT redeclared here.
+
+   Apply on <body data-theme="margin-notes" data-mode="classic|crazy|choice|chaos">.
+   The dual-substrate scoping ensures these rules paint ONLY when
+   both the active theme is Margin Notes AND a data-mode is set;
+   any non-Margin-Notes theme that happens to acquire data-mode in
+   the future is unaffected.
+
+   Performance: pure CSS, no network requests. Backgrounds use
+   color-mix and CSS gradients composed at GPU-paint time.
+
+   Reduced-motion: every transform-setting selector outside @media
+   is reset inside the @media (prefers-reduced-motion: reduce)
+   block at the file's tail. The audit script
+   scripts/audit-reduced-motion.ts (P4.5) enforces this contract.
+   ───────────────────────────────────────────────────────────────── */
+
+/* ── classic mode — the quiet baseline ──────────────────────── */
+/* (No rules. Pure paper. The marginnotes.ts theme + Phase 3
+   chrome already paint the classic-tier visual; escalation
+   adds nothing here so classic snapshots stay pixel-identical
+   to no-data-mode renders. P4.3-D verifies this baseline.) */
+
+/* ── crazy mode — marginalia in three pencil colors ─────────── */
+body[data-theme='margin-notes'][data-mode='crazy'] {
+  background-image:
+    radial-gradient(circle at 0% 0%,
+      color-mix(in srgb, var(--highlighter-yellow) 8%, transparent) 0,
+      transparent 28%),
+    radial-gradient(circle at 100% 100%,
+      color-mix(in srgb, var(--ballpoint-blue) 6%, transparent) 0,
+      transparent 32%);
+}
+
+body[data-theme='margin-notes'][data-mode='crazy'] h1,
+body[data-theme='margin-notes'][data-mode='crazy'] h2,
+body[data-theme='margin-notes'][data-mode='crazy'] h3 {
+  position: relative;
+}
+
+body[data-theme='margin-notes'][data-mode='crazy'] h1::after,
+body[data-theme='margin-notes'][data-mode='crazy'] h2::after,
+body[data-theme='margin-notes'][data-mode='crazy'] h3::after {
+  content: '';
+  display: block;
+  height: 6px;
+  margin-top: 0.15em;
+  background: var(--annotation-underline) center/100% 100% no-repeat;
+  width: min(72%, 18ch);
+  pointer-events: none;
+}
+
+body[data-theme='margin-notes'][data-mode='crazy'] .event-announcement-name {
+  font-family: var(--annotation-font);
+  font-weight: 700;
+  letter-spacing: 0;
+  transform: rotate(-1.2deg);
+}
+
+body[data-theme='margin-notes'][data-mode='crazy'] .event-row .event-name {
+  font-family: var(--annotation-font);
+  font-weight: 700;
+  letter-spacing: 0;
+  transform: rotate(-1.2deg);
+  display: inline-block;
+}
+
+body[data-theme='margin-notes'][data-mode='crazy'] .wordmark-annotation {
+  transform: rotate(var(--annotation-rotation-lg-crazy, 12deg));
+}
+
+/* ── choice mode — bookmark / sticky-note treatments ────────── */
+body[data-theme='margin-notes'][data-mode='choice'] {
+  --bookmark: linear-gradient(
+    to bottom,
+    var(--india-red) 0,
+    var(--india-red) 60%,
+    transparent 60%,
+    transparent 100%
+  );
+}
+
+body[data-theme='margin-notes'][data-mode='choice'] .active-events-card {
+  position: relative;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+}
+
+body[data-theme='margin-notes'][data-mode='choice'] .active-events-card::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 64px;
+  height: 16px;
+  background: color-mix(in srgb, var(--highlighter-yellow) 70%, transparent);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ui-text) 8%, transparent);
+  pointer-events: none;
+}
+
+body[data-theme='margin-notes'][data-mode='choice'] [data-mode-tile='choice'] {
+  position: relative;
+}
+
+body[data-theme='margin-notes'][data-mode='choice'] [data-mode-tile='choice']::after {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 18px;
+  height: 28px;
+  background: var(--bookmark);
+  transform: translateX(-50%) rotate(-3deg);
+  pointer-events: none;
+}
+
+body[data-theme='margin-notes'][data-mode='choice'] .choice-detail-card {
+  position: relative;
+}
+
+body[data-theme='margin-notes'][data-mode='choice'] .choice-detail-card::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 80px;
+  height: 14px;
+  background: color-mix(in srgb, var(--highlighter-yellow) 60%, transparent);
+  border-radius: 2px;
+  transform: translateX(-50%) rotate(-2deg);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ui-text) 8%, transparent);
+  pointer-events: none;
+}
+
+/* ── chaos mode — graph paper + ink-blot + crayon orange ────── */
+body[data-theme='margin-notes'][data-mode='chaos'] {
+  background-color: var(--ui-bg);
+  background-image:
+    linear-gradient(to right, rgba(31, 27, 22, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 27, 22, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+body[data-theme='margin-notes'][data-mode='chaos'] h1,
+body[data-theme='margin-notes'][data-mode='chaos'] .menu-title,
+body[data-theme='margin-notes'][data-mode='chaos'] .game-title,
+body[data-theme='margin-notes'][data-mode='chaos'] .dialog-title,
+body[data-theme='margin-notes'][data-mode='chaos'] .section-heading {
+  transform: rotate(-1deg);
+}
+
+body[data-theme='margin-notes'][data-mode='chaos'] .mode-button {
+  filter: contrast(1.05) saturate(1.05);
+}
+
+body[data-theme='margin-notes'][data-mode='chaos'] .event-announcement {
+  border-color: var(--crayon-orange);
+}
+
+body[data-theme='margin-notes'][data-mode='chaos'] .event-announcement-name {
+  font-family: var(--annotation-font);
+  font-weight: 700;
+  font-size: 2.4rem;
+  color: var(--crayon-orange);
+  text-shadow: -1px 0 var(--india-red), 1px 1px var(--ballpoint-blue);
+}
+
+body[data-theme='margin-notes'][data-mode='chaos'] .active-events-card {
+  transform: rotate(-1.5deg);
+  background-image:
+    linear-gradient(to right, rgba(31, 27, 22, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 27, 22, 0.08) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+body[data-theme='margin-notes'][data-mode='chaos'] .move-history-card,
+body[data-theme='margin-notes'][data-mode='chaos'] .captured-pieces-card,
+body[data-theme='margin-notes'][data-mode='chaos'] .score-panel {
+  transform: rotate(-1.5deg);
+  background-image:
+    linear-gradient(to right, rgba(31, 27, 22, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 27, 22, 0.08) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+body[data-theme='margin-notes'][data-mode='chaos'] .chaos-ink-blot {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--ui-text) 18%, transparent) 0,
+    transparent 70%
+  );
+  transform: rotate(8deg);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body[data-theme='margin-notes'][data-mode='chaos'] .ui-btn:not([data-variant='ghost']):not(:disabled) {
+  border-color: var(--crayon-orange);
+}
+
+/* ── motion: respect prefers-reduced-motion ─────────────────── */
+/* Every transform-setting selector outside this block must be
+   listed here with `transform: none`. The audit script
+   scripts/audit-reduced-motion.ts enforces this contract
+   automatically (see P4.5). */
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme='margin-notes'][data-mode='crazy'] .event-announcement-name,
+  body[data-theme='margin-notes'][data-mode='crazy'] .event-row .event-name,
+  body[data-theme='margin-notes'][data-mode='crazy'] .wordmark-annotation,
+  body[data-theme='margin-notes'][data-mode='choice'] .active-events-card::before,
+  body[data-theme='margin-notes'][data-mode='choice'] [data-mode-tile='choice']::after,
+  body[data-theme='margin-notes'][data-mode='choice'] .choice-detail-card::before,
+  body[data-theme='margin-notes'][data-mode='chaos'] h1,
+  body[data-theme='margin-notes'][data-mode='chaos'] .menu-title,
+  body[data-theme='margin-notes'][data-mode='chaos'] .game-title,
+  body[data-theme='margin-notes'][data-mode='chaos'] .dialog-title,
+  body[data-theme='margin-notes'][data-mode='chaos'] .section-heading,
+  body[data-theme='margin-notes'][data-mode='chaos'] .active-events-card,
+  body[data-theme='margin-notes'][data-mode='chaos'] .move-history-card,
+  body[data-theme='margin-notes'][data-mode='chaos'] .captured-pieces-card,
+  body[data-theme='margin-notes'][data-mode='chaos'] .score-panel,
+  body[data-theme='margin-notes'][data-mode='chaos'] .chaos-ink-blot {
+    transform: none;
+  }
+}

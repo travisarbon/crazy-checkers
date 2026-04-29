@@ -26,6 +26,20 @@ export interface BoardChromeProps {
    * consumed by `BoardChrome` itself — the renderer reads it via props.
    */
   readonly showCoordinates?: boolean;
+  /**
+   * Optional decoration anchored above the board's top edge. P3.4 will
+   * use this slot to render the Margin-Notes "sticky-note rule" carrying
+   * the active event's flavor text. The slot is theme-gated via
+   * `body[data-theme='margin-notes'] .frameDecoration` in the companion
+   * CSS module — non-Margin-Notes themes never see it. The slot wrapper
+   * is `aria-hidden="true"` so the decoration doesn't double-announce
+   * content already exposed by `ActiveEventsIndicator` and
+   * `EventAnnouncement`. `pointer-events: none` keeps the slot out of
+   * hit-testing so a click on the sticker passes through to the board.
+   * P3.2 only exposes the slot; P3.4 fills it.
+   * See Documentation/UI Overhaul/P3.2-Board-Chrome.md.
+   */
+  readonly frameDecoration?: ReactNode;
 }
 
 interface RulerLabels {
@@ -85,6 +99,7 @@ export function BoardChrome({
   ariaLabel,
   showRulers = true,
   showCoordinates: _showCoordinates,
+  frameDecoration,
 }: BoardChromeProps) {
   void _showCoordinates;
   const { files, ranks } = rulerLabels(geometry);
@@ -110,7 +125,14 @@ export function BoardChrome({
               ))}
             </div>
           ) : null}
-          <div className={styles.boardWrap}>{children}</div>
+          <div className={styles.boardWrap}>
+            {frameDecoration ? (
+              <div className={styles.frameDecoration} aria-hidden="true">
+                {frameDecoration}
+              </div>
+            ) : null}
+            {children}
+          </div>
         </div>
         {sidePanel ? <div className={styles.sidePanel}>{sidePanel}</div> : null}
       </div>

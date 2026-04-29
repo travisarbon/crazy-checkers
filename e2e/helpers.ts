@@ -104,6 +104,32 @@ export async function clearAppStorage(page: Page): Promise<void> {
 }
 
 /**
+ * Pre-seed the settings envelope so the next page load lands on Margin
+ * Notes with the escalation flag on. Used by P4.4 escalation tests so
+ * the chrome paints on first paint without clicking through Configure.
+ */
+export async function enableMarginNotesEscalation(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const data = {
+      themeId: 'margin-notes',
+      animationSpeed: 1.0,
+      moveConfirmation: false,
+      masterVolume: 0.7,
+      sfxVolume: 1.0,
+      musicVolume: 0.5,
+      muted: true,
+      audioPackId: 'silent',
+      marginNotesEscalation: true,
+      timeControl: null,
+    };
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({ version: 4, data }),
+    );
+  });
+}
+
+/**
  * Clear all IndexedDB data (games + challenges).
  */
 export async function clearAppIndexedDb(page: Page): Promise<void> {

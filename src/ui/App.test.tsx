@@ -130,10 +130,12 @@ describe('App', () => {
 });
 
 // ---------------------------------------------------------------------------
-// P1.3 — Margin Notes data-mode substrate
+// P1.3 / P6.3 — Margin Notes data-mode substrate.
+// After P6.3 retirement, the substrate is gated on themeId === 'margin-notes'
+// rather than the (now-vestigial) marginNotesEscalation flag.
 // ---------------------------------------------------------------------------
 
-describe('marginNotesEscalation substrate (P1.3)', () => {
+describe('Margin Notes data-mode substrate (P1.3, P6.3)', () => {
   beforeEach(() => {
     delete document.body.dataset.mode;
     localStorage.clear();
@@ -143,36 +145,30 @@ describe('marginNotesEscalation substrate (P1.3)', () => {
     delete document.body.dataset.mode;
   });
 
-  it('does not write data-mode when the flag is off (default)', () => {
-    render(<App />);
-    expect(document.body.dataset.mode).toBeUndefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Crazy' }));
-    expect(document.body.dataset.mode).toBeUndefined();
-  });
-
-  it('writes data-mode when the flag is on (via persisted settings)', () => {
-    localStorage.setItem(
-      'crazy-checkers-settings',
-      JSON.stringify({
-        version: 4,
-        data: { ...DEFAULT_SETTINGS, marginNotesEscalation: true },
-      }),
-    );
+  it('writes data-mode when the active theme is margin-notes (default)', () => {
+    // No persisted settings → DEFAULT_SETTINGS → themeId 'margin-notes' (P6.1).
     render(<App />);
     expect(document.body.dataset.mode).toBe('menu');
     fireEvent.click(screen.getByRole('button', { name: 'Crazy' }));
     expect(document.body.dataset.mode).toBe('crazy');
   });
 
-  it('clears data-mode when remounted with the flag off', () => {
-    // First mount: flag on, attribute is written.
+  it('does not write data-mode when the active theme is non-margin-notes', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
       JSON.stringify({
         version: 4,
-        data: { ...DEFAULT_SETTINGS, marginNotesEscalation: true },
+        data: { ...DEFAULT_SETTINGS, themeId: 'cork', marginNotesEscalation: false },
       }),
     );
+    render(<App />);
+    expect(document.body.dataset.mode).toBeUndefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Crazy' }));
+    expect(document.body.dataset.mode).toBeUndefined();
+  });
+
+  it('clears data-mode when the active theme is changed away from margin-notes', () => {
+    // First mount: margin-notes default, attribute is written.
     const { unmount } = render(<App />);
     expect(document.body.dataset.mode).toBe('menu');
 
@@ -180,12 +176,12 @@ describe('marginNotesEscalation substrate (P1.3)', () => {
     unmount();
     expect(document.body.dataset.mode).toBeUndefined();
 
-    // Re-mount with the flag off: attribute stays absent.
+    // Re-mount under cork: attribute stays absent.
     localStorage.setItem(
       'crazy-checkers-settings',
       JSON.stringify({
         version: 4,
-        data: { ...DEFAULT_SETTINGS, marginNotesEscalation: false },
+        data: { ...DEFAULT_SETTINGS, themeId: 'cork' },
       }),
     );
     render(<App />);

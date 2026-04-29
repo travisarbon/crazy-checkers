@@ -8,6 +8,7 @@
 import type { ActiveEvent, PieceColor } from '../engine/types';
 import { CrazyEvent, PieceColor as PC } from '../engine/types';
 import { EVENT_DISPLAY_NAMES } from '../engine/events';
+import EventIcon from './EventIcon';
 import styles from './ActiveEventsIndicator.module.css';
 
 // ---------------------------------------------------------------------------
@@ -55,19 +56,30 @@ export default function ActiveEventsIndicator({
   if (visibleEvents.length === 0) return null;
 
   return (
-    <div className={styles.container} data-testid="active-events-indicator">
+    <div
+      className={`${styles.container ?? ''} active-events-card`}
+      data-testid="active-events-indicator"
+    >
       <p className={styles.heading}>Active Events</p>
-      {visibleEvents.map((event) => (
+      {visibleEvents.map((event, index) => (
         <div
           key={`${event.type}-${String(event.triggeredAtPly)}`}
-          className={styles.eventRow}
+          className={`${styles.eventRow ?? ''} event-row`}
           data-testid="active-event-row"
+          // P5.6 — staggered sway phase via inline custom property.
+          // The CSS animation in ActiveEventsIndicator.module.css reads
+          // --event-index to compute the per-row animation-delay.
+          style={{ ['--event-index' as string]: String(index) }}
         >
+          {/* P5.5 — Margin Notes per-event icon thumbnail. The CSS in
+              EventIcon.module.css hides this thumbnail under non-Margin-Notes
+              themes; the legacy color-dot below is hidden under Margin Notes. */}
+          <EventIcon eventType={event.type} size={20} />
           <span
-            className={`${styles.colorDot ?? ''} ${event.triggeredBy === PC.White ? (styles.white ?? '') : (styles.black ?? '')}`}
+            className={`${styles.colorDot ?? ''} event-color-dot ${event.triggeredBy === PC.White ? (styles.white ?? '') : (styles.black ?? '')}`}
             aria-label={`Triggered by ${event.triggeredBy === PC.White ? 'White' : 'Black'}`}
           />
-          <span className={styles.eventName}>{EVENT_DISPLAY_NAMES[event.type]}</span>
+          <span className={`${styles.eventName ?? ''} event-name`}>{EVENT_DISPLAY_NAMES[event.type]}</span>
           <span className={styles.durationBadge}>{formatDuration(event)}</span>
         </div>
       ))}

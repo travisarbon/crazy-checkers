@@ -12,6 +12,7 @@ import {
   saveGame,
   loadSavedGame,
   clearSavedGame,
+  coerceEscalationOnThemeChange,
 } from './settings';
 
 // ---------------------------------------------------------------------------
@@ -82,6 +83,8 @@ describe('loadSettings', () => {
       audioPackId: 'silent',
       marginNotesEscalation: false,
       timeControl: null,
+      marginNotesToastDismissed: false,
+      marginNotesToastFirstSeenAt: null,
     };
     saveSettings(custom);
     expect(loadSettings()).toEqual(custom);
@@ -294,8 +297,8 @@ describe('loadSettings', () => {
     expect(loadSettings().marginNotesEscalation).toBe(true);
   });
 
-  it('defaults marginNotesEscalation to false when the field is missing (P1.3)', () => {
-    const partial: Record<string, unknown> = { ...DEFAULT_SETTINGS };
+  it('defaults marginNotesEscalation to false when the field is missing under a non-margin-notes theme (P1.3)', () => {
+    const partial: Record<string, unknown> = { ...DEFAULT_SETTINGS, themeId: 'cork' };
     delete partial.marginNotesEscalation;
     localStorage.setItem(
       'crazy-checkers-settings',
@@ -304,15 +307,115 @@ describe('loadSettings', () => {
     expect(loadSettings().marginNotesEscalation).toBe(false);
   });
 
-  it('rejects non-boolean marginNotesEscalation (P1.3)', () => {
+  it('rejects non-boolean marginNotesEscalation under non-margin-notes theme (P1.3)', () => {
     localStorage.setItem(
       'crazy-checkers-settings',
       JSON.stringify({
         version: 4,
-        data: { ...DEFAULT_SETTINGS, marginNotesEscalation: 'yes' },
+        data: { ...DEFAULT_SETTINGS, themeId: 'cork', marginNotesEscalation: 'yes' },
+      }),
+    );
+    // Falls through to the derivation: themeId !== 'margin-notes' → false.
+    expect(loadSettings().marginNotesEscalation).toBe(false);
+  });
+
+  // ── P4.1 — escalation flag default is theme-derived ─────────────
+
+  it('derives marginNotesEscalation to true when themeId is margin-notes and field is absent (P4.1)', () => {
+    const partial: Record<string, unknown> = { ...DEFAULT_SETTINGS, themeId: 'margin-notes' };
+    delete partial.marginNotesEscalation;
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({ version: 4, data: partial }),
+    );
+    const result = loadSettings();
+    expect(result.themeId).toBe('margin-notes');
+    expect(result.marginNotesEscalation).toBe(true);
+  });
+
+  it('derives marginNotesEscalation to false when themeId is non-margin-notes and field is absent (P4.1)', () => {
+    const partial: Record<string, unknown> = { ...DEFAULT_SETTINGS, themeId: 'classic' };
+    delete partial.marginNotesEscalation;
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({ version: 4, data: partial }),
+    );
+    const result = loadSettings();
+    expect(result.themeId).toBe('classic');
+    expect(result.marginNotesEscalation).toBe(false);
+  });
+
+  it('respects explicit marginNotesEscalation: false on margin-notes (P4.1, user choice wins)', () => {
+    localStorage.setItem(
+      'crazy-checkers-settings',
+      JSON.stringify({
+        version: 4,
+        data: {
+          ...DEFAULT_SETTINGS,
+          themeId: 'margin-notes',
+          marginNotesEscalation: false,
+        },
       }),
     );
     expect(loadSettings().marginNotesEscalation).toBe(false);
+  });
+});
+
+describe('coerceEscalationOnThemeChange (P4.1)', () => {
+  it('flips escalation on when moving from cork to margin-notes', () => {
+    const prev: Settings = {
+      ...DEFAULT_SETTINGS,
+      themeId: 'cork',
+      marginNotesEscalation: false,
+    };
+    const next = coerceEscalationOnThemeChange(prev, 'margin-notes');
+    expect(next.themeId).toBe('margin-notes');
+    expect(next.marginNotesEscalation).toBe(true);
+  });
+
+  it('does not flip escalation when moving cork to classic', () => {
+    const prev: Settings = {
+      ...DEFAULT_SETTINGS,
+      themeId: 'cork',
+      marginNotesEscalation: false,
+    };
+    const next = coerceEscalationOnThemeChange(prev, 'classic');
+    expect(next.themeId).toBe('classic');
+    expect(next.marginNotesEscalation).toBe(false);
+  });
+
+  it('preserves an explicit-true escalation when moving from margin-notes to cork', () => {
+    const prev: Settings = {
+      ...DEFAULT_SETTINGS,
+      themeId: 'margin-notes',
+      marginNotesEscalation: true,
+    };
+    const next = coerceEscalationOnThemeChange(prev, 'cork');
+    expect(next.themeId).toBe('cork');
+    expect(next.marginNotesEscalation).toBe(true);
+  });
+
+  it('preserves an explicit-false escalation when moving back to margin-notes', () => {
+    const prev: Settings = {
+      ...DEFAULT_SETTINGS,
+      themeId: 'cork',
+      marginNotesEscalation: true, // user previously turned it on then off — but we only look at current value
+    };
+    // The user's current explicit choice is true; coercion is a no-op for the flag.
+    const next = coerceEscalationOnThemeChange(prev, 'margin-notes');
+    expect(next.themeId).toBe('margin-notes');
+    expect(next.marginNotesEscalation).toBe(true);
+  });
+
+  it('does not double-flip when already on margin-notes', () => {
+    const prev: Settings = {
+      ...DEFAULT_SETTINGS,
+      themeId: 'margin-notes',
+      marginNotesEscalation: false,
+    };
+    // Already on margin-notes; the transition rule should not apply.
+    const next = coerceEscalationOnThemeChange(prev, 'margin-notes');
+    expect(next.marginNotesEscalation).toBe(false);
   });
 });
 
