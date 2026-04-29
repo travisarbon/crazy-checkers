@@ -1,0 +1,4 @@
+var e=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="var(--ink, currentColor)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<path d="M32 12 L 50 18 L 50 36 Q 50 48, 32 54 Q 14 48, 14 36 L 14 18 Z" fill="var(--paper)" /><path d="M26 32 L 30 38 L 40 26" />
+</svg>
+`;export{e as default};

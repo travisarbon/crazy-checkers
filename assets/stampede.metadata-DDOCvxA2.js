@@ -1,0 +1,1 @@
+var e=900,t={drawOnDurationMs:900};export{t as default,e as drawOnDurationMs};
