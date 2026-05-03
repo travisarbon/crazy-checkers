@@ -21,6 +21,10 @@ import { buildArcTrackAdjacency } from './adjacency/ArcTrackAdjacency';
 import { buildDotAdjacency } from './adjacency/DotAdjacency';
 import { buildMancalaPitAdjacency } from './adjacency/MancalaPitAdjacency';
 import { buildTerrainOverlayAdjacency } from './adjacency/TerrainOverlayAdjacency';
+import {
+  type AlquerqueDiagonalPattern,
+  buildAlquerqueAdjacency,
+} from './adjacency/AlquerqueAdjacency';
 import { buildSquareCoordinates } from './coordinates/SquareCoordinates';
 import { buildRectangleCoordinates } from './coordinates/RectangleCoordinates';
 import {
@@ -32,6 +36,7 @@ import { buildCrossCoordinates } from './coordinates/CrossCoordinates';
 import { buildArcTrackCoordinates } from './coordinates/ArcTrackCoordinates';
 import { buildDotCoordinates } from './coordinates/DotCoordinates';
 import { buildMancalaPitCoordinates } from './coordinates/MancalaPitCoordinates';
+import { buildAlquerqueCoordinates } from './coordinates/AlquerqueCoordinates';
 
 export type NodeId = number & { readonly __brand: 'GeometryNodeId' };
 
@@ -48,6 +53,7 @@ export type BoardGeometryKind =
   | 'dot-grid'
   | 'mancala-pit'
   | 'terrain-overlay'
+  | 'alquerque'
   | 'irregular-registered';
 
 export type IndexingMode = 'squares' | 'intersections' | 'points' | 'pits' | 'dots';
@@ -93,6 +99,7 @@ export interface Dimensions {
     sowingOrder: readonly NodeId[];
   };
   readonly terrainOverlay?: { baseKey: string; overlays: readonly OverlayRegion[] };
+  readonly alquerque?: { size: number; diagonalPattern: AlquerqueDiagonalPattern };
   readonly irregular?: { description: string };
 }
 
@@ -312,6 +319,35 @@ export function irregularGeometry(opts: {
     adjacency: opts.adjacency,
     coordinateLabels: opts.coordinateLabels,
     serializedKey: `irregular-${opts.serializedKey}`,
+  };
+}
+
+export interface AlquerqueGeometryOptions {
+  /** Side length (9 for Zamma; 5 for Bagh-Chal). */
+  readonly size: number;
+  /** Diagonal-line pattern. Defaults to `'alternating'` (Zamma's canonical pattern). */
+  readonly diagonalPattern?: AlquerqueDiagonalPattern;
+}
+
+/**
+ * Alquerque-grid geometry for Tier 2 #15 Zamma. Diagonals follow the
+ * alternating pattern by default (a node `(r, c)` has diagonals iff
+ * `(r + c) % 2 === 0`). Reusable for Bagh-Chal (5×5) and any future
+ * full-diagonal alquerque variant via `diagonalPattern: 'full'`.
+ */
+export function alquerqueGeometry(opts: AlquerqueGeometryOptions): BoardGeometry {
+  const { size, diagonalPattern = 'alternating' } = opts;
+  const adjacency = buildAlquerqueAdjacency({ size, diagonalPattern });
+  const coordinateLabels = buildAlquerqueCoordinates({ size });
+  const keyParts = [`alquerque-${String(size)}x${String(size)}`];
+  if (diagonalPattern === 'full') keyParts.push('full-diag');
+  return {
+    kind: 'alquerque',
+    dimensions: { alquerque: { size, diagonalPattern } },
+    indexing: 'intersections',
+    adjacency,
+    coordinateLabels,
+    serializedKey: keyParts.join('-'),
   };
 }
 

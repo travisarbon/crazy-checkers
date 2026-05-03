@@ -18,6 +18,7 @@ Cogitate, serializers, and persistence.
 | `dot-grid`              | `dots` + derived edges/boxes             | Dots and Boxes                                                  |
 | `mancala-pit`           | `pits` with sowing order                 | Oware, Bao                                                      |
 | `terrain-overlay`       | decorator over a base geometry           | Arimaa traps, Halma camps                                        |
+| `alquerque`             | `intersections` with alternating-diagonal lines | Zamma 9×9, Bagh-Chal 5×5 (Tier 9 expansion)                  |
 | `irregular-registered`  | bespoke adjacency registered by a caller | Camelot, Trax (Phase 4 expansion)                                |
 
 ## Stable serialized-key conventions
@@ -37,6 +38,7 @@ shipped key is a breaking change — use the schema-migration hook instead.
 | `dotGridGeometry({ boxesAcross, boxesDown })`       | `dot-grid-{a}x{d}`                                 |
 | `mancalaPitGeometry('oware-2x6' \| 'bao-4x8')`      | `mancala-oware-2x6` / `mancala-bao-4x8`            |
 | `withTerrainOverlay(base, overlays, overlayKey)`    | `overlay-{baseKey}+{overlayKey}`                   |
+| `alquerqueGeometry({ size, diagonalPattern? })`     | `alquerque-{size}x{size}[-full-diag]`              |
 | `irregularGeometry({ serializedKey })`              | `irregular-{serializedKey}`                        |
 
 ## Authoring rules (expansion tiers)

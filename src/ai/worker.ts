@@ -435,6 +435,67 @@ export function evaluateClassifiedDraughtsPosition(
   };
 }
 
+// ---------------------------------------------------------------------------
+// Tier 2 Classified AI entry point (Task 29.7)
+// ---------------------------------------------------------------------------
+
+import {
+  getTier2Dispatch,
+  getTier2DifficultyConfig,
+  tier2IterativeSearch,
+} from './evaluators/tier2';
+import type { ClassifiedGameId, ClassifiedMove } from '../engine/classified/ClassifiedRuleSet';
+
+/**
+ * Serializable form of a Tier 2 ClassifiedGameState.
+ * `pieces` is `[nodeIdNumber, piece]` tuples since `Map` isn't transferable.
+ */
+export interface SerializableClassifiedTier2State {
+  readonly gameId: string;
+  readonly pieces: ReadonlyArray<readonly [number, { owner: string; kind: string; promoted?: boolean; stack?: ReadonlyArray<{ owner: string; kind: string }> }]>;
+  readonly turn: 'white' | 'black';
+  readonly plyCount: number;
+  readonly moveHistory: readonly ClassifiedMove[];
+  readonly meta?: Readonly<Record<string, unknown>>;
+}
+
+function deserializeClassifiedTier2State(
+  data: SerializableClassifiedTier2State,
+): ClassifiedGameState {
+  const pieces = new Map<NodeId, ClassifiedPiece>();
+  for (const [rawId, piece] of data.pieces) {
+    const value: ClassifiedPiece = piece.stack
+      ? { owner: piece.owner, kind: piece.kind, stack: piece.stack as ClassifiedPiece['stack'] }
+      : piece.promoted === true
+        ? { owner: piece.owner, kind: piece.kind, promoted: true }
+        : { owner: piece.owner, kind: piece.kind };
+    pieces.set(asNodeId(rawId), value);
+  }
+  return {
+    pieces,
+    turn: data.turn,
+    plyCount: data.plyCount,
+    moveHistory: data.moveHistory,
+    meta: data.meta,
+  };
+}
+
+/**
+ * Computes the AI move for a Tier 2 Classified game. Generic dispatch via
+ * gameId. Returns `null` only when the position has zero legal moves.
+ */
+export function getClassifiedTier2AIMove(
+  data: SerializableClassifiedTier2State,
+  difficulty: 'easy' | 'hard',
+): ClassifiedMove | null {
+  const gameId = data.gameId as unknown as ClassifiedGameId;
+  const dispatch = getTier2Dispatch(gameId);
+  const state = deserializeClassifiedTier2State(data);
+  const config = getTier2DifficultyConfig({ gameId, level: difficulty });
+  const result = tier2IterativeSearch(state, dispatch.ruleSet, dispatch.evaluate, config);
+  return result.move;
+}
+
 const workerApi = {
   getAIMove,
   analyzePosition,
@@ -444,6 +505,7 @@ const workerApi = {
   getClassifiedDraughtsAIMove,
   evaluateClassifiedDraughtsPosition,
   isDraughtsGameId,
+  getClassifiedTier2AIMove,
 };
 export type WorkerApi = typeof workerApi;
 

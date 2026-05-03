@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  alquerqueGeometry,
   arcTrackGeometry,
   asNodeId,
   crossGeometry,
@@ -95,6 +96,20 @@ describe('BoardGeometry — factory stable keys (snapshot)', () => {
     expect(mancalaPitGeometry('bao-4x8').serializedKey).toBe('mancala-bao-4x8');
   });
 
+  it('alquerque-9x9 (Zamma) and alquerque-9x9-full-diag (variant)', () => {
+    expect(alquerqueGeometry({ size: 9 }).serializedKey).toBe('alquerque-9x9');
+    expect(
+      alquerqueGeometry({ size: 9, diagonalPattern: 'alternating' }).serializedKey,
+    ).toBe('alquerque-9x9');
+    expect(
+      alquerqueGeometry({ size: 9, diagonalPattern: 'full' }).serializedKey,
+    ).toBe('alquerque-9x9-full-diag');
+  });
+
+  it('alquerque-5x5 (Bagh-Chal-style)', () => {
+    expect(alquerqueGeometry({ size: 5 }).serializedKey).toBe('alquerque-5x5');
+  });
+
   it('overlay key composes from base + overlay', () => {
     const base = squareGeometry({ size: 8, indexing: 'squares' });
     const overlaid = withTerrainOverlay(base, [], 'arimaa-traps');
@@ -136,6 +151,7 @@ describe('BoardGeometry — descriptor shape', () => {
       arcTrackGeometry('surakarta'),
       dotGridGeometry({ boxesAcross: 5, boxesDown: 5 }),
       mancalaPitGeometry('oware-2x6'),
+      alquerqueGeometry({ size: 9 }),
     ];
     for (const g of all) {
       expect(g.kind).toBeDefined();
@@ -144,6 +160,21 @@ describe('BoardGeometry — descriptor shape', () => {
       expect(g.adjacency.directionKinds.length).toBeGreaterThan(0);
       expect(typeof g.coordinateLabels.notationOf).toBe('function');
     }
+  });
+});
+
+describe('BoardGeometry — alquerqueGeometry descriptor', () => {
+  it('produces an alquerque-kind geometry with intersections indexing and 81 nodes for size 9', () => {
+    const geom = alquerqueGeometry({ size: 9 });
+    expect(geom.kind).toBe('alquerque');
+    expect(geom.indexing).toBe('intersections');
+    expect(geom.adjacency.nodeCount()).toBe(81);
+    expect(geom.dimensions.alquerque).toEqual({ size: 9, diagonalPattern: 'alternating' });
+  });
+
+  it('passes diagonalPattern through to dimensions', () => {
+    const geom = alquerqueGeometry({ size: 9, diagonalPattern: 'full' });
+    expect(geom.dimensions.alquerque?.diagonalPattern).toBe('full');
   });
 });
 

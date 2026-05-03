@@ -32,13 +32,17 @@ export function loadClassifiedTier(tierNumber: number): Promise<void> {
         mod.registerTier1();
         return;
       }
-      case 2:
+      case 2: {
+        const mod = await import('./tier2/index');
+        mod.registerTier2();
+        return;
+      }
       case 3:
       case 4:
       case 5:
       case 6:
       case 7: {
-        const taskNumber = 27 + tierNumber; // 29, 30, 31, 32, 33, 34
+        const taskNumber = 27 + tierNumber; // 30, 31, 32, 33, 34
         throw new Error(
           `loadClassifiedTier(${String(tierNumber)}): tier not yet authored ` +
             `(Tier ${String(tierNumber)} lands in Task ${String(taskNumber)}).`,

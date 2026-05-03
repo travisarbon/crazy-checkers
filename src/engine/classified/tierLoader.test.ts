@@ -28,7 +28,7 @@ describe('loadClassifiedTier — unknown tier', () => {
     await expect(loadClassifiedTier(99)).rejects.toThrow(/invalid tier number/);
   });
 
-  it('rejects on a not-yet-authored tier (2..7)', async () => {
-    await expect(loadClassifiedTier(2)).rejects.toThrow(/not yet authored/);
+  it('rejects on a not-yet-authored tier (3..7)', async () => {
+    await expect(loadClassifiedTier(3)).rejects.toThrow(/not yet authored/);
   });
 });

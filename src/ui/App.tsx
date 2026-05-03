@@ -218,10 +218,17 @@ export default function App() {
 
   // Task 27.8: load the Tier 1 Classified registrations so their gallery
   // cards render the live Play affordance and their detail screens open the
-  // MVP game-launch path. Tiers 2–7 follow the same pattern as they land.
+  // MVP game-launch path. Task 29.7 / 29.G.1: Tier 2 is now shipped, so
+  // load both tiers together. Tiers 3–7 follow the same pattern as they
+  // land. Each `loadClassifiedTier(N)` call is independent — if one fails
+  // (e.g., a Tier 2 game can't register due to a typo) the other tiers
+  // remain loaded.
   useEffect(() => {
     void loadClassifiedTier(1).catch((err: unknown) => {
       console.warn('[App] failed to load Classified Tier 1:', err);
+    });
+    void loadClassifiedTier(2).catch((err: unknown) => {
+      console.warn('[App] failed to load Classified Tier 2:', err);
     });
   }, []);
 
